@@ -1,11 +1,10 @@
 import axios from "axios";
 
-console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
   },
 });
 
@@ -13,7 +12,10 @@ api.interceptors.request.use((config) => {
   console.log("===== AXIOS REQUEST =====");
   console.log("Base URL:", config.baseURL);
   console.log("URL:", config.url);
-  console.log(config);
+
+  // Make sure every request includes the ngrok bypass header
+  config.headers["ngrok-skip-browser-warning"] = "true";
+
   return config;
 });
 
@@ -28,6 +30,6 @@ api.interceptors.response.use(
     console.log(error);
     console.log("Response:", error.response);
     console.log("Request:", error.request);
-    throw error;
+    return Promise.reject(error);
   }
 );
