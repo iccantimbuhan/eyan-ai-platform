@@ -1,0 +1,47 @@
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# IntelliJ / JetBrains
+.idea/
+
+# Node
+node_modules/
+dist/
+.pnpm-store/
+
+# Environment files
+.env
+.env.local
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Coverage
+coverage/
+
+# Build
+build/
+
+# Temporary
+tmp/
+temp/
+
+# TypeScript
+*.tsbuildinfo
+
+# OS Files
+Thumbs.db
