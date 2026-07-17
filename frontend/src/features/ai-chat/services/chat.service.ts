@@ -58,7 +58,10 @@ export async function streamChat(
   try {
     const response = await fetch(`${baseURL}/chat/stream`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: JSON.stringify({ messages }),
       signal,
     })
