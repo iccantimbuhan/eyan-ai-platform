@@ -1,6 +1,0 @@
-// frontend/src/components/layout/types.ts
-export type User = {
-  name: string;
-  email: string;
-  avatar: string;
-}
