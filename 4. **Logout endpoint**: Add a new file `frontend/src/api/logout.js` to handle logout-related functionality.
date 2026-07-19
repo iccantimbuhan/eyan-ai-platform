@@ -1,0 +1,14 @@
+// frontend/src/api/logout.js
+import axios from 'axios';
+import auth from './auth';
+
+const logout = async () => {
+  try {
+    await axios.post('/logout');
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export default logout;

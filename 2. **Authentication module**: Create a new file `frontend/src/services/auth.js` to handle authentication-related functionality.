@@ -1,0 +1,13 @@
+// frontend/src/services/auth.js
+import axios from 'axios';
+
+const auth = {
+  login: async (username, password) => {
+    // Implement login logic here
+  },
+  logout: async () => {
+    // Implement logout logic here
+  },
+};
+
+export default auth;
