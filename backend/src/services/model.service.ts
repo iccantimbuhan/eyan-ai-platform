@@ -1,10 +1,17 @@
 import { OllamaProvider } from "../providers/ollama/ollama.provider.js";
+import { ApiError } from "../errors/api-error.js";
 
 export class ModelService {
   private readonly provider = new OllamaProvider();
 
   async getModels() {
-    const response = await this.provider.listModels();
+    let response;
+
+    try {
+      response = await this.provider.listModels();
+    } catch {
+      throw new ApiError(503, "Unable to connect to AI provider.");
+    }
 
     return response.models.map((model: any) => ({
       name: model.name,

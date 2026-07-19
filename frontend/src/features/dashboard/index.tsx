@@ -56,7 +56,7 @@ export function Dashboard() {
                 ))}
               </div>
             ) : healthError ? (
-              <StatusBadge status="disconnected" label="Backend unreachable" />
+              <StatusBadge status="disconnected" label={healthError} />
             ) : health ? (
               <div className="flex flex-wrap gap-3">
                 <StatusBadge
@@ -152,7 +152,7 @@ export function Dashboard() {
               <StatCard
                 title="Current Provider"
                 value={healthLoading ? <Skeleton className="h-8 w-20" /> : (health?.provider ? health.provider.charAt(0).toUpperCase() + health.provider.slice(1) : '—')}
-                description={healthError ? 'Backend unreachable' : (health?.model ?? 'No model configured')}
+                description={healthError ?? (health?.model ?? 'No model configured')}
                 icon={<Server />}
               />
               <StatCard
@@ -160,7 +160,7 @@ export function Dashboard() {
                 value={healthLoading ? <Skeleton className="h-8 w-16" /> : (health?.version ?? '—')}
                 description={
                   healthError
-                    ? 'Backend unreachable'
+                    ? healthError
                     : health
                       ? `Last checked: ${new Date(health.timestamp).toLocaleTimeString()}`
                       : 'Unavailable'

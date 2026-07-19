@@ -9,7 +9,10 @@ export class ChatService {
   async chat(messages: OllamaMessage[]) {
     try {
       return await this.provider.chat(messages);
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(503, "Unable to connect to AI provider.");
     }
   }
@@ -22,11 +25,25 @@ export class ChatService {
         throw new ApiError(501, "Streaming not supported.");
       }
 
-      res.setHeader("Content-Type", "text/plain");
+      res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("X-Accel-Buffering", "no");
       res.setHeader("Transfer-Encoding", "chunked");
+      res.flushHeaders();
+
+      response.data.on("error", (error: Error) => {
+        console.error("[stream] Upstream stream error", error);
+        if (!res.destroyed) {
+          res.destroy(error);
+        }
+      });
 
       response.data.pipe(res);
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(503, "Unable to connect to AI provider.");
     }
   }

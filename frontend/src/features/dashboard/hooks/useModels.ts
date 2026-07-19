@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { AxiosError } from 'axios'
 import { getModels, type ModelsResponse } from '@/features/ai-chat/services/chat.service'
 
 type UseModelsResult = {
@@ -6,6 +7,31 @@ type UseModelsResult = {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+}
+
+function describeError(error: unknown) {
+  if (error instanceof AxiosError) {
+    if (error.response) {
+      return `Models request returned HTTP ${error.response.status}`
+    }
+    if (error.code === 'ECONNABORTED') {
+      return 'Models request timed out'
+    }
+    if (error.code === 'ERR_NETWORK') {
+      return 'Models network request failed'
+    }
+    return error.message || 'Models request failed'
+  }
+
+  if (error instanceof TypeError) {
+    return `Models request failed: ${error.message}`
+  }
+
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return 'Unable to fetch models'
 }
 
 export function useModels(): UseModelsResult {
@@ -19,8 +45,9 @@ export function useModels(): UseModelsResult {
     try {
       const result = await getModels()
       setData(result)
-    } catch {
-      setError('Unable to fetch models')
+    } catch (error) {
+      console.error('[useModels] Failed to load models', error)
+      setError(describeError(error))
       setData(null)
     } finally {
       setIsLoading(false)

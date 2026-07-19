@@ -1,0 +1,32 @@
+// frontend/src/services/auth.js
+import axios from 'axios';
+import auth from './auth';
+
+const auth = {
+  login: async (username, password) => {
+    // Implement login logic here
+  },
+  logout: async () => {
+    // Implement logout logic here
+  },
+  token: async () => {
+    try {
+      const response = await axios.get('/token');
+      return response.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  },
+  refreshToken: async () => {
+    try {
+      const response = await axios.post('/refresh-token', { token: auth.token() });
+      return response.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  },
+};
+
+export default auth;
