@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Express } from "express";
 import cors from "cors";
 
 import healthRoutes from "./routes/v1/health.routes.js";
@@ -8,7 +8,7 @@ import chatStreamRoutes from "./routes/v1/chat-stream.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
 
-const app = express();
+const app: Express = express();
 
 app.use(cors());
 app.use(express.json());
