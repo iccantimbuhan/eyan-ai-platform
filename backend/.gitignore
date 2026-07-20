@@ -1,17 +1,26 @@
 # Dependencies
 node_modules/
 
-# Environment
-.env
-.env.local
-
 # Build output
 dist/
 build/
 coverage/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
 
 # Logs
 *.log
+npm-debug.log*
+pnpm-debug.log*
 
-# macOS
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
