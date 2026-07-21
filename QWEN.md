@@ -1,17 +1,24 @@
-# Open Source AI Platform
+# Eyan AI Platform Development Rules
 
-Mission:
-Build a production-ready AI Engineering Platform.
+## Never
 
-Rules:
+- Never change unrelated files.
+- Never modify package versions unless asked.
+- Never create duplicate utilities.
+- Never introduce breaking changes.
 
-- Never create duplicate components.
-- Always reuse existing Shadcn UI components.
-- Never modify unrelated files.
-- Always explain the plan before coding.
-- Prefer small tickets over large refactors.
-- Keep the UI clean and production-ready.
-- Do not generate placeholder features unless requested.
-- Every feature must compile without TypeScript errors.
-- Build for deployment on Vercel.
-- Keep Express backend and React frontend loosely coupled.
+## Always
+
+- Follow existing folder structure.
+- Use TypeScript strict mode.
+- Use async/await.
+- Validate inputs with Zod.
+- Return consistent API responses.
+- Add comments only when necessary.
+
+## Architecture
+
+- Controllers are thin.
+- Services contain business logic.
+- Middleware contains authentication/authorization.
+- Prisma handles database access.
