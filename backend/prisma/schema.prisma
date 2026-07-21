@@ -14,18 +14,59 @@ model User {
   passwordHash    String
   name            String
 
-  role            UserRole @default(USER)
-
   refreshToken    String?
 
   isActive        Boolean  @default(true)
   emailVerified   Boolean  @default(false)
 
+  roles           UserRole[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 
-enum UserRole {
-  USER
-  ADMIN
+model Role {
+  id          String   @id @default(cuid())
+
+  name        String   @unique
+  description String?
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+
+  name        String   @unique
+  description String?
+
+  roles       RolePermission[]
+
+  createdAt   DateTime @default(now())
+}
+
+model UserRole {
+  userId      String
+  roleId      String
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  assignedAt  DateTime @default(now())
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role         Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
 }
