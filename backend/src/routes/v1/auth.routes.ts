@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import { AuthController } from "../../controllers/auth.controller.js";
 
+console.log("✅ auth.routes.ts loaded");
+
 import {
   registerValidator,
   loginValidator,
@@ -44,6 +46,14 @@ router.get(
   "/me",
   authenticate,
   AuthController.me
+);
+
+console.log(
+  "Auth routes:",
+  router.stack.map((layer: any) => ({
+    path: layer.route?.path,
+    methods: layer.route?.methods,
+  }))
 );
 
 export default router;

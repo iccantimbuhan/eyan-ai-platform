@@ -46,9 +46,22 @@ export class UserRepository {
     });
   }
 
+  async findRoleByName(name: string) {
+    return prisma.role.findUnique({
+      where: { name },
+    });
+  }
+
   async assignRole(userId: string, roleId: string) {
-    return prisma.userRole.create({
-      data: {
+    return prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId,
+          roleId,
+        },
+      },
+      update: {},
+      create: {
         userId,
         roleId,
       },

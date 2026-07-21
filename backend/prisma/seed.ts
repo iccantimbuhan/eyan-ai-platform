@@ -12,26 +12,11 @@ const prisma = new PrismaClient({
 });
 
 const roles = [
-  {
-    name: "Owner",
-    description: "Full system owner",
-  },
-  {
-    name: "Admin",
-    description: "System administrator",
-  },
-  {
-    name: "Developer",
-    description: "Software developer",
-  },
-  {
-    name: "QA Engineer",
-    description: "Quality Assurance",
-  },
-  {
-    name: "Viewer",
-    description: "Read-only user",
-  },
+  { name: "Owner", description: "Full system owner" },
+  { name: "Admin", description: "System administrator" },
+  { name: "Developer", description: "Software developer" },
+  { name: "QA Engineer", description: "Quality Assurance" },
+  { name: "Viewer", description: "Read-only user" },
 ];
 
 const permissions = [
@@ -47,6 +32,7 @@ const permissions = [
   "deployments.create",
   "deployments.read",
   "api.manage",
+  "models.read",
 ];
 
 async function main() {
@@ -64,14 +50,41 @@ async function main() {
     await prisma.permission.upsert({
       where: { name: permission },
       update: {},
+      create: { name: permission },
+    });
+  }
+
+  const owner = await prisma.role.findUnique({
+    where: { name: "Owner" },
+  });
+
+  if (!owner) throw new Error("Owner role not found.");
+
+  for (const permissionName of permissions) {
+    const permission = await prisma.permission.findUnique({
+      where: { name: permissionName },
+    });
+
+    if (!permission) continue;
+
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: owner.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
       create: {
-        name: permission,
+        roleId: owner.id,
+        permissionId: permission.id,
       },
     });
   }
 
   console.log("✅ Roles seeded");
   console.log("✅ Permissions seeded");
+  console.log("✅ Owner permissions assigned");
 }
 
 main()

@@ -31,30 +31,15 @@ const corsOptions: CorsOptions = {
   allowedHeaders: [
     "Accept",
     "Content-Type",
-    "ngrok-skip-browser-warning",
     "Authorization",
+    "ngrok-skip-browser-warning",
   ],
-  exposedHeaders: [
-    "Content-Type",
-    "ngrok-agent-ips",
-  ],
-  credentials: false,
-  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
 
 app.use((req, _res, next) => {
-  console.info("[api] Request", {
-    method: req.method,
-    path: req.originalUrl,
-    origin: req.header("origin"),
-    accessControlRequestMethod: req.header("access-control-request-method"),
-    accessControlRequestHeaders: req.header("access-control-request-headers"),
-    contentType: req.header("content-type"),
-    hasNgrokSkipHeader: Boolean(req.header("ngrok-skip-browser-warning")),
-  });
-
+  console.log(`➡️ ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -65,6 +50,15 @@ app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/models", modelRoutes);
 app.use("/api/v1/chat/stream", chatStreamRoutes);
 app.use("/api/v1/chat", chatRoutes);
+
+console.log("Registered routes:");
+app.router.stack.forEach((layer: any) => {
+  if (layer.route) {
+    console.log(layer.route.path, layer.route.methods);
+  } else if (layer.name === "router") {
+    console.log("Router mounted");
+  }
+});
 
 app.use(errorHandler);
 
