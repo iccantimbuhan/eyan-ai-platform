@@ -23,6 +23,10 @@ type AuthenticatedUser = NonNullable<
   Awaited<ReturnType<typeof userRepository.findById>>
 >;
 
+function getPrimaryRole(user: AuthenticatedUser): string {
+  return user.roles[0]?.role.name ?? "Viewer";
+}
+
 export class AuthService {
   async register(dto: RegisterDto): Promise<AuthResponse> {
     const existing = await userRepository.findByEmail(dto.email);
@@ -42,7 +46,6 @@ export class AuthService {
     const payload = {
       userId: user.id,
       email: user.email,
-      role: user.role,
     };
 
     const accessToken = signAccessToken(payload);
@@ -58,7 +61,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: getPrimaryRole(user),
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -88,7 +91,6 @@ export class AuthService {
     const payload = {
       userId: user.id,
       email: user.email,
-      role: user.role,
     };
 
     const accessToken = signAccessToken(payload);
@@ -104,7 +106,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: getPrimaryRole(user),
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -142,7 +144,6 @@ export class AuthService {
     const newPayload = {
       userId: user.id,
       email: user.email,
-      role: user.role,
     };
 
     const accessToken = signAccessToken(newPayload);
@@ -170,7 +171,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: getPrimaryRole(user),
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

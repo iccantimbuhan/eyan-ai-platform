@@ -1,16 +1,33 @@
 import { prisma } from "../lib/prisma.js";
-import { UserRole } from "../generated/prisma/enums.js";
+
+const userWithRolesInclude = {
+  roles: {
+    include: {
+      role: {
+        include: {
+          permissions: {
+            include: {
+              permission: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
 
 export class UserRepository {
   async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
+      include: userWithRolesInclude,
     });
   }
 
   async findByEmail(email: string) {
     return prisma.user.findUnique({
       where: { email },
+      include: userWithRolesInclude,
     });
   }
 
@@ -18,14 +35,22 @@ export class UserRepository {
     name: string;
     email: string;
     passwordHash: string;
-    role?: UserRole;
   }) {
     return prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         passwordHash: data.passwordHash,
-        role: data.role ?? UserRole.USER,
+      },
+      include: userWithRolesInclude,
+    });
+  }
+
+  async assignRole(userId: string, roleId: string) {
+    return prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
       },
     });
   }

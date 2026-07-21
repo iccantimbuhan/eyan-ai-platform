@@ -2,13 +2,12 @@ import jwt, {
   type Secret,
   type JwtPayload as DefaultJwtPayload,
 } from "jsonwebtoken";
+
 import { env } from "../config/env.js";
-import { UserRole } from "../generated/prisma/enums.js";
 
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: UserRole;
 }
 
 const ACCESS_SECRET: Secret = env.jwtSecret;
