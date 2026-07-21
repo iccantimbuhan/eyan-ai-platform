@@ -1,5 +1,4 @@
-import express from "express";
-import type { Express } from "express";
+import express, { type Express } from "express";
 import cors, { type CorsOptions } from "cors";
 
 import authRoutes from "./routes/v1/auth.routes.js";

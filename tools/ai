@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+set -e
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LIB_DIR="$ROOT_DIR/tools/lib"
+
+show_menu() {
+    clear
+
+    echo "========================================"
+    echo "        Eyan AI CLI v1.0"
+    echo "========================================"
+    echo
+    echo "Project : Eyan AI Platform"
+    echo
+    echo "1) Review"
+    echo "2) Architect"
+    echo "3) Code"
+    echo "4) Doctor"
+    echo "5) Models"
+    echo "6) Exit"
+    echo
+    read -rp "Select: " choice
+
+    case "$choice" in
+        1) exec "$0" review ;;
+        2) exec "$0" architect ;;
+        3) exec "$0" code ;;
+        4) exec "$0" doctor ;;
+        5) exec "$0" models ;;
+        6) exit 0 ;;
+        *) echo "Invalid option"; sleep 1; show_menu ;;
+    esac
+}
+
+case "${1:-}" in
+    review)
+        exec bash "$LIB_DIR/review.sh"
+        ;;
+    architect)
+        exec bash "$LIB_DIR/architect.sh"
+        ;;
+    code)
+        exec bash "$LIB_DIR/code.sh"
+        ;;
+    doctor)
+        exec bash "$LIB_DIR/doctor.sh"
+        ;;
+    models)
+        exec bash "$LIB_DIR/models.sh"
+        ;;
+    "")
+        show_menu
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo
+        echo "Usage:"
+        echo "  ./tools/ai review"
+        echo "  ./tools/ai architect"
+        echo "  ./tools/ai code"
+        echo "  ./tools/ai doctor"
+        echo "  ./tools/ai models"
+        exit 1
+        ;;
+esac

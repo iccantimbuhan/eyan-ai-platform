@@ -1,6 +1,6 @@
 {
-  "name": "open-source-ai-platform",
-  "private": false,
+  "name": "@eyan/frontend",
+  "private": true,
   "version": "2.2.1",
   "type": "module",
   "scripts": {

@@ -1,18 +1,28 @@
 # Dependencies
 node_modules/
 
+# Build
+dist/
+
 # Environment
 .env
-.env.local
+.env.*
 
-# Build output
-dist/
-build/
-coverage/
+# Coverage
+coverage
 
 # Logs
 *.log
+npm-debug.log*
+pnpm-debug.log*
 
-# macOS
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Prisma
 /src/generated/prisma
