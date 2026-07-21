@@ -5,9 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
+
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
-import { useAuthStore } from '@/stores/auth-store'
-import { sleep, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import { useLogin } from '../../hooks/use-login'
 
 const formSchema = z.object({
   email: z.email({
@@ -40,8 +41,9 @@ export function UserAuthForm({
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+
   const navigate = useNavigate()
-  const { auth } = useAuthStore()
+  const login = useLogin()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,34 +53,35 @@ export function UserAuthForm({
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    try {
+      setIsLoading(true)
 
-    toast.promise(sleep(2000), {
-      loading: 'Signing in...',
-      success: () => {
-        setIsLoading(false)
+      toast.loading('Signing in...')
 
-        // Mock successful authentication with expiry computed at success time
-        const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-        }
+      const user = await login(
+        data.email,
+        data.password
+      )
 
-        // Set user and access token
-        auth.setUser(mockUser)
-        auth.setAccessToken('mock-access-token')
+      toast.dismiss()
 
-        // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
-        navigate({ to: targetPath, replace: true })
+      toast.success(`Welcome back, ${user.name}!`)
 
-        return `Welcome back, ${data.email}!`
-      },
-      error: 'Error',
-    })
+      navigate({
+        to: redirectTo || '/',
+        replace: true,
+      })
+    } catch (error: any) {
+      toast.dismiss()
+
+      toast.error(
+        error?.response?.data?.message ??
+          'Invalid email or password.'
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -101,16 +104,20 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name='password'
           render={({ field }) => (
             <FormItem className='relative'>
               <FormLabel>Password</FormLabel>
+
               <FormControl>
                 <PasswordInput placeholder='********' {...field} />
               </FormControl>
+
               <FormMessage />
+
               <Link
                 to='/forgot-password'
                 className='absolute inset-e-0 -top-0.5 text-sm font-medium text-muted-foreground hover:opacity-75'
@@ -120,8 +127,14 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
+
         <Button className='mt-2' disabled={isLoading}>
-          {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
+          {isLoading ? (
+            <Loader2 className='animate-spin' />
+          ) : (
+            <LogIn />
+          )}
+
           Sign in
         </Button>
 
@@ -129,6 +142,7 @@ export function UserAuthForm({
           <div className='absolute inset-0 flex items-center'>
             <span className='w-full border-t' />
           </div>
+
           <div className='relative flex justify-center text-xs uppercase'>
             <span className='bg-background px-2 text-muted-foreground'>
               Or continue with
@@ -138,10 +152,13 @@ export function UserAuthForm({
 
         <div className='grid grid-cols-2 gap-2'>
           <Button variant='outline' type='button' disabled={isLoading}>
-            <IconGithub className='h-4 w-4' /> GitHub
+            <IconGithub className='h-4 w-4' />
+            GitHub
           </Button>
+
           <Button variant='outline' type='button' disabled={isLoading}>
-            <IconFacebook className='h-4 w-4' /> Facebook
+            <IconFacebook className='h-4 w-4' />
+            Facebook
           </Button>
         </div>
       </form>

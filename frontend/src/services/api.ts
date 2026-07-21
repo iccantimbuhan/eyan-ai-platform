@@ -1,4 +1,6 @@
 import axios, { AxiosError } from "axios";
+import { useAuthStore } from "@/stores/auth-store";
+import { refreshAccessToken } from "@/features/auth/utils/refresh-token";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const NGROK_SKIP_HEADER = "ngrok-skip-browser-warning";
@@ -37,7 +39,7 @@ function logAxiosError(error: unknown) {
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30_000,
+  timeout: 30000,
   withCredentials: false,
   headers: {
     Accept: "application/json",
@@ -51,9 +53,19 @@ api.interceptors.request.use((config) => {
     console.error("[api] Missing VITE_API_URL", { API_BASE_URL });
   }
 
+  const accessToken =
+    useAuthStore.getState().auth.accessToken;
+
   config.headers.set("Accept", "application/json");
   config.headers.set("Content-Type", "application/json");
   config.headers.set(NGROK_SKIP_HEADER, "true");
+
+  if (accessToken) {
+    config.headers.set(
+      "Authorization",
+      `Bearer ${accessToken}`
+    );
+  }
 
   console.info("[api] Request", {
     method: config.method?.toUpperCase(),
@@ -67,18 +79,37 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => {
-    console.info("[api] Response", {
-      status: response.status,
-      statusText: response.statusText,
-      finalUrl: response.config ? axios.getUri(response.config) : undefined,
-      headers: headersToJSON(response.headers),
-      data: response.data,
-    });
-    return response;
-  },
-  (error) => {
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const token = await refreshAccessToken();
+
+        originalRequest.headers = {
+          ...originalRequest.headers,
+          Authorization: `Bearer ${token}`,
+        };
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        useAuthStore.getState().auth.reset();
+
+        window.location.href = "/sign-in";
+
+        return Promise.reject(refreshError);
+      }
+    }
+
     logAxiosError(error);
     return Promise.reject(error);
   }
 );
+

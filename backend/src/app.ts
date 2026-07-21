@@ -4,6 +4,7 @@ import cors, { type CorsOptions } from "cors";
 import authRoutes from "./routes/v1/auth.routes.js";
 import healthRoutes from "./routes/v1/health.routes.js";
 import modelRoutes from "./routes/v1/model.routes.js";
+import usersRoutes from "./routes/v1/users.routes.js";
 import chatRoutes from "./routes/v1/chat.routes.js";
 import chatStreamRoutes from "./routes/v1/chat-stream.routes.js";
 
@@ -39,7 +40,10 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions));
 
 app.use((req, _res, next) => {
-  console.log(`➡️ ${req.method} ${req.originalUrl}`);
+  console.log("================================================");
+  console.log("REQUEST HIT");
+  console.log(req.method, req.originalUrl);
+  console.log("================================================");
   next();
 });
 
@@ -48,6 +52,7 @@ app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/models", modelRoutes);
+app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/chat/stream", chatStreamRoutes);
 app.use("/api/v1/chat", chatRoutes);
 

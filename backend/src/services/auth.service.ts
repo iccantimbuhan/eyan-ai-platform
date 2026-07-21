@@ -27,6 +27,35 @@ function getPrimaryRole(user: AuthenticatedUser): string {
   return user.roles[0]?.role.name ?? "Viewer";
 }
 
+function toUserResponse(user: AuthenticatedUser) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+
+    // Backward compatibility
+    role: getPrimaryRole(user),
+
+    // RBAC
+    roles: user.roles.map((r) => r.role.name),
+
+    permissions: [
+      ...new Set(
+        user.roles.flatMap((r) =>
+          r.role.permissions.map((p) => p.permission.name)
+        )
+      ),
+    ],
+
+    // Account status
+    isActive: user.isActive,
+    emailVerified: user.emailVerified,
+
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
 export class AuthService {
   async register(dto: RegisterDto): Promise<AuthResponse> {
     const existing = await userRepository.findByEmail(dto.email);
@@ -57,14 +86,7 @@ export class AuthService {
     );
 
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: getPrimaryRole(user),
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: toUserResponse(user),
       tokens: {
         accessToken,
         refreshToken,
@@ -102,14 +124,7 @@ export class AuthService {
     );
 
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: getPrimaryRole(user),
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: toUserResponse(user),
       tokens: {
         accessToken,
         refreshToken,
@@ -167,13 +182,6 @@ export class AuthService {
   }
 
   async me(user: AuthenticatedUser) {
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: getPrimaryRole(user),
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return toUserResponse(user);
   }
 }

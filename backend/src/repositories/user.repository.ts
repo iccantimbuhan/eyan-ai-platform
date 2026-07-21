@@ -52,6 +52,47 @@ export class UserRepository {
     });
   }
 
+  async findRolesByNames(names: string[]) {
+    return prisma.role.findMany({
+      where: {
+        name: {
+          in: names,
+        },
+      },
+    });
+  }
+
+  async createWithRoles(data: {
+    name: string;
+    email: string;
+    passwordHash: string;
+    roleIds: string[];
+  }) {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          passwordHash: data.passwordHash,
+        },
+      });
+
+      if (data.roleIds.length > 0) {
+        await tx.userRole.createMany({
+          data: data.roleIds.map((roleId) => ({
+            userId: user.id,
+            roleId,
+          })),
+        });
+      }
+
+      return tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        include: userWithRolesInclude,
+      });
+    });
+  }
+
   async assignRole(userId: string, roleId: string) {
     return prisma.userRole.upsert({
       where: {
@@ -68,10 +109,7 @@ export class UserRepository {
     });
   }
 
-  async saveRefreshToken(
-    userId: string,
-    refreshToken: string
-  ) {
+  async saveRefreshToken(userId: string, refreshToken: string) {
     return prisma.user.update({
       where: { id: userId },
       data: {
@@ -98,6 +136,84 @@ export class UserRepository {
       data: {
         refreshToken: null,
       },
+    });
+  }
+
+  async findMany(options: {
+    skip: number;
+    take: number;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const where = {
+      ...(options.search
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: options.search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                email: {
+                  contains: options.search,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {}),
+      ...(options.isActive !== undefined
+        ? {
+            isActive: options.isActive,
+          }
+        : {}),
+    };
+
+    return prisma.user.findMany({
+      where,
+      skip: options.skip,
+      take: options.take,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: userWithRolesInclude,
+    });
+  }
+
+  async count(options: {
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const where = {
+      ...(options.search
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: options.search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                email: {
+                  contains: options.search,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {}),
+      ...(options.isActive !== undefined
+        ? {
+            isActive: options.isActive,
+          }
+        : {}),
+    };
+
+    return prisma.user.count({
+      where,
     });
   }
 }
