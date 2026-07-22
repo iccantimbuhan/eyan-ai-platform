@@ -8,7 +8,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-
 import { useDeleteUser } from '../hooks/use-delete-user'
 
 type DeleteUserDialogProps = {
@@ -32,15 +31,10 @@ export function DeleteUserDialog({
   }
 
   return (
-    <AlertDialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Delete User
-          </AlertDialogTitle>
+          <AlertDialogTitle>Delete User</AlertDialogTitle>
 
           <AlertDialogDescription>
             Are you sure you want to permanently delete{' '}
@@ -52,9 +46,7 @@ export function DeleteUserDialog({
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel
-            disabled={deleteUser.isPending}
-          >
+          <AlertDialogCancel disabled={deleteUser.isPending}>
             Cancel
           </AlertDialogCancel>
 
@@ -65,9 +57,7 @@ export function DeleteUserDialog({
               void handleDelete()
             }}
           >
-            {deleteUser.isPending
-              ? 'Deleting...'
-              : 'Delete User'}
+            {deleteUser.isPending ? 'Deleting...' : 'Delete User'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

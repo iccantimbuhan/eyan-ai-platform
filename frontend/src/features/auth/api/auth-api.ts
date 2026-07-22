@@ -1,60 +1,57 @@
-import { api } from "@/services/api";
+import { api } from '@/services/api'
 
 export interface LoginRequest {
-  email: string;
-  password: string;
+  email: string
+  password: string
 }
 
 export interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
+  id: string
+  name: string
+  email: string
 
   // Backward compatibility
-  role: string;
+  role: string
 
   // RBAC
-  roles: string[];
-  permissions: string[];
+  roles: string[]
+  permissions: string[]
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string
+  updatedAt: string
 }
 
 export interface LoginResponse {
-  success: boolean;
+  success: boolean
   data: {
-    user: AuthUser;
+    user: AuthUser
     tokens: {
-      accessToken: string;
-      refreshToken: string;
-    };
-  };
+      accessToken: string
+      refreshToken: string
+    }
+  }
 }
 
 export async function login(payload: LoginRequest) {
-  const { data } = await api.post<LoginResponse>(
-    "/auth/login",
-    payload
-  );
+  const { data } = await api.post<LoginResponse>('/auth/login', payload)
 
-  return data.data;
+  return data.data
 }
 
 export async function me() {
-  const { data } = await api.get("/auth/me");
-  return data.data;
+  const { data } = await api.get('/auth/me')
+  return data.data
 }
 
 export async function logout() {
-  const { data } = await api.post("/auth/logout");
-  return data.data;
+  const { data } = await api.post('/auth/logout')
+  return data.data
 }
 
 export async function refresh(refreshToken: string) {
-  const { data } = await api.post("/auth/refresh", {
+  const { data } = await api.post('/auth/refresh', {
     refreshToken,
-  });
+  })
 
-  return data.data;
+  return data.data
 }

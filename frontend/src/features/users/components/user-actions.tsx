@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
-
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,19 +7,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-import { EditUserDialog } from './edit-user-dialog'
-import { DeleteUserDialog } from './delete-user-dialog'
-
 import type { User } from '../types/user'
+import { DeleteUserDialog } from './delete-user-dialog'
+import { EditUserDialog } from './edit-user-dialog'
 
 type UserActionsProps = {
   user: User
 }
 
-export function UserActions({
-  user,
-}: UserActionsProps) {
+export function UserActions({ user }: UserActionsProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -28,27 +23,20 @@ export function UserActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-          >
-            <MoreHorizontal className="h-4 w-4" />
+          <Button variant='ghost' size='icon'>
+            <MoreHorizontal className='h-4 w-4' />
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => setEditOpen(true)}
-          >
+        <DropdownMenuContent align='end'>
+          <DropdownMenuItem onClick={() => setEditOpen(true)}>
             Edit User
           </DropdownMenuItem>
 
-          <DropdownMenuItem>
-            Reset Password
-          </DropdownMenuItem>
+          <DropdownMenuItem>Reset Password</DropdownMenuItem>
 
           <DropdownMenuItem
-            className="text-destructive"
+            className='text-destructive'
             onClick={() => setDeleteOpen(true)}
           >
             Delete User
@@ -56,11 +44,7 @@ export function UserActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <EditUserDialog
-        user={user}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
+      <EditUserDialog user={user} open={editOpen} onOpenChange={setEditOpen} />
 
       <DeleteUserDialog
         userId={user.id}

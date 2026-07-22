@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AxiosError } from 'axios'
-import { getHealth, type HealthResponse } from '@/features/ai-chat/services/chat.service'
+import {
+  getHealth,
+  type HealthResponse,
+} from '@/features/ai-chat/services/chat.service'
 
 type UseHealthResult = {
   data: HealthResponse | null

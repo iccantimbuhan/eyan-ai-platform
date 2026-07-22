@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AxiosError } from 'axios'
-import { getModels, type ModelsResponse } from '@/features/ai-chat/services/chat.service'
+import {
+  getModels,
+  type ModelsResponse,
+} from '@/features/ai-chat/services/chat.service'
 
 type UseModelsResult = {
   data: ModelsResponse | null

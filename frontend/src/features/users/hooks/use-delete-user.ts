@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-
 import { deleteUser } from '../api/users-api'
 
 export function useDeleteUser() {

@@ -1,9 +1,6 @@
 import { type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-
-import { useCan } from '@/features/auth/hooks/use-can'
-
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,6 +17,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useCan } from '@/features/auth/hooks/use-can'
 import { Badge } from '../ui/badge'
 import {
   DropdownMenu,
@@ -56,32 +54,16 @@ export function NavGroup({ title, items }: NavGroupProps) {
           const key = `${item.title}-${item.url}`
 
           if (!item.items) {
-            return (
-              <SidebarMenuLink
-                key={key}
-                item={item}
-                href={href}
-              />
-            )
+            return <SidebarMenuLink key={key} item={item} href={href} />
           }
 
           if (state === 'collapsed' && !isMobile) {
             return (
-              <SidebarMenuCollapsedDropdown
-                key={key}
-                item={item}
-                href={href}
-              />
+              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
             )
           }
 
-          return (
-            <SidebarMenuCollapsible
-              key={key}
-              item={item}
-              href={href}
-            />
-          )
+          return <SidebarMenuCollapsible key={key} item={item} href={href} />
         })}
       </SidebarMenu>
     </SidebarGroup>
@@ -123,9 +105,7 @@ function SidebarMenuCollapsible({
 
   const can = useCan()
 
-  const visibleChildren = item.items.filter((child) =>
-    can(child.permission)
-  )
+  const visibleChildren = item.items.filter((child) => can(child.permission))
 
   if (visibleChildren.length === 0) {
     return null
@@ -155,15 +135,10 @@ function SidebarMenuCollapsible({
                   asChild
                   isActive={checkIsActive(href, subItem)}
                 >
-                  <Link
-                    to={subItem.url}
-                    onClick={() => setOpenMobile(false)}
-                  >
+                  <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
                     {subItem.icon && <subItem.icon />}
                     <span>{subItem.title}</span>
-                    {subItem.badge && (
-                      <NavBadge>{subItem.badge}</NavBadge>
-                    )}
+                    {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
                   </Link>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
@@ -184,9 +159,7 @@ function SidebarMenuCollapsedDropdown({
 }) {
   const can = useCan()
 
-  const visibleChildren = item.items.filter((child) =>
-    can(child.permission)
-  )
+  const visibleChildren = item.items.filter((child) => can(child.permission))
 
   if (visibleChildren.length === 0) {
     return null
@@ -213,18 +186,13 @@ function SidebarMenuCollapsedDropdown({
           <DropdownMenuSeparator />
 
           {visibleChildren.map((sub) => (
-            <DropdownMenuItem
-              key={`${sub.title}-${sub.url}`}
-              asChild
-            >
+            <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
               <Link
                 to={sub.url}
                 className={checkIsActive(href, sub) ? 'bg-secondary' : ''}
               >
                 {sub.icon && <sub.icon />}
-                <span className='max-w-52 text-wrap'>
-                  {sub.title}
-                </span>
+                <span className='max-w-52 text-wrap'>{sub.title}</span>
               </Link>
             </DropdownMenuItem>
           ))}
@@ -234,11 +202,7 @@ function SidebarMenuCollapsedDropdown({
   )
 }
 
-function checkIsActive(
-  href: string,
-  item: NavItem,
-  mainNav = false
-) {
+function checkIsActive(href: string, item: NavItem, mainNav = false) {
   return (
     href === item.url ||
     href.split('?')[0] === item.url ||

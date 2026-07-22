@@ -1,44 +1,44 @@
-import { ReactNode, useEffect, useState } from "react";
-import { me } from "@/features/auth/api/auth-api";
-import { useAuthStore } from "@/stores/auth-store";
+import { ReactNode, useEffect, useState } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
+import { me } from '@/features/auth/api/auth-api'
 
 interface Props {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export function AuthProvider({ children }: Props) {
-  const { auth } = useAuthStore();
+  const { auth } = useAuthStore()
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function restoreSession() {
       if (!auth.accessToken) {
-        setLoading(false);
-        return;
+        setLoading(false)
+        return
       }
 
       try {
-        const user = await me();
+        const user = await me()
 
-        auth.setUser(user);
+        auth.setUser(user)
       } catch {
-        auth.reset();
+        auth.reset()
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
 
-    restoreSession();
-  }, []);
+    restoreSession()
+  }, [])
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className='flex h-screen items-center justify-center'>
         Restoring session...
       </div>
-    );
+    )
   }
 
-  return children;
+  return children
 }

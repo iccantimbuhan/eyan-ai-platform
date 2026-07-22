@@ -1,33 +1,30 @@
-import { refresh } from "../api/auth-api";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore } from '@/stores/auth-store'
+import { refresh } from '../api/auth-api'
 
-let refreshPromise: Promise<string> | null = null;
+let refreshPromise: Promise<string> | null = null
 
 export async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) {
-    return refreshPromise;
+    return refreshPromise
   }
 
   refreshPromise = (async () => {
-    const { auth } = useAuthStore.getState();
+    const { auth } = useAuthStore.getState()
 
     if (!auth.refreshToken) {
-      throw new Error("Missing refresh token.");
+      throw new Error('Missing refresh token.')
     }
 
-    const result = await refresh(auth.refreshToken);
+    const result = await refresh(auth.refreshToken)
 
-    auth.setTokens(
-      result.tokens.accessToken,
-      result.tokens.refreshToken
-    );
+    auth.setTokens(result.tokens.accessToken, result.tokens.refreshToken)
 
-    return result.tokens.accessToken;
-  })();
+    return result.tokens.accessToken
+  })()
 
   try {
-    return await refreshPromise;
+    return await refreshPromise
   } finally {
-    refreshPromise = null;
+    refreshPromise = null
   }
 }

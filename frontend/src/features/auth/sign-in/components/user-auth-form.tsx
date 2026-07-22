@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
-
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -59,10 +58,7 @@ export function UserAuthForm({
 
       toast.loading('Signing in...')
 
-      const user = await login(
-        data.email,
-        data.password
-      )
+      const user = await login(data.email, data.password)
 
       toast.dismiss()
 
@@ -76,8 +72,7 @@ export function UserAuthForm({
       toast.dismiss()
 
       toast.error(
-        error?.response?.data?.message ??
-          'Invalid email or password.'
+        error?.response?.data?.message ?? 'Invalid email or password.'
       )
     } finally {
       setIsLoading(false)
@@ -129,12 +124,7 @@ export function UserAuthForm({
         />
 
         <Button className='mt-2' disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className='animate-spin' />
-          ) : (
-            <LogIn />
-          )}
-
+          {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
           Sign in
         </Button>
 

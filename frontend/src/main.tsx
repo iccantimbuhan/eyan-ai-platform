@@ -7,10 +7,10 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AuthProvider } from '@/providers/auth/auth-provider'
 import { Toaster, toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { handleServerError } from '@/lib/handle-server-error'
-import { AuthProvider } from '@/providers/auth/auth-provider'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -93,11 +93,7 @@ if (!rootElement.innerHTML) {
             <DirectionProvider>
               <AuthProvider>
                 <RouterProvider router={router} />
-                <Toaster
-                  position="top-right"
-                  richColors
-                  closeButton
-                />
+                <Toaster position='top-right' richColors closeButton />
               </AuthProvider>
             </DirectionProvider>
           </FontProvider>

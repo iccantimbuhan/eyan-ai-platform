@@ -1,51 +1,48 @@
-import { create } from "zustand";
-import { getCookie, removeCookie, setCookie } from "@/lib/cookies";
+import { create } from 'zustand'
+import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 
-const ACCESS_TOKEN = "eyan_access_token";
-const REFRESH_TOKEN = "eyan_refresh_token";
+const ACCESS_TOKEN = 'eyan_access_token'
+const REFRESH_TOKEN = 'eyan_refresh_token'
 
 export interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
+  id: string
+  name: string
+  email: string
 
   // Backward compatibility
-  role: string;
+  role: string
 
   // RBAC
-  roles: string[];
-  permissions: string[];
+  roles: string[]
+  permissions: string[]
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string
+  updatedAt: string
 }
 
 interface AuthState {
   auth: {
-    user: AuthUser | null;
+    user: AuthUser | null
 
-    accessToken: string;
-    refreshToken: string;
+    accessToken: string
+    refreshToken: string
 
-    setUser: (user: AuthUser | null) => void;
+    setUser: (user: AuthUser | null) => void
 
-    setTokens: (
-      accessToken: string,
-      refreshToken: string
-    ) => void;
+    setTokens: (accessToken: string, refreshToken: string) => void
 
-    clearTokens: () => void;
+    clearTokens: () => void
 
-    reset: () => void;
-  };
+    reset: () => void
+  }
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
   auth: {
     user: null,
 
-    accessToken: getCookie(ACCESS_TOKEN) || "",
-    refreshToken: getCookie(REFRESH_TOKEN) || "",
+    accessToken: getCookie(ACCESS_TOKEN) || '',
+    refreshToken: getCookie(REFRESH_TOKEN) || '',
 
     setUser: (user) =>
       set((state) => ({
@@ -56,8 +53,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
       })),
 
     setTokens: (accessToken, refreshToken) => {
-      setCookie(ACCESS_TOKEN, accessToken);
-      setCookie(REFRESH_TOKEN, refreshToken);
+      setCookie(ACCESS_TOKEN, accessToken)
+      setCookie(REFRESH_TOKEN, refreshToken)
 
       set((state) => ({
         auth: {
@@ -65,34 +62,34 @@ export const useAuthStore = create<AuthState>()((set) => ({
           accessToken,
           refreshToken,
         },
-      }));
+      }))
     },
 
     clearTokens: () => {
-      removeCookie(ACCESS_TOKEN);
-      removeCookie(REFRESH_TOKEN);
+      removeCookie(ACCESS_TOKEN)
+      removeCookie(REFRESH_TOKEN)
 
       set((state) => ({
         auth: {
           ...state.auth,
-          accessToken: "",
-          refreshToken: "",
+          accessToken: '',
+          refreshToken: '',
         },
-      }));
+      }))
     },
 
     reset: () => {
-      removeCookie(ACCESS_TOKEN);
-      removeCookie(REFRESH_TOKEN);
+      removeCookie(ACCESS_TOKEN)
+      removeCookie(REFRESH_TOKEN)
 
       set((state) => ({
         auth: {
           ...state.auth,
           user: null,
-          accessToken: "",
-          refreshToken: "",
+          accessToken: '',
+          refreshToken: '',
         },
-      }));
+      }))
     },
   },
-}));
+}))

@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -22,7 +21,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-
 import { useUpdateUser } from '../hooks/use-update-user'
 import {
   availableRoles,
@@ -75,27 +73,19 @@ export function EditUserDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
 
-          <DialogDescription>
-            Update user information.
-          </DialogDescription>
+          <DialogDescription>Update user information.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             <FormField
               control={form.control}
-              name="name"
+              name='name'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
@@ -111,16 +101,13 @@ export function EditUserDialog({
 
             <FormField
               control={form.control}
-              name="email"
+              name='email'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
 
                   <FormControl>
-                    <Input
-                      type="email"
-                      {...field}
-                    />
+                    <Input type='email' {...field} />
                   </FormControl>
 
                   <FormMessage />
@@ -130,9 +117,9 @@ export function EditUserDialog({
 
             <FormField
               control={form.control}
-              name="isActive"
+              name='isActive'
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-md border p-4">
+                <FormItem className='flex items-center justify-between rounded-md border p-4'>
                   <FormLabel>Active</FormLabel>
 
                   <FormControl>
@@ -147,40 +134,35 @@ export function EditUserDialog({
 
             <FormField
               control={form.control}
-              name="roles"
+              name='roles'
               render={() => (
                 <FormItem>
                   <FormLabel>Roles</FormLabel>
 
-                  <div className="space-y-3 rounded-md border p-4">
+                  <div className='space-y-3 rounded-md border p-4'>
                     {availableRoles.map((role) => (
                       <FormField
                         key={role}
                         control={form.control}
-                        name="roles"
+                        name='roles'
                         render={({ field }) => (
-                          <FormItem className="flex items-center space-x-3">
+                          <FormItem className='flex items-center space-x-3'>
                             <FormControl>
                               <Checkbox
                                 checked={field.value.includes(role)}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
-                                    field.onChange([
-                                      ...field.value,
-                                      role,
-                                    ])
+                                    field.onChange([...field.value, role])
                                   } else {
                                     field.onChange(
-                                      field.value.filter(
-                                        (r) => r !== role
-                                      )
+                                      field.value.filter((r) => r !== role)
                                     )
                                   }
                                 }}
                               />
                             </FormControl>
 
-                            <FormLabel className="font-normal">
+                            <FormLabel className='font-normal'>
                               {role}
                             </FormLabel>
                           </FormItem>
@@ -196,21 +178,16 @@ export function EditUserDialog({
 
             <DialogFooter>
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 disabled={updateUserMutation.isPending}
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
 
-              <Button
-                type="submit"
-                disabled={updateUserMutation.isPending}
-              >
-                {updateUserMutation.isPending
-                  ? 'Saving...'
-                  : 'Save Changes'}
+              <Button type='submit' disabled={updateUserMutation.isPending}>
+                {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>
           </form>

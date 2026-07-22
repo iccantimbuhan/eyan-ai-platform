@@ -39,21 +39,19 @@ describe('useAuthStore', () => {
   it('persists tokens so a new store instance reads them back', async () => {
     const useAuthStore = await importAuthStore()
 
-    useAuthStore
-      .getState()
-      .auth.setTokens('access-token', 'refresh-token')
+    useAuthStore.getState().auth.setTokens('access-token', 'refresh-token')
 
     vi.resetModules()
 
     const useAuthStoreAfterReload = await importAuthStore()
 
-    expect(
-      useAuthStoreAfterReload.getState().auth.accessToken
-    ).toBe('access-token')
+    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe(
+      'access-token'
+    )
 
-    expect(
-      useAuthStoreAfterReload.getState().auth.refreshToken
-    ).toBe('refresh-token')
+    expect(useAuthStoreAfterReload.getState().auth.refreshToken).toBe(
+      'refresh-token'
+    )
   })
 
   it('updates the signed-in user via setUser', async () => {
@@ -67,9 +65,7 @@ describe('useAuthStore', () => {
   it('clearTokens removes persisted tokens', async () => {
     const useAuthStore = await importAuthStore()
 
-    useAuthStore
-      .getState()
-      .auth.setTokens('access-token', 'refresh-token')
+    useAuthStore.getState().auth.setTokens('access-token', 'refresh-token')
 
     useAuthStore.getState().auth.clearTokens()
 
@@ -80,21 +76,15 @@ describe('useAuthStore', () => {
 
     const useAuthStoreAfterReload = await importAuthStore()
 
-    expect(
-      useAuthStoreAfterReload.getState().auth.accessToken
-    ).toBe('')
+    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
 
-    expect(
-      useAuthStoreAfterReload.getState().auth.refreshToken
-    ).toBe('')
+    expect(useAuthStoreAfterReload.getState().auth.refreshToken).toBe('')
   })
 
   it('reset clears user and tokens', async () => {
     const useAuthStore = await importAuthStore()
 
-    useAuthStore
-      .getState()
-      .auth.setTokens('access-token', 'refresh-token')
+    useAuthStore.getState().auth.setTokens('access-token', 'refresh-token')
 
     useAuthStore.getState().auth.setUser(sampleUser)
 
@@ -109,11 +99,7 @@ describe('useAuthStore', () => {
     const useAuthStoreAfterReload = await importAuthStore()
 
     expect(useAuthStoreAfterReload.getState().auth.user).toBeNull()
-    expect(
-      useAuthStoreAfterReload.getState().auth.accessToken
-    ).toBe('')
-    expect(
-      useAuthStoreAfterReload.getState().auth.refreshToken
-    ).toBe('')
+    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
+    expect(useAuthStoreAfterReload.getState().auth.refreshToken).toBe('')
   })
 })

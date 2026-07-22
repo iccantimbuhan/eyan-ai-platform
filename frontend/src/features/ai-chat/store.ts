@@ -1,14 +1,14 @@
+import { AxiosError } from 'axios'
+import { toast } from 'sonner'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { toast } from 'sonner'
-import { AxiosError } from 'axios'
-import { type AiConversation, type AiMessage } from './types'
+import { SYSTEM_PROMPT } from './config/system-prompt'
 import {
   chat as chatApiCall,
   streamChat,
   type BackendMessage,
 } from './services/chat.service'
-import { SYSTEM_PROMPT } from './config/system-prompt'
+import { type AiConversation, type AiMessage } from './types'
 
 let idCounter = 0
 const uid = () => `ai-${++idCounter}-${Date.now()}`
@@ -302,40 +302,44 @@ export const useAiChatStore = create<AiChatState>()(
         }))
 
         // Safety timeout: if stream doesn't complete within 5 minutes, force cleanup
-        const safetyTimeout = setTimeout(() => {
-          set((state) => {
-            // Only cleanup if still streaming this message
-            if (state.pendingAssistantId === assistantMsgId) {
-              return {
-                isSending: false,
-                isStreaming: false,
-                streamAbortController: null,
-                pendingAssistantId: null,
-                conversations: state.conversations.map((c) =>
-                  c.id === conversationId
-                    ? {
-                        ...c,
-                        messages: c.messages.map((m) =>
-                          m.id === assistantMsgId
-                            ? m.content === ''
-                              ? {
-                                  ...m,
-                                  content: 'Response timed out. Please try again.',
-                                  isError: true,
-                                }
+        const safetyTimeout = setTimeout(
+          () => {
+            set((state) => {
+              // Only cleanup if still streaming this message
+              if (state.pendingAssistantId === assistantMsgId) {
+                return {
+                  isSending: false,
+                  isStreaming: false,
+                  streamAbortController: null,
+                  pendingAssistantId: null,
+                  conversations: state.conversations.map((c) =>
+                    c.id === conversationId
+                      ? {
+                          ...c,
+                          messages: c.messages.map((m) =>
+                            m.id === assistantMsgId
+                              ? m.content === ''
+                                ? {
+                                    ...m,
+                                    content:
+                                      'Response timed out. Please try again.',
+                                    isError: true,
+                                  }
+                                : m
                               : m
-                            : m
-                        ),
-                        updatedAt: new Date(),
-                      }
-                    : c
-                ),
+                          ),
+                          updatedAt: new Date(),
+                        }
+                      : c
+                  ),
+                }
               }
-            }
-            return state
-          })
-          controller.abort()
-        }, 5 * 60 * 1000)
+              return state
+            })
+            controller.abort()
+          },
+          5 * 60 * 1000
+        )
 
         await streamChat(
           messagesPayload,
@@ -360,7 +364,12 @@ export const useAiChatStore = create<AiChatState>()(
             }))
 
             if (done) {
-              set({ isSending: false, isStreaming: false, streamAbortController: null, pendingAssistantId: null })
+              set({
+                isSending: false,
+                isStreaming: false,
+                streamAbortController: null,
+                pendingAssistantId: null,
+              })
             }
           },
           (err) => {
@@ -416,7 +425,11 @@ export const useAiChatStore = create<AiChatState>()(
                     messages: c.messages.map((m) =>
                       m.id === pendingAssistantId
                         ? m.content === ''
-                          ? { ...m, content: '_Response cancelled._', isError: true }
+                          ? {
+                              ...m,
+                              content: '_Response cancelled._',
+                              isError: true,
+                            }
                           : m
                         : m
                     ),

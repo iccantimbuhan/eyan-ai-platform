@@ -11,7 +11,12 @@ type ChatInputProps = {
   isStreaming?: boolean
 }
 
-export function ChatInput({ onSend, onStop, disabled, isStreaming }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  onStop,
+  disabled,
+  isStreaming,
+}: ChatInputProps) {
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -53,9 +58,9 @@ export function ChatInput({ onSend, onStop, disabled, isStreaming }: ChatInputPr
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Message AI..."
+        placeholder='Message AI...'
         className={cn(
-          'min-h-[44px] max-h-[200px] resize-none border-0 bg-transparent px-3 py-2.5 shadow-none',
+          'max-h-[200px] min-h-[44px] resize-none border-0 bg-transparent px-3 py-2.5 shadow-none',
           'focus-visible:ring-0 focus-visible:ring-offset-0'
         )}
         rows={1}
@@ -63,10 +68,10 @@ export function ChatInput({ onSend, onStop, disabled, isStreaming }: ChatInputPr
         autoFocus
       />
       <Button
-        size="icon"
+        size='icon'
         onClick={isStreaming ? onStop : handleSubmit}
         disabled={!isStreaming && (!value.trim() || disabled)}
-        className="mb-0.5 shrink-0 rounded-lg"
+        className='mb-0.5 shrink-0 rounded-lg'
         variant={isStreaming ? 'destructive' : 'default'}
       >
         {isStreaming ? <Square size={16} /> : <ArrowUp size={18} />}

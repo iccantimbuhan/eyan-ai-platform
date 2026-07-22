@@ -1,6 +1,5 @@
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -20,7 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-
 import { useCreateUser } from '../hooks/use-create-user'
 import {
   availableRoles,
@@ -54,36 +52,25 @@ export function CreateUserDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle>Create User</DialogTitle>
 
-          <DialogDescription>
-            Create a new user account.
-          </DialogDescription>
+          <DialogDescription>Create a new user account.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             <FormField
               control={form.control}
-              name="name"
+              name='name'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
 
                   <FormControl>
-                    <Input
-                      placeholder="John Doe"
-                      {...field}
-                    />
+                    <Input placeholder='John Doe' {...field} />
                   </FormControl>
 
                   <FormMessage />
@@ -93,15 +80,15 @@ export function CreateUserDialog({
 
             <FormField
               control={form.control}
-              name="email"
+              name='email'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
 
                   <FormControl>
                     <Input
-                      type="email"
-                      placeholder="john@example.com"
+                      type='email'
+                      placeholder='john@example.com'
                       {...field}
                     />
                   </FormControl>
@@ -113,17 +100,13 @@ export function CreateUserDialog({
 
             <FormField
               control={form.control}
-              name="password"
+              name='password'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
 
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      {...field}
-                    />
+                    <Input type='password' placeholder='••••••••' {...field} />
                   </FormControl>
 
                   <FormMessage />
@@ -133,19 +116,19 @@ export function CreateUserDialog({
 
             <FormField
               control={form.control}
-              name="roles"
+              name='roles'
               render={() => (
                 <FormItem>
                   <FormLabel>Roles</FormLabel>
 
-                  <div className="space-y-3 rounded-md border p-4">
+                  <div className='space-y-3 rounded-md border p-4'>
                     {availableRoles.map((role) => (
                       <FormField
                         key={role}
                         control={form.control}
-                        name="roles"
+                        name='roles'
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormItem className='flex flex-row items-center space-y-0 space-x-3'>
                             <FormControl>
                               <Checkbox
                                 checked={field.value?.includes(role)}
@@ -163,7 +146,7 @@ export function CreateUserDialog({
                               />
                             </FormControl>
 
-                            <FormLabel className="font-normal">
+                            <FormLabel className='font-normal'>
                               {role}
                             </FormLabel>
                           </FormItem>
@@ -179,21 +162,16 @@ export function CreateUserDialog({
 
             <DialogFooter>
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 disabled={createUser.isPending}
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
 
-              <Button
-                type="submit"
-                disabled={createUser.isPending}
-              >
-                {createUser.isPending
-                  ? 'Creating...'
-                  : 'Create User'}
+              <Button type='submit' disabled={createUser.isPending}>
+                {createUser.isPending ? 'Creating...' : 'Create User'}
               </Button>
             </DialogFooter>
           </form>
