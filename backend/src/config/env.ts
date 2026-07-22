@@ -2,30 +2,40 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const env = {
-  // Server
-  port: Number(process.env.PORT ?? 3001),
+function requireEnv(name: string): string {
+  const value = process.env[name];
 
-  // Ollama
+  if (!value || value.trim() === "") {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+const port = Number(process.env.PORT ?? "3001");
+
+if (Number.isNaN(port)) {
+  throw new Error("PORT must be a valid number.");
+}
+
+export const env = {
+  nodeEnv: process.env.NODE_ENV ?? "development",
+
+  port,
+
   ollamaBaseUrl:
-    process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
+    process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434",
 
   ollamaModel:
-    process.env.OLLAMA_MODEL ?? "llama3.2",
+    process.env.OLLAMA_MODEL ?? "qwen2.5-coder:14b",
 
-  // JWT
-  jwtSecret:
-    process.env.JWT_SECRET ??
-    "change-this-in-production",
+  jwtSecret: requireEnv("JWT_SECRET"),
 
   jwtExpiresIn:
     process.env.JWT_EXPIRES_IN ?? "15m",
 
-  refreshTokenSecret:
-    process.env.REFRESH_TOKEN_SECRET ??
-    "change-this-refresh-secret",
+  refreshTokenSecret: requireEnv("REFRESH_TOKEN_SECRET"),
 
   refreshTokenExpiresIn:
-    process.env.REFRESH_TOKEN_EXPIRES_IN ??
-    "7d",
+    process.env.REFRESH_TOKEN_EXPIRES_IN ?? "7d",
 };
