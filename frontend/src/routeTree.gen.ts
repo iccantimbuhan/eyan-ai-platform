@@ -29,7 +29,6 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
 import { Route as AuthenticatedAiChatIndexRouteImport } from './routes/_authenticated/ai-chat/index'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedSettingsProvidersRouteImport } from './routes/_authenticated/settings/providers'
@@ -140,12 +139,6 @@ const AuthenticatedAiChatIndexRoute =
     path: '/ai-chat/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ClerkAuthenticatedUserManagementRoute =
-  ClerkAuthenticatedUserManagementRouteImport.update({
-    id: '/user-management',
-    path: '/user-management',
-    getParentRoute: () => ClerkAuthenticatedRouteRoute,
-  } as any)
 const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -195,7 +188,7 @@ const AuthenticatedErrorsErrorRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/clerk': typeof ClerkAuthenticatedRouteRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -215,14 +208,13 @@ export interface FileRoutesByFullPath {
   '/settings/providers': typeof AuthenticatedSettingsProvidersRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/ai-chat/': typeof AuthenticatedAiChatIndexRoute
   '/models/': typeof AuthenticatedModelsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
 }
 export interface FileRoutesByTo {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/clerk': typeof ClerkAuthenticatedRouteRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -242,7 +234,6 @@ export interface FileRoutesByTo {
   '/settings/providers': typeof AuthenticatedSettingsProvidersRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/ai-chat': typeof AuthenticatedAiChatIndexRoute
   '/models': typeof AuthenticatedModelsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -254,7 +245,7 @@ export interface FileRoutesById {
   '/clerk': typeof ClerkRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
-  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -274,7 +265,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/providers': typeof AuthenticatedSettingsProvidersRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/ai-chat/': typeof AuthenticatedAiChatIndexRoute
   '/_authenticated/models/': typeof AuthenticatedModelsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -304,7 +294,6 @@ export interface FileRouteTypes {
     | '/settings/providers'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/ai-chat/'
     | '/models/'
     | '/settings/'
@@ -331,7 +320,6 @@ export interface FileRouteTypes {
     | '/settings/providers'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/ai-chat'
     | '/models'
     | '/settings'
@@ -362,7 +350,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/providers'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
-    | '/clerk/_authenticated/user-management'
     | '/_authenticated/ai-chat/'
     | '/_authenticated/models/'
     | '/_authenticated/settings/'
@@ -526,13 +513,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiChatIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/clerk/_authenticated/user-management': {
-      id: '/clerk/_authenticated/user-management'
-      path: '/user-management'
-      fullPath: '/clerk/user-management'
-      preLoaderRoute: typeof ClerkAuthenticatedUserManagementRouteImport
-      parentRoute: typeof ClerkAuthenticatedRouteRoute
-    }
     '/clerk/(auth)/sign-up': {
       id: '/clerk/(auth)/sign-up'
       path: '/sign-up'
@@ -652,29 +632,14 @@ const ClerkauthRouteRouteWithChildren = ClerkauthRouteRoute._addFileChildren(
   ClerkauthRouteRouteChildren,
 )
 
-interface ClerkAuthenticatedRouteRouteChildren {
-  ClerkAuthenticatedUserManagementRoute: typeof ClerkAuthenticatedUserManagementRoute
-}
-
-const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-  {
-    ClerkAuthenticatedUserManagementRoute:
-      ClerkAuthenticatedUserManagementRoute,
-  }
-
-const ClerkAuthenticatedRouteRouteWithChildren =
-  ClerkAuthenticatedRouteRoute._addFileChildren(
-    ClerkAuthenticatedRouteRouteChildren,
-  )
-
 interface ClerkRouteRouteChildren {
   ClerkauthRouteRoute: typeof ClerkauthRouteRouteWithChildren
-  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRouteWithChildren
+  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRoute
 }
 
 const ClerkRouteRouteChildren: ClerkRouteRouteChildren = {
   ClerkauthRouteRoute: ClerkauthRouteRouteWithChildren,
-  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRouteWithChildren,
+  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRoute,
 }
 
 const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(

@@ -5,6 +5,27 @@ import { refreshAccessToken } from "@/features/auth/utils/refresh-token";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const NGROK_SKIP_HEADER = "ngrok-skip-browser-warning";
 
+const IS_DEV = import.meta.env.DEV;
+
+function sanitizeHeaders(headers: unknown) {
+  const json = headersToJSON(headers);
+
+  if (!json || typeof json !== "object") {
+    return json;
+  }
+
+  const sanitized = { ...(json as Record<string, unknown>) };
+
+  for (const key of Object.keys(sanitized)) {
+    if (key.toLowerCase() === "authorization") {
+      sanitized[key] = "Bearer ********";
+    }
+  }
+
+  return sanitized;
+}
+
+
 function headersToJSON(headers: unknown) {
   if (!headers || typeof headers !== "object") return headers;
   if ("toJSON" in headers && typeof headers.toJSON === "function") {
@@ -30,8 +51,8 @@ function logAxiosError(error: unknown) {
           params: error.config.params,
         })
       : undefined,
-    requestHeaders: headersToJSON(error.config?.headers),
-    responseHeaders: headersToJSON(error.response?.headers),
+    requestHeaders: sanitizeHeaders(error.config?.headers),
+    responseHeaders: sanitizeHeaders(error.response?.headers),
     responseData: error.response?.data,
     stack: error.stack,
   });
@@ -49,8 +70,10 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  if (!config.baseURL) {
-    console.error("[api] Missing VITE_API_URL", { API_BASE_URL });
+  if (!config.baseURL && IS_DEV) {
+    console.error("[api] Missing VITE_API_URL", {
+      API_BASE_URL,
+    });
   }
 
   const accessToken =
@@ -67,13 +90,15 @@ api.interceptors.request.use((config) => {
     );
   }
 
-  console.info("[api] Request", {
-    method: config.method?.toUpperCase(),
-    finalUrl: axios.getUri(config),
-    baseURL: config.baseURL,
-    url: config.url,
-    headers: headersToJSON(config.headers),
-  });
+  if (IS_DEV) {
+    console.info("[api] Request", {
+      method: config.method?.toUpperCase(),
+      finalUrl: axios.getUri(config),
+      baseURL: config.baseURL,
+      url: config.url,
+      headers: sanitizeHeaders(config.headers),
+    });
+  }
 
   return config;
 });
