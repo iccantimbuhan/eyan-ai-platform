@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Boxes,
+  FolderOpen,
   Palette,
   UserCog,
   Users,
@@ -22,9 +23,9 @@ export const sidebarData: SidebarData = {
 
   teams: [
     {
-      name: 'Open Source AI Platform',
+      name: 'EYAN Studio',
       logo: Bot,
-      plan: 'Local AI',
+      plan: 'Self-Hosted AI',
     },
   ],
 
@@ -38,6 +39,12 @@ export const sidebarData: SidebarData = {
           icon: LayoutDashboard,
           permission: 'dashboard',
         },
+      ],
+    },
+
+    {
+      title: 'AI Studio',
+      items: [
         {
           title: 'AI Chat',
           url: '/ai-chat',
@@ -50,9 +57,20 @@ export const sidebarData: SidebarData = {
           icon: Boxes,
           permission: 'models',
         },
-
       ],
     },
+
+    {
+      title: 'Content Studio',
+      items: [
+        {
+          title: 'Content Studio',
+          url: '/content-studio',
+          icon: FolderOpen,
+        },
+      ],
+    },
+
     {
       title: 'Administration',
       items: [
@@ -70,6 +88,7 @@ export const sidebarData: SidebarData = {
         },
       ],
     },
+
     {
       title: 'Settings',
       items: [

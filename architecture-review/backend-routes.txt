@@ -1,0 +1,8 @@
+backend/src/routes/v1/health.routes.ts
+backend/src/routes/v1/auth.routes.ts
+backend/src/routes/v1/model.routes.ts
+backend/src/routes/v1/roles.routes.ts
+backend/src/routes/v1/users.routes.ts
+backend/src/routes/v1/chat.routes.ts
+backend/src/routes/v1/permissions.routes.ts
+backend/src/routes/v1/chat-stream.routes.ts
