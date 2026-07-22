@@ -3,7 +3,7 @@ module.exports = {
     {
       name: "eyan-backend",
 
-      cwd: "/home/eyancantimbuhan/eyan-ai-platform/backend",
+      cwd: __dirname,
 
       script: "dist/index.js",
 
