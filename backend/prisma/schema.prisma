@@ -30,6 +30,7 @@ model Role {
 
   name        String   @unique
   description String?
+  isActive    Boolean  @default(true)
 
   users       UserRole[]
   permissions RolePermission[]

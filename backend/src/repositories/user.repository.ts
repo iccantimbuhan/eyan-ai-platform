@@ -98,12 +98,41 @@ export class UserRepository {
     data: {
       name?: string;
       email?: string;
+      isActive?: boolean;
+      roleIds?: string[];
     }
   ) {
-    return prisma.user.update({
-      where: { id },
-      data,
-      include: userWithRolesInclude,
+    return prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: {
+          name: data.name,
+          email: data.email,
+          isActive: data.isActive,
+        },
+      });
+
+      if (data.roleIds) {
+        await tx.userRole.deleteMany({
+          where: {
+            userId: id,
+          },
+        });
+
+        if (data.roleIds.length > 0) {
+          await tx.userRole.createMany({
+            data: data.roleIds.map((roleId) => ({
+              userId: id,
+              roleId,
+            })),
+          });
+        }
+      }
+
+      return tx.user.findUniqueOrThrow({
+        where: { id },
+        include: userWithRolesInclude,
+      });
     });
   }
 

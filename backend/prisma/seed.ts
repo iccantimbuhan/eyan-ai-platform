@@ -1,97 +1,32 @@
-import "dotenv/config";
+import 'dotenv/config'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../src/generated/prisma/client'
 
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
 
 const roles = [
-  { name: "Owner", description: "Full system owner" },
-  { name: "Admin", description: "System administrator" },
-  { name: "Developer", description: "Software developer" },
-  { name: "QA Engineer", description: "Quality Assurance" },
-  { name: "Viewer", description: "Read-only user" },
-];
+  { name: 'Owner', description: 'Full system owner' },
+  { name: 'Admin', description: 'System administrator' },
+  { name: 'Developer', description: 'Software developer' },
+  { name: 'QA Engineer', description: 'Quality Assurance' },
+  { name: 'Viewer', description: 'Read-only user' },
+]
 
+// Page-level permissions. Granular keys can be added later without a schema change.
 const permissions = [
-  "users.create",
-  "users.read",
-  "users.update",
-  "users.delete",
-  "roles.manage",
-  "permissions.manage",
-  "dashboard.read",
-  "profile.read",
-  "audit.read",
-  "deployments.create",
-  "deployments.read",
-  "api.manage",
-  "models.read",
-];
+  ['dashboard', 'View the dashboard'], ['chat', 'Use AI Chat'], ['models', 'View models'],
+  ['conversations', 'View conversations'], ['users', 'Access users'], ['roles', 'Access roles'],
+  ['providers', 'Access AI providers'], ['settings', 'Access settings'], ['apikeys', 'Access API keys'],
+  ['analytics', 'View analytics'], ['auditlogs', 'View audit logs'],
+] as const
 
 async function main() {
-  console.log("🌱 Seeding RBAC...");
-
-  for (const role of roles) {
-    await prisma.role.upsert({
-      where: { name: role.name },
-      update: {},
-      create: role,
-    });
+  for (const role of roles) await prisma.role.upsert({ where: { name: role.name }, update: {}, create: role })
+  for (const [name, description] of permissions) await prisma.permission.upsert({ where: { name }, update: { description }, create: { name, description } })
+  const owner = await prisma.role.findUniqueOrThrow({ where: { name: 'Owner' } })
+  for (const [name] of permissions) {
+    const permission = await prisma.permission.findUniqueOrThrow({ where: { name } })
+    await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: owner.id, permissionId: permission.id } }, update: {}, create: { roleId: owner.id, permissionId: permission.id } })
   }
-
-  for (const permission of permissions) {
-    await prisma.permission.upsert({
-      where: { name: permission },
-      update: {},
-      create: { name: permission },
-    });
-  }
-
-  const owner = await prisma.role.findUnique({
-    where: { name: "Owner" },
-  });
-
-  if (!owner) throw new Error("Owner role not found.");
-
-  for (const permissionName of permissions) {
-    const permission = await prisma.permission.findUnique({
-      where: { name: permissionName },
-    });
-
-    if (!permission) continue;
-
-    await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: owner.id,
-          permissionId: permission.id,
-        },
-      },
-      update: {},
-      create: {
-        roleId: owner.id,
-        permissionId: permission.id,
-      },
-    });
-  }
-
-  console.log("✅ Roles seeded");
-  console.log("✅ Permissions seeded");
-  console.log("✅ Owner permissions assigned");
 }
-
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

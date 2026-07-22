@@ -1,0 +1,6 @@
+import { Checkbox } from '@/components/ui/checkbox'
+import { permissionCategories } from '../config/permissions'
+export function PermissionMatrix({ value, onChange, disabled }: { value: string[]; onChange: (value: string[]) => void; disabled?: boolean }) {
+  const toggle = (permissions: string[], checked: boolean) => onChange(checked ? [...new Set([...value, ...permissions])] : value.filter((permission) => !permissions.includes(permission)))
+  return <div className="space-y-6">{permissionCategories.map((category) => <section key={category.label} className="space-y-3"><h3 className="text-sm font-semibold">{category.label}</h3><div className="grid gap-3 rounded-md border p-4 sm:grid-cols-2">{category.features.map((feature) => { const checked = feature.permissions.every((permission) => value.includes(permission)); const partial = !checked && feature.permissions.some((permission) => value.includes(permission)); return <label key={feature.label} className="flex cursor-pointer items-center gap-3 text-sm"><Checkbox checked={partial ? 'indeterminate' : checked} disabled={disabled} onCheckedChange={(value) => toggle(feature.permissions, value === true)} /><span>{feature.label}</span></label> })}</div></section>)}</div>
+}

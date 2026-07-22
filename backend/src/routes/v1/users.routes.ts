@@ -2,7 +2,6 @@ import { Router, type Router as ExpressRouter } from "express";
 
 import { UsersController } from "../../controllers/users.controller.js";
 import { authenticate } from "../../middleware/auth.middleware.js";
-import { requirePermission } from "../../middleware/permission.middleware.js";
 import { validate } from "../../middleware/validation.middleware.js";
 
 import {
@@ -16,14 +15,12 @@ const router: ExpressRouter = Router();
 router.get(
   "/",
   authenticate,
-  requirePermission("users.read"),
   UsersController.getUsers
 );
 
 router.get(
   "/:id",
   authenticate,
-  requirePermission("users.read"),
   userIdParamValidator,
   validate,
   UsersController.getUser
@@ -32,7 +29,6 @@ router.get(
 router.post(
   "/",
   authenticate,
-  requirePermission("users.create"),
   createUserValidator,
   validate,
   UsersController.createUser
@@ -41,7 +37,6 @@ router.post(
 router.patch(
   "/:id",
   authenticate,
-  requirePermission("users.update"),
   userIdParamValidator,
   updateUserValidator,
   validate,

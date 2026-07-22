@@ -9,6 +9,7 @@ import {
   Monitor,
   Bell,
   Cpu,
+  ShieldCheck,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -35,21 +36,37 @@ export const sidebarData: SidebarData = {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
+          permission: 'dashboard',
         },
         {
           title: 'AI Chat',
           url: '/ai-chat',
           icon: MessageSquare,
+          permission: 'chat',
         },
         {
           title: 'Models',
           url: '/models',
           icon: Boxes,
+          permission: 'models',
         },
+
+      ],
+    },
+    {
+      title: 'Administration',
+      items: [
         {
           title: 'Users',
           url: '/users',
           icon: Users,
+          permission: 'users',
+        },
+        {
+          title: 'Roles',
+          url: '/roles',
+          icon: ShieldCheck,
+          permission: 'roles',
         },
       ],
     },
@@ -60,6 +77,7 @@ export const sidebarData: SidebarData = {
           title: 'Profile',
           url: '/settings',
           icon: UserCog,
+          permission: 'settings',
         },
         {
           title: 'Appearance',
@@ -75,11 +93,13 @@ export const sidebarData: SidebarData = {
           title: 'Notifications',
           url: '/settings/notifications',
           icon: Bell,
+          permission: 'settings',
         },
         {
           title: 'AI Providers',
           url: '/settings/providers',
           icon: Cpu,
+          permission: 'providers',
         },
       ],
     },

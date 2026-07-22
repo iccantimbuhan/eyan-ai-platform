@@ -3,10 +3,20 @@ export interface User {
   name: string
   email: string
 
+  /**
+   * Primary role
+   */
+  role: string
+
+  /**
+   * All assigned roles
+   */
   roles: string[]
+
   permissions: string[]
 
   isActive: boolean
+  emailVerified: boolean
 
   createdAt: string
   updatedAt: string

@@ -1,8 +1,16 @@
 import { Main } from '@/components/layout/main'
+import { Button } from '@/components/ui/button'
+
 import { useUsers } from '../hooks/use-users'
+import { useCreateUserDialog } from '../hooks/use-create-user-dialog'
+
+import { UsersTable } from './users-table'
+import { CreateUserDialog } from './create-user-dialog'
 
 export function UsersPage() {
   const { data: users = [], isLoading, error } = useUsers()
+
+  const createDialog = useCreateUserDialog()
 
   if (isLoading) {
     return (
@@ -17,7 +25,7 @@ export function UsersPage() {
   if (error) {
     return (
       <Main>
-        <div className="flex h-64 items-center justify-center text-red-500">
+        <div className="flex h-64 items-center justify-center text-destructive">
           Failed to load users.
         </div>
       </Main>
@@ -25,50 +33,31 @@ export function UsersPage() {
   }
 
   return (
-    <Main className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Users</h1>
-        <p className="text-muted-foreground">
-          Manage your application users.
-        </p>
-      </div>
+    <>
+      <Main className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Users
+            </h1>
 
-      <div className="rounded-lg border">
-        <table className="w-full">
-          <thead className="border-b bg-muted/40">
-            <tr>
-              <th className="p-3 text-left">Name</th>
-              <th className="p-3 text-left">Email</th>
-              <th className="p-3 text-left">Roles</th>
-              <th className="p-3 text-left">Status</th>
-            </tr>
-          </thead>
+            <p className="text-muted-foreground">
+              Manage your application users.
+            </p>
+          </div>
 
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="p-6 text-center text-muted-foreground"
-                >
-                  No users found.
-                </td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id} className="border-b">
-                  <td className="p-3">{user.name}</td>
-                  <td className="p-3">{user.email}</td>
-                  <td className="p-3">{user.roles.join(', ')}</td>
-                  <td className="p-3">
-                    {user.isActive ? 'Active' : 'Inactive'}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </Main>
+          <Button onClick={createDialog.openDialog}>
+            New User
+          </Button>
+        </div>
+
+        <UsersTable users={users} />
+      </Main>
+
+      <CreateUserDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+      />
+    </>
   )
 }

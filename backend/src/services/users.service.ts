@@ -121,9 +121,23 @@ export class UsersService {
       }
     }
 
+    let roleIds: string[] | undefined;
+
+    if (dto.roles) {
+      const roles = await userRepository.findRolesByNames(dto.roles);
+
+      if (roles.length !== dto.roles.length) {
+        throw new NotFoundError("One or more roles do not exist.");
+      }
+
+      roleIds = roles.map((role) => role.id);
+    }
+
     const updatedUser = await userRepository.update(id, {
       name: dto.name,
       email: dto.email,
+      isActive: dto.isActive,
+      roleIds,
     });
 
     return toUserResponse(updatedUser);
