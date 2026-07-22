@@ -12,6 +12,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 
 const app: Express = express();
 
+
 const allowedOrigins = new Set([
   "https://www.eyan.fyi",
   "https://eyan.fyi",
@@ -28,7 +29,7 @@ const corsOptions: CorsOptions = {
 
     callback(new Error(`CORS origin not allowed: ${origin}`));
   },
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: [
     "Accept",
     "Content-Type",
@@ -38,7 +39,6 @@ const corsOptions: CorsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);

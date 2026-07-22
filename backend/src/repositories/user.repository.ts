@@ -93,6 +93,20 @@ export class UserRepository {
     });
   }
 
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+    }
+  ) {
+    return prisma.user.update({
+      where: { id },
+      data,
+      include: userWithRolesInclude,
+    });
+  }
+
   async assignRole(userId: string, roleId: string) {
     return prisma.userRole.upsert({
       where: {

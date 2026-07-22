@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
 
-import type { CreateUserDto } from "../dto/user.dto.js";
+import type {
+  CreateUserDto,
+  UpdateUserDto,
+} from "../dto/user.dto.js";
+
 import { usersService } from "../services/users.service.js";
 import { ApiResponse } from "../utils/api-response.js";
 
@@ -42,6 +46,23 @@ export class UsersController {
       user,
       201,
       "User created successfully."
+    );
+  }
+
+  static async updateUser(
+    req: Request<{ id: string }, {}, UpdateUserDto>,
+    res: Response
+  ) {
+    const user = await usersService.updateUser(
+      req.params.id,
+      req.body
+    );
+
+    return ApiResponse.success(
+      res,
+      user,
+      200,
+      "User updated successfully."
     );
   }
 }

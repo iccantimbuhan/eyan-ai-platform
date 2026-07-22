@@ -1,12 +1,17 @@
 import type {
   CreateUserDto,
   ListUsersQueryDto,
+  UpdateUserDto,
   UserResponseDto,
 } from "../dto/user.dto.js";
 
 import { hashPassword } from "../utils/password.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { paginate } from "../utils/pagination.js";
+import {
+  ConflictError,
+  NotFoundError,
+} from "../errors/auth.error.js";
 
 function toUserResponse(user: any): UserResponseDto {
   return {
@@ -67,7 +72,7 @@ export class UsersService {
     const user = await userRepository.findById(id);
 
     if (!user) {
-      throw new Error("User not found.");
+      throw new NotFoundError("User not found.");
     }
 
     return toUserResponse(user);
@@ -77,13 +82,13 @@ export class UsersService {
     const existing = await userRepository.findByEmail(dto.email);
 
     if (existing) {
-      throw new Error("Email already exists.");
+      throw new ConflictError("Email already exists.");
     }
 
     const roles = await userRepository.findRolesByNames(dto.roles);
 
     if (roles.length !== dto.roles.length) {
-      throw new Error("One or more roles do not exist.");
+      throw new NotFoundError("One or more roles do not exist.");
     }
 
     const passwordHash = await hashPassword(dto.password);
@@ -96,6 +101,32 @@ export class UsersService {
     });
 
     return toUserResponse(user);
+  }
+
+  async updateUser(
+    id: string,
+    dto: UpdateUserDto
+  ): Promise<UserResponseDto> {
+    const user = await userRepository.findById(id);
+
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
+    if (dto.email && dto.email !== user.email) {
+      const existing = await userRepository.findByEmail(dto.email);
+
+      if (existing && existing.id !== id) {
+        throw new ConflictError("Email already exists.");
+      }
+    }
+
+    const updatedUser = await userRepository.update(id, {
+      name: dto.name,
+      email: dto.email,
+    });
+
+    return toUserResponse(updatedUser);
   }
 }
 

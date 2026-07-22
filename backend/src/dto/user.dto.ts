@@ -31,3 +31,8 @@ export interface CreateUserDto {
   password: string;
   roles: string[];
 }
+
+export interface UpdateUserDto {
+  name?: string;
+  email?: string;
+}
