@@ -39,14 +39,6 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 
-app.use((req, _res, next) => {
-  console.log("================================================");
-  console.log("REQUEST HIT");
-  console.log(req.method, req.originalUrl);
-  console.log("================================================");
-  next();
-});
-
 app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);
@@ -55,15 +47,6 @@ app.use("/api/v1/models", modelRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/chat/stream", chatStreamRoutes);
 app.use("/api/v1/chat", chatRoutes);
-
-console.log("Registered routes:");
-app.router.stack.forEach((layer: any) => {
-  if (layer.route) {
-    console.log(layer.route.path, layer.route.methods);
-  } else if (layer.name === "router") {
-    console.log("Router mounted");
-  }
-});
 
 app.use(errorHandler);
 
