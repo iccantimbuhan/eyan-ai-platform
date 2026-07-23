@@ -16,8 +16,11 @@ export class ContentService {
     private readonly chatService = new ChatService(),
   ) {}
 
-  async generate(data: GenerateContentDto, userId?: string) {
-    const project = await this.projectRepository.findById(data.projectId);
+  async generate(data: GenerateContentDto, userId: string) {
+    const project = await this.projectRepository.findById(
+      data.projectId,
+      userId
+    );
 
     if (!project) {
       throw new NotFoundError("Project not found.");
@@ -34,11 +37,20 @@ export class ContentService {
       prompt: data.prompt,
       output: result.response,
       model: result.model,
-      createdBy: userId ?? null,
+      createdBy: userId,
     });
   }
 
-  async list(query: ListContentQueryDto) {
+  async list(query: ListContentQueryDto, userId: string) {
+    const project = await this.projectRepository.findById(
+      query.projectId,
+      userId
+    );
+
+    if (!project) {
+      throw new NotFoundError("Project not found.");
+    }
+
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
 
@@ -47,10 +59,11 @@ export class ContentService {
     const [items, total] = await Promise.all([
       this.repository.findMany({
         projectId: query.projectId,
+        userId,
         skip,
         take: pageSize,
       }),
-      this.repository.count(query.projectId),
+      this.repository.count(query.projectId, userId),
     ]);
 
     return {
@@ -64,8 +77,8 @@ export class ContentService {
     };
   }
 
-  async getById(id: string) {
-    const content = await this.repository.findById(id);
+  async getById(id: string, userId: string) {
+    const content = await this.repository.findById(id, userId);
 
     if (!content) {
       throw new NotFoundError("Generated content not found.");
@@ -74,12 +87,8 @@ export class ContentService {
     return content;
   }
 
-  async delete(id: string) {
-    const content = await this.repository.findById(id);
-
-    if (!content) {
-      throw new NotFoundError("Generated content not found.");
-    }
+  async delete(id: string, userId: string) {
+    await this.getById(id, userId);
 
     return this.repository.delete(id);
   }

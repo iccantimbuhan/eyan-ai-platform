@@ -13,6 +13,7 @@ export interface UpdateProjectDto {
 
 export interface ProjectResponseDto {
   id: string;
+  userId: string;
   name: string;
   description: string | null;
   status: ProjectStatus;

@@ -15,19 +15,23 @@ export class ContentRepository {
     });
   }
 
-  async findById(id: string) {
-    return prisma.generatedContent.findUnique({
-      where: { id },
+  async findById(id: string, userId: string) {
+    return prisma.generatedContent.findFirst({
+      where: { id, project: { userId } },
     });
   }
 
   async findMany(options: {
     projectId: string;
+    userId: string;
     skip: number;
     take: number;
   }) {
     return prisma.generatedContent.findMany({
-      where: { projectId: options.projectId },
+      where: {
+        projectId: options.projectId,
+        project: { userId: options.userId },
+      },
 
       skip: options.skip,
       take: options.take,
@@ -38,9 +42,9 @@ export class ContentRepository {
     });
   }
 
-  async count(projectId: string) {
+  async count(projectId: string, userId: string) {
     return prisma.generatedContent.count({
-      where: { projectId },
+      where: { projectId, project: { userId } },
     });
   }
 

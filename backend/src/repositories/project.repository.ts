@@ -1,13 +1,14 @@
 import { prisma } from "../lib/prisma.js";
 
 export class ProjectRepository {
-  async findById(id: string) {
-    return prisma.contentProject.findUnique({
-      where: { id },
+  async findById(id: string, userId: string) {
+    return prisma.contentProject.findFirst({
+      where: { id, userId },
     });
   }
 
   async create(data: {
+    userId: string;
     name: string;
     description?: string;
   }) {
@@ -37,29 +38,33 @@ export class ProjectRepository {
   }
 
   async findMany(options: {
+    userId: string;
     skip: number;
     take: number;
     search?: string;
   }) {
     return prisma.contentProject.findMany({
-      where: options.search
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: options.search,
-                  mode: "insensitive",
+      where: {
+        userId: options.userId,
+        ...(options.search
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: options.search,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                description: {
-                  contains: options.search,
-                  mode: "insensitive",
+                {
+                  description: {
+                    contains: options.search,
+                    mode: "insensitive",
+                  },
                 },
-              },
-            ],
-          }
-        : undefined,
+              ],
+            }
+          : {}),
+      },
 
       skip: options.skip,
       take: options.take,
@@ -70,26 +75,29 @@ export class ProjectRepository {
     });
   }
 
-  async count(search?: string) {
+  async count(userId: string, search?: string) {
     return prisma.contentProject.count({
-      where: search
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: search,
-                  mode: "insensitive",
+      where: {
+        userId,
+        ...(search
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                description: {
-                  contains: search,
-                  mode: "insensitive",
+                {
+                  description: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
                 },
-              },
-            ],
-          }
-        : undefined,
+              ],
+            }
+          : {}),
+      },
     });
   }
 }

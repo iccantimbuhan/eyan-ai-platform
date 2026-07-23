@@ -12,8 +12,7 @@ export class ProjectsController {
   }
 
   static async getProjects(req: Request, res: Response) {
-    console.log(">>> CONTROLLER getProjects");
-    const result = await projectsService.list({
+    const result = await projectsService.list(req.user.id, {
       page: req.query.page ? Number(req.query.page) : undefined,
       pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
       search: req.query.search?.toString(),
@@ -30,7 +29,8 @@ export class ProjectsController {
 
   static async getProject(req: Request, res: Response) {
     const project = await projectsService.getById(
-      ProjectsController.getId(req)
+      ProjectsController.getId(req),
+      req.user.id
     );
 
     return ApiResponse.success(
@@ -42,7 +42,7 @@ export class ProjectsController {
   }
 
   static async createProject(req: Request, res: Response) {
-    const project = await projectsService.create(req.body);
+    const project = await projectsService.create(req.body, req.user.id);
 
     return ApiResponse.success(
       res,
@@ -55,7 +55,8 @@ export class ProjectsController {
   static async updateProject(req: Request, res: Response) {
     const project = await projectsService.update(
       ProjectsController.getId(req),
-      req.body
+      req.body,
+      req.user.id
     );
 
     return ApiResponse.success(
@@ -68,7 +69,8 @@ export class ProjectsController {
 
   static async deleteProject(req: Request, res: Response) {
     await projectsService.delete(
-      ProjectsController.getId(req)
+      ProjectsController.getId(req),
+      req.user.id
     );
 
     return ApiResponse.success(

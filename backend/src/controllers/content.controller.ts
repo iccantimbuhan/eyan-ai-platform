@@ -7,7 +7,7 @@ const contentService = new ContentService();
 
 export class ContentController {
   static async generateContent(req: Request, res: Response) {
-    const content = await contentService.generate(req.body, req.user?.id);
+    const content = await contentService.generate(req.body, req.user.id);
 
     return ApiResponse.success(
       res,
@@ -18,11 +18,14 @@ export class ContentController {
   }
 
   static async getContents(req: Request, res: Response) {
-    const result = await contentService.list({
-      projectId: req.query.projectId as string,
-      page: req.query.page ? Number(req.query.page) : undefined,
-      pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
-    });
+    const result = await contentService.list(
+      {
+        projectId: req.query.projectId as string,
+        page: req.query.page ? Number(req.query.page) : undefined,
+        pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
+      },
+      req.user.id
+    );
 
     return ApiResponse.paginated(
       res,
@@ -34,7 +37,10 @@ export class ContentController {
   }
 
   static async getContent(req: Request, res: Response) {
-    const content = await contentService.getById(req.params.id as string);
+    const content = await contentService.getById(
+      req.params.id as string,
+      req.user.id
+    );
 
     return ApiResponse.success(
       res,
@@ -45,7 +51,7 @@ export class ContentController {
   }
 
   static async deleteContent(req: Request, res: Response) {
-    await contentService.delete(req.params.id as string);
+    await contentService.delete(req.params.id as string, req.user.id);
 
     return ApiResponse.success(
       res,
