@@ -10,7 +10,13 @@ import type {
 export const SYSTEM_PROMPT =
   "You are Open Source AI Platform, a helpful AI assistant.";
 
-const REQUEST_TIMEOUT_MS = 180_000;
+// 300s: on the production VPS (CPU-only, memory-constrained), the first
+// request after a backend restart can hit a cold model load — Ollama
+// unloads idle models, and reloading qwen2.5-coder:7b from disk plus
+// generating a response has been observed to exceed the previous 180s
+// ceiling, surfacing as a false "Unable to connect to AI provider" error
+// even though Ollama was reachable and healthy the whole time.
+const REQUEST_TIMEOUT_MS = 300_000;
 
 export class OllamaProvider implements AIProvider {
   private readonly client = axios.create({

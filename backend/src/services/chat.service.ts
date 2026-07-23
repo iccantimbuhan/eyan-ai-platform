@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { AxiosError } from "axios";
 import { ProviderFactory } from "../providers/provider.factory.js";
 import { ApiError } from "../errors/api-error.js";
 import type {
@@ -16,6 +17,18 @@ export class ChatService {
       if (error instanceof ApiError) {
         throw error;
       }
+
+      // The client only ever sees the generic message below — this is
+      // purely for server-side diagnosis, since without it a real cause
+      // (e.g. a cold-start timeout) is indistinguishable from Ollama being
+      // genuinely unreachable.
+      console.error("[chat] AI provider request failed", {
+        type: error instanceof AxiosError ? "AxiosError" : error?.constructor?.name,
+        message: error instanceof Error ? error.message : String(error),
+        code: error instanceof AxiosError ? error.code : undefined,
+        timeoutMs: error instanceof AxiosError ? error.config?.timeout : undefined,
+      });
+
       throw new ApiError(503, "Unable to connect to AI provider.");
     }
   }
