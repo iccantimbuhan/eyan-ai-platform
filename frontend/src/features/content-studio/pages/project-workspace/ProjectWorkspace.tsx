@@ -2,6 +2,10 @@ import { Link, useParams } from '@tanstack/react-router'
 import { ArrowLeft, FolderOpen } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
+import { GenerateForm } from '../../components/generator/GenerateForm'
+import { GenerationHistory } from '../../components/generator/GenerationHistory'
+import { OutputViewer } from '../../components/generator/OutputViewer'
+import { useGenerateContent } from '../../hooks/use-generate-content'
 import { useProject } from '../../hooks/use-project'
 
 export function ProjectWorkspace() {
@@ -10,6 +14,7 @@ export function ProjectWorkspace() {
   })
 
   const { data: project, isLoading, error } = useProject(projectId)
+  const generateContent = useGenerateContent(projectId)
 
   if (isLoading) {
     return (
@@ -62,18 +67,11 @@ export function ProjectWorkspace() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="py-10">
-          <h2 className="mb-2 text-xl font-semibold">
-            Workspace Overview
-          </h2>
+      <GenerateForm projectId={projectId} generateContent={generateContent} />
 
-          <p className="text-muted-foreground">
-            Tomorrow we'll transform this page into the complete AI Workspace
-            with Chat, Blog Writer, Social Generator, Image AI, and Video AI.
-          </p>
-        </CardContent>
-      </Card>
+      <OutputViewer generateContent={generateContent} />
+
+      <GenerationHistory projectId={projectId} />
     </div>
   )
 }

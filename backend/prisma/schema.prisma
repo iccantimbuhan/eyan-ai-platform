@@ -14,6 +14,14 @@ enum ProjectStatus {
   PUBLISHED
 }
 
+enum ContentType {
+  BLOG
+  EMAIL
+  SOCIAL_MEDIA
+  MARKETING_COPY
+  DOCUMENTATION
+}
+
 model User {
   id              String   @id @default(cuid())
 
@@ -27,6 +35,7 @@ model User {
   emailVerified   Boolean  @default(false)
 
   roles           UserRole[]
+  savedPrompts    SavedPrompt[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -87,6 +96,58 @@ model ContentProject {
 
   status      ProjectStatus @default(DRAFT)
 
+  generatedContent GeneratedContent[]
+
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+}
+
+model GeneratedContent {
+  id        String      @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  type      ContentType
+  prompt    String
+  output    String
+  model     String
+
+  createdBy String?
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([projectId])
+}
+
+model PromptTemplate {
+  id          String      @id @default(cuid())
+
+  name        String      @unique
+  category    String
+  contentType ContentType
+
+  promptBody  String
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([category])
+}
+
+model SavedPrompt {
+  id          String      @id @default(cuid())
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  promptBody  String
+  contentType ContentType
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
 }

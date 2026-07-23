@@ -1,14 +1,17 @@
 import type { Response } from "express";
 import { ProviderFactory } from "../providers/provider.factory.js";
 import { ApiError } from "../errors/api-error.js";
-import type { OllamaMessage } from "../providers/interfaces/ai-provider.js";
+import type {
+  ChatOptions,
+  OllamaMessage,
+} from "../providers/interfaces/ai-provider.js";
 
 export class ChatService {
   private provider = ProviderFactory.create();
 
-  async chat(messages: OllamaMessage[]) {
+  async chat(messages: OllamaMessage[], options?: ChatOptions) {
     try {
-      return await this.provider.chat(messages);
+      return await this.provider.chat(messages, options);
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -17,9 +20,9 @@ export class ChatService {
     }
   }
 
-  async stream(messages: OllamaMessage[], res: Response) {
+  async stream(messages: OllamaMessage[], res: Response, options?: ChatOptions) {
     try {
-      const response = await this.provider.streamChat?.(messages);
+      const response = await this.provider.streamChat?.(messages, options);
 
       if (!response) {
         throw new ApiError(501, "Streaming not supported.");

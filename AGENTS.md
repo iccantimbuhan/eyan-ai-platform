@@ -1,43 +1,50 @@
 # AGENTS.md
 
-This repository follows these engineering rules.
+## Purpose
 
-## General
+This repository uses an AI Engineering Framework located in the `.claude/` directory.
 
-- Think before making changes.
-- Explain the implementation plan before editing code.
-- Keep changes as small as possible.
-- Never modify unrelated files.
-- Prefer improving existing code over rewriting it.
-- Follow the existing project structure.
+Before making changes, review the project context and follow the documented engineering standards.
 
-## Code Quality
+---
 
-- Write readable, maintainable code.
-- Avoid duplicated logic.
-- Handle errors properly.
-- Do not introduce breaking changes unless requested.
+## Read First
 
-## Git
+1. PROJECT_STATE.md — current sprint, status, next task (start here)
+2. PROJECT_CONTEXT.md
+3. .claude/CLAUDE.md
+4. .claude/AI_RULES.md
+5. .claude/context/product.md
+6. .claude/context/backend.md
+7. .claude/context/frontend.md
+8. .claude/workflows/engineering-lifecycle.md
 
-- Make small logical changes.
-- Do not create commits automatically.
-- Explain what changed before suggesting a commit.
+---
 
-## Security
+## Engineering Principles
 
-- Never hardcode secrets.
+- Preserve the existing architecture.
+- Reuse existing code before creating new code.
+- Keep controllers thin.
+- Keep business logic in services.
+- Keep repositories focused on data access.
 - Validate all external input.
-- Follow least-privilege principles.
-- Preserve authentication and authorization boundaries.
+- Review security before merging.
+- Update documentation when architecture changes.
 
-## Communication
+---
 
-- If requirements are unclear, ask questions.
-- If multiple approaches exist, explain the trade-offs.
-- Don't invent APIs or libraries that don't exist.
+## Skills
 
-## Editing
+Available engineering skills include:
 
-- Only edit files required for the task.
-- If more than 5 files need modification, explain why before proceeding.
+- new-backend-feature
+- new-fullstack-feature
+- bug-fix
+- engineering-standards
+
+---
+
+## Goal
+
+Contribute code that is consistent, maintainable, secure, and aligned with the long-term vision of the Eyan AI Platform.
