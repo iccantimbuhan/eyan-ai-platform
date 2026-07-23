@@ -8,11 +8,13 @@ This file contains **only the current state** of the project. It is overwritten 
 
 ## Current Sprint
 
-None active. **Sprint 3 — Prompt Library Foundation — is complete and closed**, including a post-deployment production incident that was investigated and fully resolved (see `tasks/completed/sprint-3-prompt-library.md`). Awaiting direction on Sprint 4 scope — AI Image Generation was named as the likely next feature, not yet started. See `tasks/backlog/sprint-4-readiness.md` for the pre-Sprint-4 readiness assessment.
+None active. **Sprint 3.5 — Security Hardening — is complete, deployed, and validated in production** (commit `be20870bb299fcd4d202b2377a6d09f44a9e6fd3`, deployed 2026-07-24; see `tasks/completed/sprint-3-5-security-hardening.md` and `.claude/decisions/ADR-0007-content-project-ownership.md`). This closed the platform's previously-largest-known gap — `ContentProject`/`GeneratedContent` now enforce per-user ownership — as a prerequisite before Sprint 4.1. **Sprint 4.1 (AI Image Studio) is next, architecture already approved; Phase 1 (backend module skeleton) is in progress.**
 
 ---
 
 ## Status
+
+**Sprint 3.5 — Security Hardening (2026-07-24):** `ContentProject` gained required, enforced `userId` ownership (ADR-0007), following the exact pattern ADR-0006 established for `SavedPrompt`. `GeneratedContent` ownership is derived transitively through its parent project rather than a duplicated column. All affected routes now scope reads/writes to the requesting user and return `404` (not `403`) for rows that exist but aren't theirs. Migration backfilled the 3 pre-existing production `ContentProject` rows against real data (not guessed). Added 46 new unit tests for previously-untested `projects`/`content` service and repository layers (52/52 passing). Deployed via the standard `deploy.sh` flow and validated live in production against two disposable test accounts, covering project creation, listing, content generation, content history, and cross-user access on read and delete paths — all correct, backend logs clean. One operational note: a brief live regression window occurred when the migration was applied directly to production ahead of the code deploy (the environment was initially mistaken for non-production); no data loss, closed within the same session. Full detail in the sprint log.
 
 Sprint 3 delivered a minimum-viable Prompt Library end-to-end (`SavedPrompt` backend with enforced per-user ownership per ADR-0006, plus a full frontend), a Content Studio polish pass (layout consistency, Generation History collapse/delete-confirm), and — following the real production deployment — resolved a three-layer production incident.
 
@@ -28,13 +30,12 @@ Sprint 2 is complete and closed (see `tasks/completed/sprint-2-templates-and-pic
 
 ## Next Task
 
-No task in progress. Next step is Sprint 4 scoping, pending direction — see `tasks/backlog/sprint-4-readiness.md` for completed work, known limitations, technical debt, and recommendations to weigh before starting.
+Sprint 4.1 (AI Image Studio), Phase 1 only: `GeneratedImage` Prisma model, migration, and backend module skeleton (routes/controller/service/repository/validator/dto), wired into the app but with no provider, storage, generation endpoint, or frontend yet — those are later phases, each requiring separate approval before starting. See `tasks/backlog/sprint-4-readiness.md` for the full incremental plan.
 
 ---
 
 ## Open Risks / Known Issues
 
-- `ContentProject`/`GeneratedContent` still have no per-user ownership model — any authenticated user can read or delete any project's content by ID. This is the largest open architectural gap; ADR-0006 deliberately scoped itself to `SavedPrompt` only.
 - Frontend lint: 26 pre-existing errors, 3 pre-existing warnings, repo-wide (`chat.service.ts`, `use-login.ts`, `user-auth-form.tsx`, `use-projects.ts`, `model-card.tsx`, `stat-card.tsx`, `useHealth.ts`, `useModels.ts`, `useModelsList.ts`, `main.tsx`, `auth-provider.tsx`, `api.ts`, plus two React Compiler table-memoization warnings). None are in Content Studio's own files.
 - 2 pre-existing frontend test failures in `search-provider.test.tsx` (command palette navigation, timeout-based) in addition to the 2 long-standing `user-auth-form.test.tsx` failures — both confirmed pre-existing, neither caused by this project's Content Studio work.
 - No CI/CD auto-deploy exists yet (a standing risk since Sprint 1.1) — `deploy.sh` is manually triggered and requires sudo privileges this session does not have.
@@ -47,11 +48,11 @@ No task in progress. Next step is Sprint 4 scoping, pending direction — see `t
 
 ## Pointers
 
-- Completed sprints: `tasks/completed/` (most recent: `sprint-3-prompt-library.md`, includes the production incident record)
-- Active sprint: none (`tasks/active/` is empty)
+- Completed sprints: `tasks/completed/` (most recent: `sprint-3-5-security-hardening.md`; also `sprint-3-prompt-library.md`, which includes the earlier production incident record)
+- Active sprint: none (`tasks/active/` is empty) — Sprint 4.1 Phase 1 is in progress but not yet logged as its own file until Phase 1 completes
 - Sprint 4 readiness: `tasks/backlog/sprint-4-readiness.md`
 - Sprint log template: `tasks/templates/sprint-log-template.md`
-- Architecture decisions: `.claude/decisions/ADR-0001` through `ADR-0006`
+- Architecture decisions: `.claude/decisions/ADR-0001` through `ADR-0007`
 - Operations playbook: `.claude/engineering/10_OPERATIONS.md` (updated with reverse-proxy timeout and Ollama warm-up requirements)
 - Long-term direction: `docs/product/02_ROADMAP.md`
 - Architecture overview: `.claude/context/repository-map.md`

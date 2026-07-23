@@ -2,6 +2,8 @@
 
 Prepared: 2026-07-24, at the close of Sprint 3 (including its post-deployment production incident). Candidate next feature named so far: AI Image Generation — not scoped or started.
 
+**Update (2026-07-24):** Recommendation 1 below (ownership retrofit) has been completed as Sprint 3.5 — Security Hardening, deployed and validated in production. See `tasks/completed/sprint-3-5-security-hardening.md` and `.claude/decisions/ADR-0007-content-project-ownership.md`. Sprint 4.1 (AI Image Studio) architecture is approved and Phase 1 is in progress. The "Known Limitations" and "Technical Debt" entries below referencing the ownership gap are now historical — left as-is for record-keeping rather than deleted, since this file is a point-in-time readiness snapshot, not a running status document (see `PROJECT_STATE.md` for current state).
+
 ---
 
 ## Completed Work
