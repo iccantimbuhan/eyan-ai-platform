@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { projectsApi } from '../api/projects.api'
+
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,10 +17,29 @@ import {
 import { Input } from '@/components/ui/input'
 
 export function NewProjectDialog() {
+  const queryClient = useQueryClient()
+
+  const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
 
+  const createProject = useMutation({
+    mutationFn: () =>
+      projectsApi.createProject({
+        name,
+      }),
+
+    onSuccess: async () => {
+      setName('')
+      setOpen(false)
+
+      await queryClient.invalidateQueries({
+        queryKey: ['content-projects'],
+      })
+    },
+  })
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus className='mr-2 h-4 w-4' />
@@ -28,7 +51,9 @@ export function NewProjectDialog() {
         <DialogHeader>
           <DialogTitle>Create Project</DialogTitle>
 
-          <DialogDescription>Create a new content workspace.</DialogDescription>
+          <DialogDescription>
+            Create a new content workspace.
+          </DialogDescription>
         </DialogHeader>
 
         <Input
@@ -38,7 +63,14 @@ export function NewProjectDialog() {
         />
 
         <DialogFooter>
-          <Button disabled={!name}>Create Project</Button>
+          <Button
+            disabled={!name.trim() || createProject.isPending}
+            onClick={() => createProject.mutate()}
+          >
+            {createProject.isPending
+              ? 'Creating...'
+              : 'Create Project'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

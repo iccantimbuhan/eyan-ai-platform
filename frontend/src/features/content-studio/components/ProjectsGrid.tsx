@@ -1,7 +1,11 @@
-import { projects } from '../data/mock'
+import type { ContentProject } from '../types/project'
 import { ProjectCard } from './ProjectCard'
 
-export function ProjectsGrid() {
+interface Props {
+  projects: ContentProject[]
+}
+
+export function ProjectsGrid({ projects }: Props) {
   return (
     <div className='grid gap-6 md:grid-cols-2 xl:grid-cols-3'>
       {projects.map((project) => (

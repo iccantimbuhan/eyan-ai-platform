@@ -9,6 +9,7 @@ import rolesRoutes from "./routes/v1/roles.routes.js";
 import permissionsRoutes from "./routes/v1/permissions.routes.js";
 import chatRoutes from "./routes/v1/chat.routes.js";
 import chatStreamRoutes from "./routes/v1/chat-stream.routes.js";
+import projectsRoutes from "./routes/v1/projects.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
 
@@ -51,6 +52,7 @@ app.use("/api/v1/roles", rolesRoutes);
 app.use("/api/v1/permissions", permissionsRoutes);
 app.use("/api/v1/chat/stream", chatStreamRoutes);
 app.use("/api/v1/chat", chatRoutes);
+app.use("/api/v1/projects", projectsRoutes);
 
 app.use(errorHandler);
 

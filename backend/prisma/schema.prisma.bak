@@ -7,13 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum ProjectStatus {
-  DRAFT
-  IN_PROGRESS
-  REVIEW
-  PUBLISHED
-}
-
 model User {
   id              String   @id @default(cuid())
 
@@ -77,16 +70,4 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
-}
-
-model ContentProject {
-  id          String        @id @default(cuid())
-
-  name        String
-  description String?
-
-  status      ProjectStatus @default(DRAFT)
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
 }
