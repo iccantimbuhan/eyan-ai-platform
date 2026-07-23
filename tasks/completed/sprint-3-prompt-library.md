@@ -119,3 +119,39 @@ Open items after this sprint: the `ContentProject`/`GeneratedContent` ownership 
 ## Production Readiness Assessment
 
 Backend build/typecheck/tests and frontend build all pass; frontend tests are 169/173 with the 4 failures confirmed pre-existing and unrelated. No backend changes have been deployed to production this sprint (production was never touched, per standing instructions) — the `SavedPrompt` migration and new routes exist only in the dev environment, so a manual redeploy + migration is required before this sprint's backend work is live. No code-level blockers were found.
+
+## Production Incident: Cold-Start / Timeout Chain (2026-07-23 – 2026-07-24)
+
+Sprint 3's actual production deployment (run outside this session, discovered mid-session via `deploy.sh` and a freshly-restarted backend process) surfaced a chain of three independent, stacked timeout mismatches that only became visible under real production conditions — none of which were reachable from dev-only testing, because every prior dev test ran against an Ollama instance that was already warm. This is recorded here rather than as a separate document because it is a direct consequence of this sprint's deployment, not a new feature.
+
+### Timeline
+
+1. **Manual QA report**: Content Studio generation reported "Generation Failed" in the browser, but the content later appeared in Generation History after a refresh — indicating the backend succeeded and saved, but the client had already given up.
+2. **Investigation 1 (frontend)**: the shared Axios client's app-wide 30s timeout was shorter than real generation time (measured: fast prompt 8s, medium 89s, long 135s). Fixed with a 180s per-call timeout on `contentApi.generateContent` only, matching the backend's `OllamaProvider` timeout at the time. Landed alongside an unrelated Content Studio layout/UX polish pass (`ProjectWorkspace` layout fix, Generation History collapse/delete-confirm).
+3. **Real production deploy**: this polish-pass work, plus all of Sprint 3's Prompt Library backend, was committed and deployed to production for the first time (outside this session).
+4. **Production regression 1**: `POST /content/generate` began failing with `503 Unable to connect to AI provider`. Investigation (production journal logs, direct Ollama connectivity tests, dist-vs-source diffing) found: Ollama was healthy and reachable the whole time; the real cause was the first request after the backend restart hitting a **cold model load** (Ollama unloads idle models; reloading a ~4.7GB model on this CPU-only, 11GB-RAM VPS exceeded the backend's own 180s `OllamaProvider` timeout), and `ChatService.chat()`'s catch-all was discarding the real Axios error and reporting a misleading generic message. Fixed: `REQUEST_TIMEOUT_MS` raised to 300s with a documenting comment; `ChatService.chat()` now logs the real error type/code/timeout before wrapping it (public response unchanged).
+5. **Follow-up DevOps enhancement**: `deploy.sh` updated to automatically warm the configured Ollama model (`POST /api/generate` with an empty prompt — Ollama's documented no-op load) immediately after the health check passes and before declaring the deploy successful, so no user hits a cold start after any future deploy. Reads `OLLAMA_BASE_URL`/`OLLAMA_MODEL` from `backend/.env` rather than hardcoding them; fails the deploy loudly (real error, non-zero exit) if warm-up fails.
+6. **Production regression 2**: even after the above, the browser still received a `504 Gateway Time-out` — served by **nginx**, not the backend. Investigation of the complete nginx config (`nginx.conf`, `sites-available/eyan.fyi`, `conf.d/`, all snippets, the Certbot SSL include) found **zero** `proxy_read_timeout`/`proxy_connect_timeout`/`proxy_send_timeout`/`send_timeout` directives anywhere — nginx was running on its compiled-in 60s default for the `/api/` proxy. Confirmed with a live reproduction through the real public HTTPS path: a long-prompt generation returned nginx's own default 504 page at exactly 60.1s, while the backend went on to save the content ~103s later (matching the reported symptom exactly, this time one layer further out). Fixed: `proxy_read_timeout 330s;` added to the `/api/` location only (300s to match the backend's own AI-provider ceiling, +30s margin for the DB save/response write that follow it) — `proxy_connect_timeout`/`proxy_send_timeout` deliberately left untouched, since the evidence implicated only the read timeout.
+7. **Final validation**: a real long-prompt generation through `https://eyan.fyi` after all three fixes returned `HTTP 201` in 171.8s with the actual generated content, and appeared in Generation History immediately — no 504, no false failure, no refresh required.
+
+### Root Cause (full chain)
+
+Three independently-configured timeouts, at three different layers, were never reconciled against each other or against real generation time on this specific (CPU-only, memory-constrained) hardware:
+
+| Layer | Was | Fixed to |
+|---|---|---|
+| Frontend (Axios, `content.api.ts`) | 30s (app-wide default) | 180s → later effectively covered by the same reasoning as the backend's 300s (per-call override, unchanged in this incident) |
+| Backend (`OllamaProvider`) | 180s | 300s |
+| Reverse proxy (nginx `/api/` location) | 60s (unset, compiled-in default) | 330s |
+
+Each layer independently "fixed" would still have failed at the next-outer layer — the incident was only fully resolved once all three were aligned, outer-to-inner: nginx (330s) ≥ backend AI-provider timeout (300s) ≥ realistic generation time (measured up to ~172s for a long prompt in this final validation, ~135s in earlier testing).
+
+### Deployment Automation Added
+
+`deploy.sh` now warms the Ollama model automatically after every deploy's health check passes, eliminating the cold-start scenario that triggered regression 1 for all future deploys (see Sprint 3 `CHANGELOG.md` and `deploy.sh` inline comments for detail).
+
+### Lessons for Future Sprints
+
+- **Any timeout change needs to be checked against every layer in the request chain**, not just the layer being edited — this incident happened precisely because the frontend, backend, and reverse-proxy timeouts were each set independently, at different times, by different fixes.
+- **Dev-only testing cannot catch cold-start or reverse-proxy issues** — both regressions in this incident were invisible in this session's own dev-port (3099) testing, because that Ollama instance was already warm from repeated use, and dev testing never went through nginx at all. Production-path validation (through the real domain, through nginx, on a freshly-restarted stack) is the only way these surface.
+- Confirmed again the value of live reproduction over log-reading alone: both regressions were confirmed with an actual timed request against production before being called "root caused," not inferred from configuration alone.

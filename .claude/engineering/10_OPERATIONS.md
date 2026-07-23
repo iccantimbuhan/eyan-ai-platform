@@ -116,6 +116,10 @@ Before release
 
 # Deployment
 
+Before deployment
+
+✓ Any reverse proxy in front of the API (e.g. nginx `proxy_read_timeout`) allows at least as long as the backend's own AI provider timeout, plus a safety margin. A shorter proxy timeout returns a false failure to the browser even when the backend request succeeds — this caused a real production incident (see `tasks/completed/sprint-3-prompt-library.md`).
+
 After deployment
 
 Verify
@@ -179,6 +183,10 @@ Verify
 ✓ Model startup time is acceptable.
 
 ✓ Timeouts are monitored.
+
+✓ The deployment process warms the configured model (a minimal request that loads it into memory, e.g. `/api/generate` with an empty prompt) immediately after the deploy's health check passes — see `deploy.sh`. Ollama unloads idle models, so without this, the first real user request after any restart or deploy pays the full cold-load cost.
+
+✓ Every timeout in the request chain in front of Ollama (frontend HTTP client, backend AI provider client, and any reverse proxy) is at least as long as the slowest realistic generation on the current hardware — a shorter timeout anywhere in the chain produces a false failure even when the backend and Ollama both succeed.
 
 ---
 
