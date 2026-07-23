@@ -71,6 +71,56 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
 done
 
 echo ""
+echo "======================================="
+echo "🔥 Warming Ollama model..."
+echo "======================================="
+
+# Reuse the exact Ollama configuration the backend itself uses (see
+# backend/src/config/env.ts) instead of hardcoding a base URL or model
+# here. Falls back to the same defaults env.ts falls back to, only if a
+# key is genuinely absent from backend/.env.
+OLLAMA_BASE_URL=$(grep -E '^OLLAMA_BASE_URL=' backend/.env | tail -n1 | cut -d '=' -f2-)
+OLLAMA_MODEL=$(grep -E '^OLLAMA_MODEL=' backend/.env | tail -n1 | cut -d '=' -f2-)
+OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
+OLLAMA_MODEL="${OLLAMA_MODEL:-qwen2.5-coder:7b}"
+
+echo ""
+echo "⏳ Loading model into memory..."
+
+# An empty prompt to /api/generate is Ollama's documented way to load a
+# model into memory without generating any tokens — the smallest request
+# that still forces a full model load. --max-time matches the backend's
+# own AI provider timeout (300s, see ollama.provider.ts) so a slow cold
+# load has the same grace period here as it would from a real request.
+WARMUP_TMP_FILE="/tmp/ollama-warmup-response.$$"
+set +e
+WARMUP_HTTP_CODE=$(curl -sS --max-time 300 -o "$WARMUP_TMP_FILE" -w "%{http_code}" \
+    -X POST "${OLLAMA_BASE_URL}/api/generate" \
+    -H "Content-Type: application/json" \
+    -d "{\"model\":\"${OLLAMA_MODEL}\",\"prompt\":\"\"}")
+WARMUP_CURL_EXIT=$?
+set -e
+
+if [ "$WARMUP_CURL_EXIT" -ne 0 ] || [ "$WARMUP_HTTP_CODE" != "200" ]; then
+    echo ""
+    echo "❌ Model warm-up failed."
+    echo ""
+    echo "Model:    ${OLLAMA_MODEL}"
+    echo "Endpoint: ${OLLAMA_BASE_URL}/api/generate"
+    echo "curl exit code: ${WARMUP_CURL_EXIT}"
+    echo "HTTP status:     ${WARMUP_HTTP_CODE}"
+    echo ""
+    echo "Response:"
+    cat "$WARMUP_TMP_FILE" 2>/dev/null || true
+    echo ""
+    rm -f "$WARMUP_TMP_FILE"
+    exit 1
+fi
+
+rm -f "$WARMUP_TMP_FILE"
+echo "✅ Model warmed successfully."
+
+echo ""
 echo "🌐 Deploying frontend..."
 
 sudo rm -rf "${FRONTEND_DEPLOY_DIR:?}/"*
