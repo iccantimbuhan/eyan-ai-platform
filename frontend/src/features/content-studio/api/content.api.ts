@@ -22,13 +22,21 @@ export interface GenerateContentRequest {
   prompt: string
 }
 
+// Matches the backend's AI provider request timeout (REQUEST_TIMEOUT_MS in
+// backend/src/providers/ollama/ollama.provider.ts). Generation can take up
+// to several minutes on current hardware — the app-wide 30s default in
+// services/api.ts would abort the client before the backend does, even
+// though the backend goes on to complete and save the content anyway.
+const GENERATION_TIMEOUT_MS = 180_000
+
 export const contentApi = {
   async generateContent(
     payload: GenerateContentRequest
   ): Promise<GeneratedContentItem> {
     const { data } = await api.post<ApiResponse<GeneratedContentItem>>(
       '/content/generate',
-      payload
+      payload,
+      { timeout: GENERATION_TIMEOUT_MS }
     )
 
     return data.data

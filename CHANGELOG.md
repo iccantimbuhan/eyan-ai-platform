@@ -26,10 +26,17 @@ Entries are added when a sprint ships a user-visible or API-visible change — s
 - Maximum generated tokens is now configurable via `OLLAMA_MAX_TOKENS` (default 500) instead of unbounded.
 - AI provider requests now use a request timeout instead of hanging indefinitely on a stuck generation.
 
+### Changed
+
+- Generation History entries longer than a preview length now collapse behind a "Read more" toggle instead of always showing the full response, so the history stays easy to browse as it grows.
+
 ### Fixed
 
 - `POST /chat` was failing on every call in production due to a misconfigured, non-existent model — now works correctly.
 - Reselecting the currently-selected template in the content generation form no longer clears the values you'd already typed into its fields.
+- Content generation on a project page no longer reports "Generation Failed" for responses that take longer than 30 seconds to produce — the generate request now waits as long as the backend does, instead of the app-wide default timeout cutting it off early while the backend keeps working and saves the content anyway.
+- The project workspace page (generate content, view output, browse history) now uses the same page layout, width, and header as the rest of the app, instead of rendering full-width with no page header.
+- Deleting a generated content entry from Generation History now asks for confirmation first, instead of deleting immediately on click.
 
 ### Accessibility
 
