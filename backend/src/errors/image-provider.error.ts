@@ -13,3 +13,13 @@ export class ImageGenerationError extends ApiError {
     this.name = "ImageGenerationError";
   }
 }
+
+export class ImageProviderNotConfiguredError extends ApiError {
+  constructor() {
+    super(
+      400,
+      "No image provider was specified and no default IMAGE_PROVIDER is configured."
+    );
+    this.name = "ImageProviderNotConfiguredError";
+  }
+}

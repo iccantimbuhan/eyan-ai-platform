@@ -16,9 +16,13 @@ import promptTemplatesRoutes from "./routes/v1/prompt-templates.routes.js";
 import savedPromptsRoutes from "./routes/v1/saved-prompts.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
-import { registerImageProviders } from "./providers/register-image-providers.js";
+import {
+  registerImageProviders,
+  validateImageProviderConfig,
+} from "./providers/register-image-providers.js";
 
 registerImageProviders();
+validateImageProviderConfig();
 
 const app: Express = express();
 
