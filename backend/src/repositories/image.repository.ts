@@ -1,6 +1,40 @@
 import { prisma } from "../lib/prisma.js";
+import type {
+  GenerationStatus,
+  ImageFormat,
+} from "../generated/prisma/enums.js";
 
 export class ImageRepository {
+  async create(data: {
+    projectId: string;
+    prompt: string;
+    negativePrompt?: string | null;
+    provider: string;
+    width: number;
+    height: number;
+    format: ImageFormat;
+  }) {
+    return prisma.generatedImage.create({
+      data,
+    });
+  }
+
+  async update(
+    id: string,
+    data: {
+      status?: GenerationStatus;
+      model?: string | null;
+      storagePath?: string | null;
+      thumbnailPath?: string | null;
+      errorMessage?: string | null;
+    }
+  ) {
+    return prisma.generatedImage.update({
+      where: { id },
+      data,
+    });
+  }
+
   async findById(id: string, userId: string) {
     return prisma.generatedImage.findFirst({
       where: { id, project: { userId } },

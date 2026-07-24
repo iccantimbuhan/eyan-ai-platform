@@ -6,11 +6,20 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 import { validate } from "../../middleware/validation.middleware.js";
 
 import {
+  generateImageValidator,
   imageIdParamValidator,
   listImagesValidator,
 } from "../../validators/image.validator.js";
 
 const router: ExpressRouter = Router();
+
+router.post(
+  "/generate",
+  authenticate,
+  generateImageValidator,
+  validate,
+  ImageController.generateImage
+);
 
 router.get(
   "/",

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const createMock = vi.fn();
+const updateMock = vi.fn();
 const findFirstMock = vi.fn();
 const findManyMock = vi.fn();
 const countMock = vi.fn();
@@ -8,6 +10,8 @@ const deleteMock = vi.fn();
 vi.mock("../lib/prisma.js", () => ({
   prisma: {
     generatedImage: {
+      create: createMock,
+      update: updateMock,
       findFirst: findFirstMock,
       findMany: findManyMock,
       count: countMock,
@@ -22,10 +26,57 @@ describe("ImageRepository", () => {
   const repository = new ImageRepository();
 
   beforeEach(() => {
+    createMock.mockReset();
+    updateMock.mockReset();
     findFirstMock.mockReset();
     findManyMock.mockReset();
     countMock.mockReset();
     deleteMock.mockReset();
+  });
+
+  it("creates an image row with the given data", async () => {
+    createMock.mockResolvedValue({ id: "image-1" });
+
+    await repository.create({
+      projectId: "proj-1",
+      prompt: "A cat",
+      negativePrompt: null,
+      provider: "fake",
+      width: 512,
+      height: 512,
+      format: "PNG",
+    });
+
+    expect(createMock).toHaveBeenCalledWith({
+      data: {
+        projectId: "proj-1",
+        prompt: "A cat",
+        negativePrompt: null,
+        provider: "fake",
+        width: 512,
+        height: 512,
+        format: "PNG",
+      },
+    });
+  });
+
+  it("updates only the provided fields", async () => {
+    updateMock.mockResolvedValue({ id: "image-1" });
+
+    await repository.update("image-1", {
+      status: "COMPLETED",
+      model: "fake-image-v1",
+      storagePath: "proj-1/uuid.png",
+    });
+
+    expect(updateMock).toHaveBeenCalledWith({
+      where: { id: "image-1" },
+      data: {
+        status: "COMPLETED",
+        model: "fake-image-v1",
+        storagePath: "proj-1/uuid.png",
+      },
+    });
   });
 
   it("scopes findById to the id and the owning project's userId", async () => {

@@ -1,4 +1,37 @@
-import { param, query } from "express-validator";
+import { body, param, query } from "express-validator";
+
+const IMAGE_FORMATS = ["png", "jpg", "webp"];
+
+export const generateImageValidator = [
+  body("projectId")
+    .trim()
+    .notEmpty()
+    .withMessage("Project ID is required."),
+
+  body("prompt")
+    .trim()
+    .notEmpty()
+    .withMessage("Prompt is required.")
+    .isLength({ max: 2000 })
+    .withMessage("Prompt must not exceed 2000 characters."),
+
+  body("negativePrompt")
+    .optional()
+    .isString()
+    .isLength({ max: 2000 })
+    .withMessage("Negative prompt must not exceed 2000 characters."),
+
+  body("width").optional().isInt({ min: 64, max: 2048 }).toInt(),
+
+  body("height").optional().isInt({ min: 64, max: 2048 }).toInt(),
+
+  body("format")
+    .optional()
+    .isIn(IMAGE_FORMATS)
+    .withMessage("Invalid image format."),
+
+  body("provider").optional().isString(),
+];
 
 export const imageIdParamValidator = [
   param("id").notEmpty().withMessage("Image ID is required."),

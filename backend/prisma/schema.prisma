@@ -131,7 +131,7 @@ model GeneratedImage {
   negativePrompt String?
 
   provider       String
-  model          String
+  model          String?
 
   width          Int
   height         Int

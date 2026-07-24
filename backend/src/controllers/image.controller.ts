@@ -6,6 +6,17 @@ import { ApiResponse } from "../utils/api-response.js";
 const imageService = new ImageService();
 
 export class ImageController {
+  static async generateImage(req: Request, res: Response) {
+    const image = await imageService.generate(req.body, req.user.id);
+
+    return ApiResponse.success(
+      res,
+      image,
+      201,
+      "Image generated successfully."
+    );
+  }
+
   static async getImages(req: Request, res: Response) {
     const result = await imageService.list(
       {
