@@ -57,4 +57,11 @@ export const env = {
 
   storagePublicBaseUrl:
     process.env.STORAGE_PUBLIC_BASE_URL ?? "/uploads/images",
+
+  // Which registered ImageProvider ImageProviderFactory.create() resolves by
+  // default. No provider is registered yet (Sprint 4.1 Phase 3 establishes
+  // only the registry itself), so this intentionally has no default value —
+  // calling create() today always throws UnsupportedImageProviderError until
+  // a concrete provider both exists and is registered under this name.
+  imageProvider: process.env.IMAGE_PROVIDER ?? "",
 };
