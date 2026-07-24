@@ -40,7 +40,7 @@ export function ProjectWorkspace() {
 
   const { data: project, isLoading, error } = useProject(projectId)
   const generateContent = useGenerateContent(projectId)
-  const generateImage = useGenerateImage()
+  const generateImage = useGenerateImage(projectId)
   const { provider: imageProvider, setProvider: setImageProvider } =
     useImageProviderPreference()
 
@@ -127,6 +127,7 @@ export function ProjectWorkspace() {
             />
 
             <ImageOutputViewer
+              projectId={projectId}
               generateImage={generateImage}
               provider={imageProvider}
             />

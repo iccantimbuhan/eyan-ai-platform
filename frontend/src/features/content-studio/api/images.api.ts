@@ -1,11 +1,21 @@
 import { api } from '@/services/api'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, PaginatedResponse } from '@/types/api'
 import type { GeneratedImageItem, ImageProviderOption } from '../types/image'
 
 export interface GenerateImageRequest {
   projectId: string
   prompt: string
   provider?: Exclude<ImageProviderOption, 'auto'>
+}
+
+export interface ImagesResponse {
+  items: GeneratedImageItem[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
 }
 
 // Image generation can legitimately take well past the app-wide default
@@ -48,5 +58,25 @@ export const imagesApi = {
     )
 
     return data.data
+  },
+
+  async getImages(
+    projectId: string,
+    params?: { page?: number; pageSize?: number }
+  ): Promise<ImagesResponse> {
+    const { data } = await api.get<PaginatedResponse<GeneratedImageItem>>(
+      '/images',
+      {
+        params: {
+          projectId,
+          ...params,
+        },
+      }
+    )
+
+    return {
+      items: data.data,
+      pagination: data.meta,
+    }
   },
 }

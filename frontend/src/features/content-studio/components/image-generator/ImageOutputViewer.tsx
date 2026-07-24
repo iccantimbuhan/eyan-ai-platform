@@ -3,10 +3,12 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { resolveImageUrl } from '../../api/images.api'
+import { useImages } from '../../hooks/use-images'
 import type { useGenerateImage } from '../../hooks/use-generate-image'
-import type { ImageProviderOption } from '../../types/image'
+import type { GeneratedImageItem, ImageProviderOption } from '../../types/image'
 
 interface ImageOutputViewerProps {
+  projectId: string
   generateImage: ReturnType<typeof useGenerateImage>
   provider: ImageProviderOption
 }
@@ -23,10 +25,31 @@ const PROVIDER_LOADING_HINTS: Partial<Record<ImageProviderOption, string>> = {
   gemini: 'Gemini typically responds within a few seconds.',
 }
 
+function ImageThumbnail({ item }: { item: GeneratedImageItem }) {
+  if (item.status === 'COMPLETED' && item.storagePath) {
+    return (
+      <img
+        src={resolveImageUrl(item.storagePath)}
+        alt={item.prompt}
+        className='h-20 w-20 rounded-md border object-cover'
+      />
+    )
+  }
+
+  return (
+    <div className='flex h-20 w-20 items-center justify-center rounded-md border text-xs text-destructive'>
+      Failed
+    </div>
+  )
+}
+
 export function ImageOutputViewer({
+  projectId,
   generateImage,
   provider,
 }: ImageOutputViewerProps) {
+  const images = useImages(projectId)
+
   if (generateImage.isPending) {
     const hint = PROVIDER_LOADING_HINTS[provider]
 
@@ -45,7 +68,38 @@ export function ImageOutputViewer({
     )
   }
 
-  const image = generateImage.data
+  if (images.isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Output</CardTitle>
+        </CardHeader>
+
+        <CardContent
+          role='status'
+          aria-label='Loading generated images'
+          className='space-y-2'
+        >
+          <Skeleton className='aspect-square w-full max-w-md' />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (images.isError) {
+    return (
+      <Card>
+        <CardContent className='py-8'>
+          <p className='text-sm text-destructive'>
+            Failed to load generated images. Try refreshing the page.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const items = images.data?.items ?? []
+  const [image, ...previousImages] = items
 
   if (!image) {
     return (
@@ -88,6 +142,20 @@ export function ImageOutputViewer({
           </p>
         )}
       </CardContent>
+
+      {previousImages.length > 0 && (
+        <CardContent className='space-y-2 border-t pt-4'>
+          <p className='text-sm font-medium text-muted-foreground'>
+            Previous images
+          </p>
+
+          <div className='flex flex-wrap gap-2'>
+            {previousImages.map((item) => (
+              <ImageThumbnail key={item.id} item={item} />
+            ))}
+          </div>
+        </CardContent>
+      )}
     </Card>
   )
 }
