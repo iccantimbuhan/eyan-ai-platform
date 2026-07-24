@@ -2,7 +2,9 @@ packages:
   - backend
   - frontend
 allowBuilds:
+  '@google/genai': true
   '@prisma/engines': true
   bcrypt: true
   esbuild: false
   prisma: true
+  protobufjs: true

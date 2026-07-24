@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../config/env.js", () => ({
-  env: { imageProvider: "" },
+  env: { imageProvider: "", geminiApiKey: "", geminiModel: "gemini-2.5-flash-image" },
 }));
 
 import { env } from "../config/env.js";
@@ -11,6 +11,7 @@ import {
 } from "./register-image-providers.js";
 import { ImageProviderFactory } from "./image-provider.factory.js";
 import { FakeImageProvider } from "./fake/fake-image.provider.js";
+import { GeminiImageProvider } from "./gemini/gemini-image.provider.js";
 
 describe("registerImageProviders", () => {
   beforeEach(() => {
@@ -18,12 +19,18 @@ describe("registerImageProviders", () => {
     (env as { imageProvider: string }).imageProvider = "";
   });
 
-  it("registers the fake provider", () => {
+  it("registers the fake and gemini providers", () => {
     registerImageProviders();
 
-    expect(ImageProviderFactory.listRegistered()).toEqual(["fake"]);
+    expect(ImageProviderFactory.listRegistered().sort()).toEqual([
+      "fake",
+      "gemini",
+    ]);
     expect(ImageProviderFactory.create("fake")).toBeInstanceOf(
       FakeImageProvider
+    );
+    expect(ImageProviderFactory.create("gemini")).toBeInstanceOf(
+      GeminiImageProvider
     );
   });
 });

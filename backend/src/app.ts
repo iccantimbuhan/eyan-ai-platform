@@ -21,10 +21,19 @@ import {
   validateImageProviderConfig,
 } from "./providers/register-image-providers.js";
 import { validateLocalDiskStorageConfig } from "./providers/local-disk/local-disk-storage.provider.js";
+import { validateGeminiProviderConfig } from "./providers/gemini/gemini-image.provider.js";
+import { env } from "./config/env.js";
 
 registerImageProviders();
 validateImageProviderConfig();
 validateLocalDiskStorageConfig();
+
+// Provider-specific config checks run only when that provider is the
+// configured default — an explicit per-request override still works
+// without one (see validateGeminiProviderConfig()'s own comment).
+if (env.imageProvider.trim().toLowerCase() === "gemini") {
+  validateGeminiProviderConfig();
+}
 
 const app: Express = express();
 

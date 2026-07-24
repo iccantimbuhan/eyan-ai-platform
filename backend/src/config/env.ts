@@ -64,4 +64,13 @@ export const env = {
   // calling create() today always throws UnsupportedImageProviderError until
   // a concrete provider both exists and is registered under this name.
   imageProvider: process.env.IMAGE_PROVIDER ?? "",
+
+  // Gemini (Google) ImageProvider. Only required when IMAGE_PROVIDER=gemini
+  // (or a request explicitly requests provider "gemini") — see
+  // validateGeminiProviderConfig() in gemini-image.provider.ts for the
+  // fail-fast check, mirroring env.ts's own requireEnv() philosophy without
+  // making every provider's key mandatory for every deployment.
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+
+  geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash-image",
 };

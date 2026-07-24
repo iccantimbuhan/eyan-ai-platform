@@ -419,6 +419,31 @@ This allows switching providers without changing business logic.
 
 ---
 
+# Image Provider Architecture
+
+AI Image Studio (Sprint 4.1+) uses a separate provider abstraction from `AIProvider` above — image generation has no local/GPU option on this hardware, so multiple hosted providers are real, expected candidates (unlike text generation, which is deliberately single-provider).
+
+```
+ImageProvider Interface (generate(request) -> bytes)
+        ▲
+        │
+ ┌──────┴──────────┐
+ │                 │
+Fake            Gemini
+(deterministic,  (real, hosted —
+ zero cost,       Sprint 4.2 Phase 1)
+ testing only)
+```
+
+- `ImageProvider` — one method, `generate()`, returns image bytes. Never touches storage or the database.
+- `ImageProviderFactory` — a registry (`register()` / `create()`), not a single-provider switch like `ProviderFactory`. Adding a provider is one new class plus one `register()` call; `ImageService`, routes, and validators never change.
+- `StorageProvider` — persists bytes a provider produced (`LocalDiskStorageProvider` today). Fully independent of which `ImageProvider` produced them.
+- `ImageService` — the only orchestrator. Calls a provider for bytes, calls storage to persist them, calls the repository to record metadata. Never knows which concrete provider or storage backend it's using.
+
+Each real provider (`GeminiImageProvider`, and later OpenAI/Stability/FLUX) also documents its own limitations against the shared `GenerateImageRequest`/`GenerateImageResponse` contract where a vendor doesn't support a field 1:1 (e.g. arbitrary width/height, negative prompts) — see each provider's own file and the sprint log that introduced it.
+
+---
+
 # Design Principles
 
 ## Separation of Concerns
