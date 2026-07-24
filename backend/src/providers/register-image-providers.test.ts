@@ -11,7 +11,7 @@ vi.mock("../config/env.js", () => ({
     comfyuiPollInterval: 2_000,
     huggingfaceApiKey: "hf_test_key",
     huggingfaceModel: "black-forest-labs/FLUX.1-schnell",
-    huggingfaceBaseUrl: "https://router.huggingface.co/hf-inference",
+    huggingfaceProvider: "auto",
     huggingfaceTimeout: 60_000,
   },
 }));

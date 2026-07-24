@@ -1,17 +1,22 @@
-// Shapes for Hugging Face's official Inference Providers API, "hf-inference"
-// provider (Hugging Face's own first-party serverless infrastructure — see
-// https://huggingface.co/docs/inference-providers/en/tasks/text-to-image).
-// Deliberately not using the community @huggingface/inference SDK: this
-// codebase's established convention (see GeminiImageProvider, ComfyUIClient)
-// is a thin axios wrapper unless a provider's raw REST API is materially
-// awkward without an SDK — text-to-image's request/response shape here is a
-// single JSON POST returning raw bytes, which isn't.
+// Request/response shapes for Hugging Face's official Inference Providers
+// API (see https://huggingface.co/docs/inference-providers/en/tasks/text-to-image).
+// Generation itself goes through Hugging Face's own official
+// @huggingface/inference SDK rather than a hand-rolled axios call — each
+// Inference Providers partner (hf-inference, together, fal-ai, ...) has its
+// own request/response shape on the wire, and the SDK is what Hugging Face
+// itself keeps in sync with that catalog. These types describe the stable,
+// provider-agnostic shape this codebase passes to and receives from the SDK.
 
 export interface HuggingFaceGenerationParameters {
   negative_prompt?: string;
   width?: number;
   height?: number;
   seed?: number;
+  // The SDK's own TextToImageParameters type carries an index signature
+  // (it's generated from Hugging Face's task JSON schema, which allows
+  // arbitrary additional provider-specific fields) — matched here so this
+  // type stays structurally assignable to it without widening to `any`.
+  [key: string]: unknown;
 }
 
 export interface HuggingFaceTextToImageRequest {

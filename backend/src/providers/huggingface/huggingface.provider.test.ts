@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  InferenceClientInputError,
+  InferenceClientProviderApiError,
+} from "@huggingface/inference";
 
 const generateImageMock = vi.fn();
 const checkAuthMock = vi.fn();
@@ -7,8 +11,8 @@ const clientConstructorMock = vi.fn();
 
 vi.mock("./huggingface.client.js", () => ({
   HuggingFaceClient: class {
-    constructor(baseURL: string, apiKey: string, timeoutMs: number) {
-      clientConstructorMock(baseURL, apiKey, timeoutMs);
+    constructor(apiKey: string, timeoutMs: number, provider: string) {
+      clientConstructorMock(apiKey, timeoutMs, provider);
     }
 
     generateImage = generateImageMock;
@@ -25,7 +29,7 @@ vi.mock("../../config/env.js", () => ({
   env: {
     huggingfaceApiKey: "hf_test_key",
     huggingfaceModel: "black-forest-labs/FLUX.1-schnell",
-    huggingfaceBaseUrl: "https://router.huggingface.co/hf-inference",
+    huggingfaceProvider: "auto",
     huggingfaceTimeout: 60_000,
   },
 }));
@@ -42,7 +46,7 @@ const {
 type MutableEnv = {
   huggingfaceApiKey: string;
   huggingfaceModel: string;
-  huggingfaceBaseUrl: string;
+  huggingfaceProvider: string;
   huggingfaceTimeout: number;
 };
 
@@ -53,10 +57,21 @@ const request = {
   format: "png" as const,
 };
 
+function providerApiError(
+  status: number,
+  body: Record<string, string | number>
+): InferenceClientProviderApiError {
+  return new InferenceClientProviderApiError(
+    "Request failed",
+    { url: "https://router.huggingface.co/hf-inference/models/org/model", method: "POST" },
+    { requestId: "req-1", status, body }
+  );
+}
+
 function resetEnv() {
   (env as MutableEnv).huggingfaceApiKey = "hf_test_key";
   (env as MutableEnv).huggingfaceModel = "black-forest-labs/FLUX.1-schnell";
-  (env as MutableEnv).huggingfaceBaseUrl = "https://router.huggingface.co/hf-inference";
+  (env as MutableEnv).huggingfaceProvider = "auto";
   (env as MutableEnv).huggingfaceTimeout = 60_000;
 }
 
@@ -74,13 +89,13 @@ describe("HuggingFaceProvider", () => {
     expect(new HuggingFaceProvider().name).toBe("huggingface");
   });
 
-  it("authenticates the client against the configured base URL, API key, and timeout", () => {
+  it("authenticates the client against the configured API key, timeout, and provider", () => {
     new HuggingFaceProvider();
 
     expect(clientConstructorMock).toHaveBeenCalledWith(
-      "https://router.huggingface.co/hf-inference",
       "hf_test_key",
-      60_000
+      60_000,
+      "auto"
     );
   });
 
@@ -125,15 +140,10 @@ describe("HuggingFaceProvider", () => {
     );
   });
 
-  it("throws a specific, sanitized-safe message for an invalid API key (401), not the raw HTTP error", async () => {
-    const axiosLikeError = Object.assign(new Error("Request failed with status code 401"), {
-      isAxiosError: true,
-      response: {
-        status: 401,
-        data: Buffer.from(JSON.stringify({ error: "Invalid credentials" })),
-      },
-    });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+  it("throws a specific, sanitized-safe message for an invalid API key (401), not the raw provider error", async () => {
+    generateImageMock.mockRejectedValueOnce(
+      providerApiError(401, { error: "Invalid credentials" })
+    );
 
     const provider = new HuggingFaceProvider();
 
@@ -143,11 +153,7 @@ describe("HuggingFaceProvider", () => {
   });
 
   it("throws a specific message for a 403 forbidden response", async () => {
-    const axiosLikeError = Object.assign(new Error("Request failed with status code 403"), {
-      isAxiosError: true,
-      response: { status: 403, data: Buffer.from(JSON.stringify({ error: "Forbidden" })) },
-    });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+    generateImageMock.mockRejectedValueOnce(providerApiError(403, { error: "Forbidden" }));
 
     const provider = new HuggingFaceProvider();
 
@@ -155,11 +161,7 @@ describe("HuggingFaceProvider", () => {
   });
 
   it("throws a specific message for a 429 rate limit response", async () => {
-    const axiosLikeError = Object.assign(new Error("Request failed with status code 429"), {
-      isAxiosError: true,
-      response: { status: 429, data: Buffer.from(JSON.stringify({ error: "Rate limited" })) },
-    });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+    generateImageMock.mockRejectedValueOnce(providerApiError(429, { error: "Rate limited" }));
 
     const provider = new HuggingFaceProvider();
 
@@ -167,11 +169,7 @@ describe("HuggingFaceProvider", () => {
   });
 
   it("throws a specific message for an unsupported/not-found model (404)", async () => {
-    const axiosLikeError = Object.assign(new Error("Request failed with status code 404"), {
-      isAxiosError: true,
-      response: { status: 404, data: Buffer.from(JSON.stringify({ error: "Not Found" })) },
-    });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+    generateImageMock.mockRejectedValueOnce(providerApiError(404, { error: "Not Found" }));
 
     const provider = new HuggingFaceProvider();
 
@@ -180,12 +178,23 @@ describe("HuggingFaceProvider", () => {
     );
   });
 
+  it("throws a specific message when the SDK cannot route the model to any provider", async () => {
+    generateImageMock.mockRejectedValueOnce(
+      new InferenceClientInputError("No Inference Provider available for model org/model.")
+    );
+
+    const provider = new HuggingFaceProvider();
+
+    await expect(provider.generate(request)).rejects.toThrow(
+      /could not be routed.*No Inference Provider available/
+    );
+  });
+
   it("throws a specific message for a timeout", async () => {
-    const axiosLikeError = Object.assign(new Error("timeout of 60000ms exceeded"), {
-      isAxiosError: true,
-      code: "ECONNABORTED",
+    const timeoutError = Object.assign(new Error("The operation timed out."), {
+      name: "TimeoutError",
     });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+    generateImageMock.mockRejectedValueOnce(timeoutError);
 
     const provider = new HuggingFaceProvider();
 
@@ -193,11 +202,7 @@ describe("HuggingFaceProvider", () => {
   });
 
   it("throws a specific message for a network failure", async () => {
-    const axiosLikeError = Object.assign(new Error("connect ECONNREFUSED"), {
-      isAxiosError: true,
-      code: "ECONNREFUSED",
-    });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+    generateImageMock.mockRejectedValueOnce(new TypeError("fetch failed"));
 
     const provider = new HuggingFaceProvider();
 
@@ -205,16 +210,9 @@ describe("HuggingFaceProvider", () => {
   });
 
   it("never lets a raw Hugging Face error message reach the thrown error directly", async () => {
-    const axiosLikeError = Object.assign(new Error("Request failed with status code 401"), {
-      isAxiosError: true,
-      response: {
-        status: 401,
-        data: Buffer.from(
-          JSON.stringify({ error: "super-secret-internal-detail-xyz" })
-        ),
-      },
-    });
-    generateImageMock.mockRejectedValueOnce(axiosLikeError);
+    generateImageMock.mockRejectedValueOnce(
+      providerApiError(401, { error: "super-secret-internal-detail-xyz" })
+    );
 
     const provider = new HuggingFaceProvider();
 
@@ -260,11 +258,11 @@ describe("validateHuggingFaceProviderConfig", () => {
     );
   });
 
-  it("throws when HUGGINGFACE_BASE_URL is empty", () => {
-    (env as MutableEnv).huggingfaceBaseUrl = "";
+  it("throws when HUGGINGFACE_PROVIDER is empty", () => {
+    (env as MutableEnv).huggingfaceProvider = "";
 
     expect(() => validateHuggingFaceProviderConfig()).toThrow(
-      /HUGGINGFACE_BASE_URL is not configured/
+      /HUGGINGFACE_PROVIDER is not configured/
     );
   });
 

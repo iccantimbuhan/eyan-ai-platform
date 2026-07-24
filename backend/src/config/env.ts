@@ -120,11 +120,16 @@ export const env = {
   // model.config.ts, the single source of truth for the default value.
   huggingfaceModel: process.env.HUGGINGFACE_MODEL ?? DEFAULT_HUGGINGFACE_MODEL,
 
-  // Hugging Face's official Inference Providers API, "hf-inference" —
-  // Hugging Face's own first-party serverless infrastructure (as opposed to
-  // a third-party-routed provider like fal-ai/replicate/together).
-  huggingfaceBaseUrl:
-    process.env.HUGGINGFACE_BASE_URL ?? "https://router.huggingface.co/hf-inference",
+  // Which Inference Providers partner serves the request — passed straight
+  // through to the official @huggingface/inference SDK. "auto" (the
+  // default, and Hugging Face's own recommended default) lets Hugging
+  // Face's router pick whichever live provider currently serves
+  // huggingfaceModel, with automatic failover — the model is never assumed
+  // to be available on any single named provider (e.g. "hf-inference"),
+  // since a provider's own catalog can change or drop a model outright (see
+  // docs/HUGGINGFACE_PROVIDER.md for the incident that motivated this).
+  // Set to a specific provider name (e.g. "together", "fal-ai") to pin it.
+  huggingfaceProvider: process.env.HUGGINGFACE_PROVIDER ?? "auto",
 
   huggingfaceTimeout,
 };

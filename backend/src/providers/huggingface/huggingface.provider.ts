@@ -39,11 +39,14 @@ function buildRequest(request: GenerateImageRequest): HuggingFaceTextToImageRequ
   };
 }
 
-// Real, hosted Hugging Face image generation (Sprint 4.4) — a third real
-// ImageProvider alongside GeminiImageProvider and ComfyUIProvider, using
-// Hugging Face's official Inference Providers API ("hf-inference" —
-// Hugging Face's own first-party serverless infrastructure, not a
-// third-party routed provider or an unofficial endpoint).
+// Real, hosted Hugging Face image generation (Sprint 4.4; migrated off a
+// hardcoded "hf-inference" REST call to the official @huggingface/inference
+// SDK with provider "auto" after hf-inference stopped serving the
+// configured model — see docs/HUGGINGFACE_PROVIDER.md, "Provider migration"
+// section, for the full incident). A third real ImageProvider alongside
+// GeminiImageProvider and ComfyUIProvider, using Hugging Face's official
+// Inference Providers API — never an unofficial endpoint, never a
+// third-party wrapper.
 //
 // Like the other two real providers, this class never sanitizes its own
 // errors — they propagate raw so ImageService's stage-based error handling
@@ -57,9 +60,9 @@ export class HuggingFaceProvider implements ImageProvider {
 
   constructor() {
     this.client = new HuggingFaceClient(
-      env.huggingfaceBaseUrl,
       env.huggingfaceApiKey,
-      env.huggingfaceTimeout
+      env.huggingfaceTimeout,
+      env.huggingfaceProvider
     );
   }
 
@@ -116,9 +119,9 @@ export function validateHuggingFaceProviderConfig(): void {
     );
   }
 
-  if (!env.huggingfaceBaseUrl.trim()) {
+  if (!env.huggingfaceProvider.trim()) {
     throw new Error(
-      'IMAGE_PROVIDER is set to "huggingface", but HUGGINGFACE_BASE_URL is not configured.'
+      'IMAGE_PROVIDER is set to "huggingface", but HUGGINGFACE_PROVIDER is not configured.'
     );
   }
 
@@ -156,9 +159,9 @@ export async function checkHuggingFaceHealth(): Promise<HuggingFaceHealthResult>
   }
 
   const client = new HuggingFaceClient(
-    env.huggingfaceBaseUrl,
     env.huggingfaceApiKey,
-    env.huggingfaceTimeout
+    env.huggingfaceTimeout,
+    env.huggingfaceProvider
   );
 
   try {
