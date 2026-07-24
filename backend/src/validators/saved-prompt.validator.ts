@@ -25,6 +25,15 @@ export const createSavedPromptValidator = [
     .withMessage("Content type is required.")
     .isIn(CONTENT_TYPES)
     .withMessage("Invalid content type."),
+
+  // Omitted -> a global, reusable prompt (unchanged existing behavior).
+  // Set -> a project-scoped PROMPT_TEMPLATE asset in that project's Asset
+  // Library. See docs/ASSET_LIBRARY.md.
+  body("projectId")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Project ID must not be empty when provided."),
 ];
 
 export const updateSavedPromptValidator = [

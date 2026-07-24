@@ -79,6 +79,20 @@ describe("ImageRepository", () => {
     });
   });
 
+  it("forwards generationTimeMs when provided", async () => {
+    updateMock.mockResolvedValue({ id: "image-1" });
+
+    await repository.update("image-1", {
+      status: "COMPLETED",
+      generationTimeMs: 4200,
+    });
+
+    expect(updateMock).toHaveBeenCalledWith({
+      where: { id: "image-1" },
+      data: { status: "COMPLETED", generationTimeMs: 4200 },
+    });
+  });
+
   it("scopes findById to the id and the owning project's userId", async () => {
     findFirstMock.mockResolvedValue(null);
 

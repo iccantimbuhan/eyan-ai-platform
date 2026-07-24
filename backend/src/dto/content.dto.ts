@@ -14,6 +14,7 @@ export interface ContentResponseDto {
   output: string;
   model: string;
   createdBy: string | null;
+  generationTimeMs: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

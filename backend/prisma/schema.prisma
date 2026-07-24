@@ -34,6 +34,30 @@ enum GenerationStatus {
   FAILED
 }
 
+// Mirrors ContentType's five values exactly (a GeneratedContent.type value
+// casts straight across, no mapping table) plus IMAGE and PROMPT_TEMPLATE —
+// the two additional real asset sources aggregated by the Asset Library.
+// Adding a future asset type (e.g. VIDEO) is one new enum value + one
+// migration + one case in asset.mapper.ts, never a redesign of this enum's
+// existing consumers — see docs/ASSET_LIBRARY.md.
+enum AssetType {
+  BLOG
+  EMAIL
+  SOCIAL_MEDIA
+  MARKETING_COPY
+  DOCUMENTATION
+  IMAGE
+  PROMPT_TEMPLATE
+}
+
+enum ReviewStatus {
+  DRAFT
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
 model User {
   id              String   @id @default(cuid())
 
@@ -49,6 +73,7 @@ model User {
   roles           UserRole[]
   savedPrompts    SavedPrompt[]
   contentProjects ContentProject[]
+  reviewedAssets  AssetReview[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -114,6 +139,9 @@ model ContentProject {
 
   generatedContent GeneratedContent[]
   generatedImages  GeneratedImage[]
+  savedPrompts     SavedPrompt[]
+  assetReviews     AssetReview[]
+  assetVersions    AssetVersion[]
 
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -143,6 +171,11 @@ model GeneratedImage {
   status         GenerationStatus @default(PENDING)
   errorMessage   String?
 
+  // Wall-clock time spent inside provider.generate(), captured in
+  // ImageService.generate() around the existing call — null for rows
+  // created before this column existed. See docs/ASSET_LIBRARY.md.
+  generationTimeMs Int?
+
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -161,6 +194,10 @@ model GeneratedContent {
   model     String
 
   createdBy String?
+
+  // See GeneratedImage.generationTimeMs — same capture point, same nullable
+  // backfill story for pre-existing rows.
+  generationTimeMs Int?
 
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -189,6 +226,14 @@ model SavedPrompt {
   userId      String
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Nullable: null means a global, reusable prompt (the original, unchanged
+  // behavior — still what the standalone Prompt Library page shows). A
+  // non-null value scopes this prompt to one project, making it a real,
+  // reviewable PROMPT_TEMPLATE asset in that project's Asset Library. See
+  // docs/ASSET_LIBRARY.md.
+  projectId   String?
+  project     ContentProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   name        String
   promptBody  String
   contentType ContentType
@@ -197,4 +242,66 @@ model SavedPrompt {
   updatedAt   DateTime    @updatedAt
 
   @@index([userId])
+  @@index([projectId])
+}
+
+// One row per underlying asset (GeneratedContent / GeneratedImage /
+// SavedPrompt) that has ever been touched by the QA workflow — an asset
+// with no row here is implicitly ReviewStatus.DRAFT (the service layer
+// upserts a row lazily on first real review action). Deliberately not a
+// column on the source tables: one polymorphic table serves every current
+// and future asset type without altering any of them.
+model AssetReview {
+  id         String        @id @default(cuid())
+
+  projectId  String
+  project    ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType  AssetType
+  sourceId   String
+
+  status     ReviewStatus  @default(DRAFT)
+
+  reviewerId String?
+  reviewer   User?         @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewedAt DateTime?
+
+  notes      String?
+  qaScore    Int?
+  checklist  Json?
+
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([assetType, sourceId])
+  @@index([projectId])
+  @@index([status])
+}
+
+// One row per generated version of an asset, linked into a chain via
+// previousVersionId. lineageId is shared by every version in one chain
+// (equal to the first version's own id) so "get full history" is a single
+// indexed findMany, not a chain walk. An asset with no row here is
+// implicitly version 1 (created lazily on first regenerate).
+model AssetVersion {
+  id                String         @id @default(cuid())
+
+  projectId         String
+  project           ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType         AssetType
+  sourceId          String
+
+  lineageId         String
+  versionNumber     Int
+
+  previousVersionId String?
+  previousVersion   AssetVersion?  @relation("VersionLineage", fields: [previousVersionId], references: [id], onDelete: SetNull)
+  nextVersions      AssetVersion[] @relation("VersionLineage")
+
+  createdAt         DateTime       @default(now())
+
+  @@unique([assetType, sourceId])
+  @@index([projectId])
+  @@index([lineageId])
 }

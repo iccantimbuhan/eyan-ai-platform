@@ -12,6 +12,7 @@ import chatStreamRoutes from "./routes/v1/chat-stream.routes.js";
 import projectsRoutes from "./routes/v1/projects.routes.js";
 import contentRoutes from "./routes/v1/content.routes.js";
 import imageRoutes from "./routes/v1/image.routes.js";
+import assetRoutes from "./routes/v1/asset.routes.js";
 import promptTemplatesRoutes from "./routes/v1/prompt-templates.routes.js";
 import savedPromptsRoutes from "./routes/v1/saved-prompts.routes.js";
 
@@ -108,6 +109,7 @@ app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1/projects", projectsRoutes);
 app.use("/api/v1/content", contentRoutes);
 app.use("/api/v1/images", imageRoutes);
+app.use("/api/v1/assets", assetRoutes);
 app.use("/api/v1/prompt-templates", promptTemplatesRoutes);
 app.use("/api/v1/saved-prompts", savedPromptsRoutes);
 

@@ -27,6 +27,7 @@ export class ImageRepository {
       storagePath?: string | null;
       thumbnailPath?: string | null;
       errorMessage?: string | null;
+      generationTimeMs?: number | null;
     }
   ) {
     return prisma.generatedImage.update({

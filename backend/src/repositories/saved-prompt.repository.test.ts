@@ -51,6 +51,28 @@ describe("SavedPromptRepository", () => {
     });
   });
 
+  it("creates a project-scoped prompt when projectId is provided", async () => {
+    createMock.mockResolvedValue({ id: "sp-2" });
+
+    await repository.create({
+      userId: "user-1",
+      name: "Project Prompt",
+      promptBody: "Write about {{topic}}.",
+      contentType: "BLOG",
+      projectId: "project-1",
+    });
+
+    expect(createMock).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        name: "Project Prompt",
+        promptBody: "Write about {{topic}}.",
+        contentType: "BLOG",
+        projectId: "project-1",
+      },
+    });
+  });
+
   it("lists only the given user's prompts, most recently updated first", async () => {
     findManyMock.mockResolvedValue([]);
 
@@ -58,6 +80,17 @@ describe("SavedPromptRepository", () => {
 
     expect(findManyMock).toHaveBeenCalledWith({
       where: { userId: "user-1" },
+      orderBy: { updatedAt: "desc" },
+    });
+  });
+
+  it("lists only prompts scoped to the given project and user, most recently updated first", async () => {
+    findManyMock.mockResolvedValue([]);
+
+    await repository.findManyByProject("project-1", "user-1");
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { projectId: "project-1", userId: "user-1" },
       orderBy: { updatedAt: "desc" },
     });
   });

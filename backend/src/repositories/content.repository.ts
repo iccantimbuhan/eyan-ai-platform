@@ -9,6 +9,7 @@ export class ContentRepository {
     output: string;
     model: string;
     createdBy?: string | null;
+    generationTimeMs?: number | null;
   }) {
     return prisma.generatedContent.create({
       data,

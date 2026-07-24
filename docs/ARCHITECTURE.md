@@ -452,6 +452,39 @@ Generation itself goes through Hugging Face's official `@huggingface/inference` 
 
 ---
 
+# Asset Library & QA Architecture
+
+Sprint 5 adds a management layer over what Content Studio already generates — an Asset Library (search/filter/batch-act) and a QA review workflow (Draft → Needs Review → Approved/Rejected → Published) — spanning three independent sources (`GeneratedContent`, `GeneratedImage`, project-scoped `SavedPrompt`) without redesigning any of them.
+
+```
+GET /assets  ──►  AssetService.list()
+                       │
+       ┌───────────────┼────────────────────┐
+       │                │                    │
+ContentRepository  ImageRepository   SavedPromptRepository
+  (unchanged)         (unchanged)      (.projectId added)
+       │                │                    │
+       └───────────────┬────────────────────┘
+                        ▼
+              asset.mapper.ts (per-type mapping
+              to one common AssetSummaryDto)
+                        │
+                        ▼
+        merge review status (AssetReview, new)
+        + version number (AssetVersion, new)
+                        │
+             search / filter / sort / paginate
+                    (in application code)
+```
+
+`AssetReview` and `AssetVersion` are new, purely additive tables, both keyed on `(assetType, sourceId)` rather than a foreign key into a unified table — no such table exists, and none was introduced. An asset with no `AssetReview` row is implicitly `DRAFT`; one with no `AssetVersion` row is implicitly version 1. Neither row is created until an asset is actually reviewed or regenerated. `AssetType`'s first five values mirror `ContentType` exactly, plus `IMAGE` and `PROMPT_TEMPLATE` — the two other real sources this sprint aggregates.
+
+Generation itself is completely untouched: `AssetService.regenerate()`/`.duplicate()` call `ContentService.generate()`/`ImageService.generate()` unchanged, then link the resulting row into `AssetVersion` (regenerate) or don't (duplicate — an independent asset, not a new version). The one exception is `generationTimeMs`, a new nullable column on both `GeneratedContent` and `GeneratedImage`, captured by timing the existing provider call — needed because Asset Details displays generation time and it can't be reconstructed after the fact.
+
+Full design rationale, the "why not a unified Asset table" reasoning, and the exact recipe for adding a future asset type: `docs/ASSET_LIBRARY.md` and `.claude/decisions/ADR-0008-asset-library-polymorphic-review-versioning.md`.
+
+---
+
 # Design Principles
 
 ## Separation of Concerns

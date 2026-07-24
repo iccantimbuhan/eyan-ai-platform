@@ -27,6 +27,7 @@ vi.mock('../../hooks/use-update-saved-prompt', () => ({
 const existingPrompt: SavedPrompt = {
   id: 'sp-1',
   userId: 'user-1',
+  projectId: null,
   name: 'My SEO Prompt',
   promptBody: 'Write an SEO-optimized post about electric vehicles.',
   contentType: 'MARKETING_COPY',
@@ -81,6 +82,30 @@ describe('SavePromptDialog', () => {
         name: 'My Prompt',
         promptBody: 'Write about X.',
         contentType: 'BLOG',
+      },
+      expect.anything()
+    )
+  })
+
+  it('scopes a new prompt to a project when projectId is provided', async () => {
+    const screen = await render(
+      <SavePromptDialog open onOpenChange={vi.fn()} prompt={null} projectId='project-1' />
+    )
+
+    await expect
+      .element(screen.getByRole('heading', { name: 'New Prompt Template' }))
+      .toBeInTheDocument()
+
+    await userEvent.fill(screen.getByLabelText('Name'), 'Project Prompt')
+    await userEvent.fill(screen.getByLabelText('Prompt', { exact: true }), 'Write about X.')
+    await userEvent.click(screen.getByRole('button', { name: 'Save Prompt' }))
+
+    expect(createMock).toHaveBeenCalledWith(
+      {
+        name: 'Project Prompt',
+        promptBody: 'Write about X.',
+        contentType: 'BLOG',
+        projectId: 'project-1',
       },
       expect.anything()
     )

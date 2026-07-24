@@ -7,6 +7,7 @@ export class SavedPromptRepository {
     name: string;
     promptBody: string;
     contentType: ContentType;
+    projectId?: string;
   }) {
     return prisma.savedPrompt.create({
       data,
@@ -16,6 +17,20 @@ export class SavedPromptRepository {
   async findMany(userId: string) {
     return prisma.savedPrompt.findMany({
       where: { userId },
+
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+  }
+
+  // Project-scoped prompts only (projectId set) — used by the Asset
+  // Library's PROMPT_TEMPLATE listing. Global prompts (projectId null,
+  // shown in the standalone Prompt Library page via findMany() above) are
+  // deliberately excluded: a global prompt isn't "this project's asset".
+  async findManyByProject(projectId: string, userId: string) {
+    return prisma.savedPrompt.findMany({
+      where: { projectId, userId },
 
       orderBy: {
         updatedAt: "desc",

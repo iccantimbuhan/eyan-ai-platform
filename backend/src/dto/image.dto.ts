@@ -18,6 +18,7 @@ export interface ImageResponseDto {
   thumbnailPath: string | null;
   status: GenerationStatus;
   errorMessage: string | null;
+  generationTimeMs: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

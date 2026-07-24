@@ -8,6 +8,7 @@ import { SavedPromptList } from './SavedPromptList'
 const prompt: SavedPrompt = {
   id: 'sp-1',
   userId: 'user-1',
+  projectId: null,
   name: 'My SEO Prompt',
   promptBody: 'Write an SEO-optimized post about electric vehicles.',
   contentType: 'MARKETING_COPY',

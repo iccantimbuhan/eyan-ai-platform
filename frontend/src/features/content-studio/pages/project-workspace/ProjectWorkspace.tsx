@@ -13,6 +13,8 @@ import { GenerationHistory } from '../../components/generator/GenerationHistory'
 import { OutputViewer } from '../../components/generator/OutputViewer'
 import { ImageGenerateForm } from '../../components/image-generator/ImageGenerateForm'
 import { ImageOutputViewer } from '../../components/image-generator/ImageOutputViewer'
+import { AssetLibrary } from '../../components/assets/AssetLibrary'
+import { ReviewQueue } from '../../components/assets/ReviewQueue'
 import { useGenerateContent } from '../../hooks/use-generate-content'
 import { useGenerateImage } from '../../hooks/use-generate-image'
 import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
@@ -105,6 +107,8 @@ export function ProjectWorkspace() {
           <TabsList>
             <TabsTrigger value='content'>Content</TabsTrigger>
             <TabsTrigger value='images'>Images</TabsTrigger>
+            <TabsTrigger value='assets'>Assets</TabsTrigger>
+            <TabsTrigger value='review'>Review</TabsTrigger>
           </TabsList>
 
           <TabsContent value='content' className='space-y-6'>
@@ -131,6 +135,14 @@ export function ProjectWorkspace() {
               generateImage={generateImage}
               provider={imageProvider}
             />
+          </TabsContent>
+
+          <TabsContent value='assets' className='space-y-6'>
+            <AssetLibrary projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value='review' className='space-y-6'>
+            <ReviewQueue projectId={projectId} />
           </TabsContent>
         </Tabs>
       </div>

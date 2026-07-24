@@ -29,12 +29,19 @@ interface SavePromptDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   prompt: SavedPrompt | null
+  // Omitted -> a global, reusable prompt (the Prompt Library page's own
+  // usage, unchanged). Set -> the new prompt is scoped to that project,
+  // making it a real PROMPT_TEMPLATE asset in its Asset Library. Only
+  // meaningful in create mode — editing an existing prompt never changes
+  // its project scope here.
+  projectId?: string
 }
 
 export function SavePromptDialog({
   open,
   onOpenChange,
   prompt,
+  projectId,
 }: SavePromptDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,6 +52,7 @@ export function SavePromptDialog({
         <SavePromptForm
           key={open ? (prompt?.id ?? 'new') : 'closed'}
           prompt={prompt}
+          projectId={projectId}
           onSaved={() => onOpenChange(false)}
         />
       </DialogContent>
@@ -54,10 +62,11 @@ export function SavePromptDialog({
 
 interface SavePromptFormProps {
   prompt: SavedPrompt | null
+  projectId?: string
   onSaved: () => void
 }
 
-function SavePromptForm({ prompt, onSaved }: SavePromptFormProps) {
+function SavePromptForm({ prompt, projectId, onSaved }: SavePromptFormProps) {
   const isEditMode = Boolean(prompt)
 
   const createSavedPrompt = useCreateSavedPrompt()
@@ -74,32 +83,41 @@ function SavePromptForm({ prompt, onSaved }: SavePromptFormProps) {
   const canSubmit = name.trim().length > 0 && promptBody.trim().length > 0
 
   const handleSubmit = () => {
-    const payload = {
-      name: name.trim(),
-      promptBody: promptBody.trim(),
-      contentType,
-    }
-
     if (isEditMode && prompt) {
       updateSavedPrompt.mutate(
-        { id: prompt.id, payload },
+        {
+          id: prompt.id,
+          payload: { name: name.trim(), promptBody: promptBody.trim(), contentType },
+        },
         { onSuccess: onSaved }
       )
       return
     }
 
-    createSavedPrompt.mutate(payload, { onSuccess: onSaved })
+    createSavedPrompt.mutate(
+      {
+        name: name.trim(),
+        promptBody: promptBody.trim(),
+        contentType,
+        ...(projectId ? { projectId } : {}),
+      },
+      { onSuccess: onSaved }
+    )
   }
 
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{isEditMode ? 'Edit Prompt' : 'Save Prompt'}</DialogTitle>
+        <DialogTitle>
+          {isEditMode ? 'Edit Prompt' : projectId ? 'New Prompt Template' : 'Save Prompt'}
+        </DialogTitle>
 
         <DialogDescription>
           {isEditMode
             ? 'Update this saved prompt.'
-            : 'Save a prompt to reuse later.'}
+            : projectId
+              ? 'Save a prompt template scoped to this project — it will appear as an asset in the Asset Library.'
+              : 'Save a prompt to reuse later.'}
         </DialogDescription>
       </DialogHeader>
 

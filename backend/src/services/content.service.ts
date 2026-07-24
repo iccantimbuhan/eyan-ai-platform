@@ -26,10 +26,16 @@ export class ContentService {
       throw new NotFoundError("Project not found.");
     }
 
+    // Captured for Asset Details' "Generation Time" field (Sprint 5) — pure
+    // timing around the existing call, no change to control flow or errors.
+    const startedAt = Date.now();
+
     const result = await this.chatService.chat([
       { role: "system", content: CONTENT_SYSTEM_PROMPTS[data.type] },
       { role: "user", content: data.prompt },
     ]);
+
+    const generationTimeMs = Date.now() - startedAt;
 
     return this.repository.create({
       projectId: data.projectId,
@@ -38,6 +44,7 @@ export class ContentService {
       output: result.response,
       model: result.model,
       createdBy: userId,
+      generationTimeMs,
     });
   }
 

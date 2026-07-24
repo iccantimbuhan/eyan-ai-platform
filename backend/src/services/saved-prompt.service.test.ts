@@ -31,6 +31,29 @@ describe("SavedPromptService", () => {
     });
   });
 
+  it("create() passes projectId through when provided, scoping the prompt to a project", async () => {
+    const repository = createRepository();
+    const service = new SavedPromptService(repository as never);
+
+    await service.create(
+      {
+        name: "Project Prompt",
+        promptBody: "Write about {{topic}}.",
+        contentType: "BLOG",
+        projectId: "project-1",
+      },
+      "user-1"
+    );
+
+    expect(repository.create).toHaveBeenCalledWith({
+      name: "Project Prompt",
+      promptBody: "Write about {{topic}}.",
+      contentType: "BLOG",
+      projectId: "project-1",
+      userId: "user-1",
+    });
+  });
+
   it("list() delegates to the repository with the requesting userId", async () => {
     const repository = createRepository();
     const service = new SavedPromptService(repository as never);

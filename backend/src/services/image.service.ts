@@ -83,6 +83,10 @@ export class ImageService {
 
     let result: GenerateImageResponse;
 
+    // Captured for Asset Details' "Generation Time" field (Sprint 5) — pure
+    // timing around the existing call, no change to control flow or errors.
+    const startedAt = Date.now();
+
     try {
       result = await provider.generate({
         prompt: data.prompt,
@@ -108,6 +112,8 @@ export class ImageService {
         "Image generation failed. Please try again, or try a different provider."
       );
     }
+
+    const generationTimeMs = Date.now() - startedAt;
 
     logger.info(
       `[ImageService] Provider "${provider.name}" generated image ${image.id} successfully.`
@@ -140,6 +146,7 @@ export class ImageService {
         status: "COMPLETED",
         model: result.model,
         storagePath: stored.path,
+        generationTimeMs,
       });
 
       logger.info(`[ImageService] Image ${image.id} completed successfully.`);

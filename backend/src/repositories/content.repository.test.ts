@@ -31,6 +31,30 @@ describe("ContentRepository", () => {
     deleteMock.mockReset();
   });
 
+  it("forwards generationTimeMs when creating", async () => {
+    createMock.mockResolvedValue({ id: "content-1" });
+
+    await repository.create({
+      projectId: "proj-1",
+      type: "BLOG",
+      prompt: "Write about cats.",
+      output: "Cats are great.",
+      model: "qwen2.5-coder:7b",
+      generationTimeMs: 1500,
+    });
+
+    expect(createMock).toHaveBeenCalledWith({
+      data: {
+        projectId: "proj-1",
+        type: "BLOG",
+        prompt: "Write about cats.",
+        output: "Cats are great.",
+        model: "qwen2.5-coder:7b",
+        generationTimeMs: 1500,
+      },
+    });
+  });
+
   it("scopes findById to the id and the owning project's userId", async () => {
     findFirstMock.mockResolvedValue(null);
 

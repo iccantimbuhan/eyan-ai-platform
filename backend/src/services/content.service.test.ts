@@ -83,7 +83,27 @@ describe("ContentService", () => {
       output: "Generated output",
       model: "qwen2.5",
       createdBy: "user-1",
+      generationTimeMs: expect.any(Number),
     });
+  });
+
+  it("generate() captures a non-negative generationTimeMs around the chat call", async () => {
+    const repository = createRepository();
+    const projectRepository = createProjectRepository();
+    const chatService = createChatService();
+    const service = new ContentService(
+      repository as never,
+      projectRepository as never,
+      chatService as never
+    );
+
+    await service.generate(
+      { projectId: "proj-1", type: "BLOG", prompt: "Write about X" },
+      "user-1"
+    );
+
+    const [[payload]] = repository.create.mock.calls;
+    expect(payload.generationTimeMs).toBeGreaterThanOrEqual(0);
   });
 
   it("list() throws NotFoundError when the project doesn't exist or isn't owned by the caller", async () => {

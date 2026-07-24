@@ -29,6 +29,13 @@ The platform is designed with scalability, security, and extensibility in mind, 
 - Conversation history
 - Prompt templates
 
+### 🗂 Content Production & QA
+
+- Asset Library — every generated content item, image, and project-scoped prompt template in one searchable, filterable, batch-actionable view (see [docs/ASSET_LIBRARY.md](docs/ASSET_LIBRARY.md))
+- QA review workflow — Draft → Needs Review → Approved/Rejected → Published, with a reusable checklist, reviewer notes, and a QA score
+- Per-project Review Queue
+- Version history on regeneration, with side-by-side compare
+
 ### 🔐 Authentication
 
 - User registration

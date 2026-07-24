@@ -145,9 +145,25 @@ describe("ImageService", () => {
         status: "COMPLETED",
         model: "fake-image-v1",
         storagePath: "proj-1/uuid.png",
+        generationTimeMs: expect.any(Number),
       });
 
       expect(result).toEqual({ id: "image-1", status: "COMPLETED" });
+    });
+
+    it("captures a non-negative generationTimeMs around the provider call", async () => {
+      const repository = createRepository();
+      const service = new ImageService(
+        repository as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        createStorageProvider() as never
+      );
+
+      await service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1");
+
+      const [, payload] = repository.update.mock.calls[0];
+      expect(payload.generationTimeMs).toBeGreaterThanOrEqual(0);
     });
 
     it("applies default width/height/format when not provided", async () => {
@@ -399,6 +415,7 @@ describe("ImageService", () => {
         status: "COMPLETED",
         model: "fake-image-v1",
         storagePath: "proj-1/uuid.png",
+        generationTimeMs: expect.any(Number),
       });
     });
 
