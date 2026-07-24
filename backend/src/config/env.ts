@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import path from "node:path";
 
 dotenv.config();
 
@@ -46,4 +47,14 @@ export const env = {
 
   refreshTokenExpiresIn:
     process.env.REFRESH_TOKEN_EXPIRES_IN ?? "7d",
+
+  // Local-disk storage (StorageProvider). Kept outside src/ and dist/ so
+  // stored files survive a rebuild; swapping to a cloud StorageProvider
+  // later only changes which of these are read, not who reads them.
+  storageLocalRoot:
+    process.env.STORAGE_LOCAL_ROOT ??
+    path.join(process.cwd(), "storage", "images"),
+
+  storagePublicBaseUrl:
+    process.env.STORAGE_PUBLIC_BASE_URL ?? "/uploads/images",
 };

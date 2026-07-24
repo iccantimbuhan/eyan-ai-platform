@@ -36,6 +36,9 @@ coverage/
 # Build
 build/
 
+# Local disk storage (LocalDiskStorageProvider) — generated files, not source
+backend/storage/
+
 # Temporary
 tmp/
 temp/
