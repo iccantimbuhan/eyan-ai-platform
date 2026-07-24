@@ -22,6 +22,18 @@ enum ContentType {
   DOCUMENTATION
 }
 
+enum ImageFormat {
+  PNG
+  JPG
+  WEBP
+}
+
+enum GenerationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id              String   @id @default(cuid())
 
@@ -101,11 +113,40 @@ model ContentProject {
   status      ProjectStatus @default(DRAFT)
 
   generatedContent GeneratedContent[]
+  generatedImages  GeneratedImage[]
 
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   @@index([userId])
+}
+
+model GeneratedImage {
+  id             String           @id @default(cuid())
+
+  projectId      String
+  project        ContentProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  prompt         String
+  negativePrompt String?
+
+  provider       String
+  model          String
+
+  width          Int
+  height         Int
+  format         ImageFormat
+
+  storagePath    String?
+  thumbnailPath  String?
+
+  status         GenerationStatus @default(PENDING)
+  errorMessage   String?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([projectId])
 }
 
 model GeneratedContent {
