@@ -17,6 +17,7 @@ export const generateImageValidator = [
 
   body("negativePrompt")
     .optional()
+    .trim()
     .isString()
     .isLength({ max: 2000 })
     .withMessage("Negative prompt must not exceed 2000 characters."),
@@ -30,7 +31,13 @@ export const generateImageValidator = [
     .isIn(IMAGE_FORMATS)
     .withMessage("Invalid image format."),
 
-  body("provider").optional().isString(),
+  body("provider")
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("Provider name must not exceed 100 characters.")
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage("Provider name may only contain letters, numbers, hyphens, and underscores."),
 ];
 
 export const imageIdParamValidator = [

@@ -1,6 +1,8 @@
 # Sprint 4.2 — Real AI Image Provider Integration
 
-Status: Planning only. Not started. Prepared 2026-07-24 at the close of Sprint 4.1.
+Status: Planning only for the phases described below. Prepared 2026-07-24 at the close of Sprint 4.1.
+
+**Note on "Phase 0" naming:** a phase actually named "Sprint 4.2, Phase 0" has since been completed — see `tasks/completed/sprint-4-2-phase-0-production-readiness.md`. It covered configuration validation, request validation, error handling, logging, and code cleanup for the Sprint 4.1 pipeline, but **not** the items this document's own "Phase 0 — Architectural prerequisites" describes below (rate limiting, timeout reconciliation, a provider-credential config convention, an error-mapping strategy, deploying to production). Those remain open and are still a prerequisite before real provider work begins — treat this document's "Phase 0" as still-pending, distinct from the completed one.
 
 Sprint 4.1 built and fully validated the internal image-generation pipeline — ownership, orchestration, lifecycle, storage — using a deterministic `FakeImageProvider` and zero external cost. Sprint 4.2 is where that architecture gets tested against reality: real HTTP calls, real latency, real failure modes, real money.
 

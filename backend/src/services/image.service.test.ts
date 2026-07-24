@@ -10,6 +10,7 @@ vi.mock("../config/env.js", () => ({
 
 import { env } from "../config/env.js";
 import { ImageService } from "./image.service.js";
+import { logger } from "../lib/logger.js";
 import {
   ImageGenerationError,
   ImageProviderNotConfiguredError,
@@ -216,7 +217,8 @@ describe("ImageService", () => {
       });
     });
 
-    it("still throws ImageGenerationError (with the original message) even if persisting the FAILED status also fails", async () => {
+    it("still throws ImageGenerationError even if persisting the FAILED status also fails, and logs the secondary failure distinctly", async () => {
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
       const repository = createRepository({
         update: vi.fn().mockRejectedValue(new Error("db unavailable")),
       });
@@ -235,7 +237,143 @@ describe("ImageService", () => {
 
       await expect(
         service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1")
-      ).rejects.toThrow("provider exploded");
+      ).rejects.toThrow(ImageGenerationError);
+
+      expect(repository.update).toHaveBeenCalledWith("image-1", {
+        status: "FAILED",
+        errorMessage: "provider exploded",
+      });
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Failed to persist FAILED status for image image-1: db unavailable"
+        )
+      );
+
+      errorSpy.mockRestore();
+    });
+
+    it("never leaks the raw provider error message to the caller — a generic, safe message is thrown instead", async () => {
+      const imageProviderFactory = createImageProviderFactory({
+        create: vi.fn().mockReturnValue({
+          name: "fake",
+          generate: vi
+            .fn()
+            .mockRejectedValue(
+              new Error("ECONNREFUSED 10.0.0.5:9999 — internal vendor detail")
+            ),
+        }),
+      });
+      const service = new ImageService(
+        createRepository() as never,
+        createProjectRepository() as never,
+        imageProviderFactory as never,
+        createStorageProvider() as never
+      );
+
+      await expect(
+        service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1")
+      ).rejects.toThrow(
+        "Image generation failed. Please try again, or try a different provider."
+      );
+    });
+
+    it("uses a distinct, safe message for a storage failure vs. a provider failure", async () => {
+      const storageProvider = createStorageProvider({
+        save: vi.fn().mockRejectedValue(new Error("ENOSPC: no space left")),
+      });
+      const service = new ImageService(
+        createRepository() as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        storageProvider as never
+      );
+
+      await expect(
+        service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1")
+      ).rejects.toThrow(
+        "The image was generated but could not be saved. Please try again."
+      );
+    });
+
+    it("logs generation start, provider success, and completion at info level", async () => {
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
+      const service = new ImageService(
+        createRepository() as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        createStorageProvider() as never
+      );
+
+      await service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1");
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Generation started: image image-1")
+      );
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Provider "fake" generated image image-1 successfully'
+        )
+      );
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Image image-1 completed successfully")
+      );
+
+      infoSpy.mockRestore();
+    });
+
+    it("logs and rethrows the raw error when creating the initial image record fails, without ever calling the provider's generate()", async () => {
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+      const dbError = new Error("connection terminated");
+      const repository = createRepository({
+        create: vi.fn().mockRejectedValue(dbError),
+      });
+      const imageProviderFactory = createImageProviderFactory();
+      const service = new ImageService(
+        repository as never,
+        createProjectRepository() as never,
+        imageProviderFactory as never,
+        createStorageProvider() as never
+      );
+
+      await expect(
+        service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1")
+      ).rejects.toBe(dbError);
+
+      const provider = imageProviderFactory.create.mock.results[0].value;
+      expect(provider.generate).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Database failure creating image record for project proj-1: connection terminated"
+        )
+      );
+
+      errorSpy.mockRestore();
+    });
+
+    it("logs the DB-layer failure when the final COMPLETED update fails", async () => {
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+      const dbError = new Error("db unavailable");
+      const repository = createRepository({
+        update: vi.fn().mockRejectedValue(dbError),
+      });
+      const service = new ImageService(
+        repository as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        createStorageProvider() as never
+      );
+
+      await expect(
+        service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1")
+      ).rejects.toBe(dbError);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Generated and stored image image-1, but failed to persist COMPLETED status: db unavailable"
+        )
+      );
+
+      errorSpy.mockRestore();
     });
 
     it("does NOT re-mark the row FAILED if generation succeeds but the final COMPLETED update fails — propagates the raw DB error instead", async () => {
@@ -318,6 +456,37 @@ describe("ImageService", () => {
 
         expect(imageProviderFactory.create).not.toHaveBeenCalled();
         expect(repository.create).not.toHaveBeenCalled();
+      });
+
+      it("logs which provider was resolved and whether it came from the request or the configured default", async () => {
+        const debugSpy = vi.spyOn(logger, "debug").mockImplementation(() => {});
+        const service = new ImageService(
+          createRepository() as never,
+          createProjectRepository() as never,
+          createImageProviderFactory() as never,
+          createStorageProvider() as never
+        );
+
+        await service.generate(
+          { projectId: "proj-1", prompt: "A cat", provider: "explicit-provider" },
+          "user-1"
+        );
+        expect(debugSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'Resolved image provider "explicit-provider" (explicit request override)'
+          )
+        );
+
+        debugSpy.mockClear();
+
+        await service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1");
+        expect(debugSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'Resolved image provider "fake-default" (configured default)'
+          )
+        );
+
+        debugSpy.mockRestore();
       });
     });
   });
@@ -452,6 +621,39 @@ describe("ImageService", () => {
       });
 
       expect(repository.delete).toHaveBeenCalledWith("image-1");
+    });
+
+    it("logs a distinct error when storage cleanup fails, and logs the deletion on success", async () => {
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
+      const repository = createRepository({
+        findById: vi.fn().mockResolvedValue({
+          id: "image-1",
+          projectId: "proj-1",
+          storagePath: "proj-1/uuid.png",
+        }),
+      });
+      const storageProvider = createStorageProvider({
+        delete: vi.fn().mockRejectedValue(new Error("permission denied")),
+      });
+      const service = new ImageService(
+        repository as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        storageProvider as never
+      );
+
+      await service.delete("image-1", "user-1");
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Failed to delete stored file for image image-1: permission denied"
+        )
+      );
+      expect(infoSpy).toHaveBeenCalledWith("[ImageService] Deleted image image-1.");
+
+      errorSpy.mockRestore();
+      infoSpy.mockRestore();
     });
   });
 });

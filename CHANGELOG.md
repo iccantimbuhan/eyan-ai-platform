@@ -23,10 +23,12 @@ Entries are added when a sprint ships a user-visible or API-visible change — s
 
 ### Security
 
+- **AI Image Studio no longer forwards raw internal error detail to API responses** (Sprint 4.2 Phase 0): a failed image generation previously returned the underlying provider/storage error message verbatim to the client, which could include vendor-internal detail (hostnames, library-specific text). The API response is now always a fixed, safe message; the full detail is still recorded and visible to the image's own owner via `GET /images/:id`.
 - **Per-user data ownership enforced on Content Studio projects and generated content** (Sprint 3.5): previously, any authenticated user could read, list, or delete any other user's project or generated content by ID. `POST /projects`, `GET /projects`, `GET /projects/:id`, `DELETE /projects/:id`, `GET /content`, `GET /content/:id`, and `DELETE /content/:id` now all scope to the requesting user; a project or content item that exists but belongs to someone else returns `404` (not `403`), consistent with how this ownership pattern already worked for Saved Prompts.
 
 ### Changed
 
+- **AI Image Studio hardening** (Sprint 4.2 Phase 0): image generation failures now report a specific, safe error message depending on what actually failed (the provider vs. storage vs. a database write), instead of one generic error either way — and the raw underlying failure detail is no longer forwarded to the API response (it's still visible to the image's own owner via `GET /images/:id`). `provider` and `negativePrompt` request fields are validated more strictly (trimmed, and `provider` restricted to a safe charset) — no existing valid request is affected. The backend now fails to start, with a clear error, if its configured local image-storage directory isn't writable, instead of only discovering that on the first real generation attempt.
 - AI provider default model corrected from an unavailable `qwen2.5-coder:14b` to the installed `qwen2.5-coder:7b`.
 - Maximum generated tokens is now configurable via `OLLAMA_MAX_TOKENS` (default 500) instead of unbounded.
 - AI provider requests now use a request timeout instead of hanging indefinitely on a stuck generation — raised from 180s to 300s after production traffic showed a cold model load (the first request after a deploy or restart) can exceed 180s on our current hardware.

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { accessSync, constants as fsConstants, mkdirSync } from "node:fs";
 import path from "node:path";
 
 import { env } from "../../config/env.js";
@@ -88,4 +89,26 @@ function assertAllowedExtension(extension: string): string {
   }
 
   return normalized;
+}
+
+// Startup validation (called from app.ts, mirroring env.ts's requireEnv()
+// fail-fast philosophy): confirms the configured storage root exists and is
+// writable before the process starts accepting requests, rather than
+// discovering a bad STORAGE_LOCAL_ROOT on the first real generation.
+// Synchronous by design, matching every other startup check in this
+// codebase (env.ts, validateImageProviderConfig) — no async orchestration
+// needed for a one-time boot check.
+export function validateLocalDiskStorageConfig(): void {
+  const rootDir = path.resolve(env.storageLocalRoot);
+
+  try {
+    mkdirSync(rootDir, { recursive: true });
+    accessSync(rootDir, fsConstants.W_OK);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    throw new Error(
+      `Local image storage root "${rootDir}" is not writable: ${message}`
+    );
+  }
 }

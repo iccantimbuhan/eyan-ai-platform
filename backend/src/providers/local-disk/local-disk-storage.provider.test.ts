@@ -4,11 +4,19 @@ const mkdirMock = vi.fn().mockResolvedValue(undefined);
 const writeFileMock = vi.fn().mockResolvedValue(undefined);
 const rmMock = vi.fn().mockResolvedValue(undefined);
 const randomUUIDMock = vi.fn().mockReturnValue("fixed-uuid");
+const mkdirSyncMock = vi.fn();
+const accessSyncMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   mkdir: mkdirMock,
   writeFile: writeFileMock,
   rm: rmMock,
+}));
+
+vi.mock("node:fs", () => ({
+  mkdirSync: mkdirSyncMock,
+  accessSync: accessSyncMock,
+  constants: { W_OK: 2 },
 }));
 
 vi.mock("node:crypto", () => ({
@@ -22,9 +30,8 @@ vi.mock("../../config/env.js", () => ({
   },
 }));
 
-const { LocalDiskStorageProvider } = await import(
-  "./local-disk-storage.provider.js"
-);
+const { LocalDiskStorageProvider, validateLocalDiskStorageConfig } =
+  await import("./local-disk-storage.provider.js");
 
 describe("LocalDiskStorageProvider", () => {
   const provider = new LocalDiskStorageProvider();
@@ -33,6 +40,8 @@ describe("LocalDiskStorageProvider", () => {
     mkdirMock.mockClear();
     writeFileMock.mockClear();
     rmMock.mockClear();
+    mkdirSyncMock.mockReset();
+    accessSyncMock.mockReset();
   });
 
   it("saves a file under <root>/<projectId>/<uuid>.<extension>", async () => {
@@ -114,6 +123,46 @@ describe("LocalDiskStorageProvider", () => {
   it("builds a URL from the public base URL and the stored path", () => {
     expect(provider.getUrl("proj-1/fixed-uuid.png")).toBe(
       "/uploads/images/proj-1/fixed-uuid.png"
+    );
+  });
+});
+
+describe("validateLocalDiskStorageConfig", () => {
+  beforeEach(() => {
+    mkdirSyncMock.mockReset();
+    accessSyncMock.mockReset();
+  });
+
+  it("does not throw when the storage root can be created and is writable", () => {
+    mkdirSyncMock.mockReturnValue(undefined);
+    accessSyncMock.mockReturnValue(undefined);
+
+    expect(() => validateLocalDiskStorageConfig()).not.toThrow();
+
+    expect(mkdirSyncMock).toHaveBeenCalledWith("/test-storage-root", {
+      recursive: true,
+    });
+    expect(accessSyncMock).toHaveBeenCalledWith("/test-storage-root", 2);
+  });
+
+  it("throws a clear error when the storage root can't be created", () => {
+    mkdirSyncMock.mockImplementation(() => {
+      throw new Error("EACCES: permission denied");
+    });
+
+    expect(() => validateLocalDiskStorageConfig()).toThrow(
+      /Local image storage root .* is not writable: EACCES/
+    );
+  });
+
+  it("throws a clear error when the storage root exists but isn't writable", () => {
+    mkdirSyncMock.mockReturnValue(undefined);
+    accessSyncMock.mockImplementation(() => {
+      throw new Error("EACCES: permission denied");
+    });
+
+    expect(() => validateLocalDiskStorageConfig()).toThrow(
+      /Local image storage root .* is not writable/
     );
   });
 });

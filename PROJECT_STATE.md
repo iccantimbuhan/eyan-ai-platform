@@ -8,13 +8,15 @@ This file contains **only the current state** of the project. It is overwritten 
 
 ## Current Sprint
 
-None active. **Sprint 4.1 — AI Image Studio (Backend Pipeline) — is complete** (5 phases, commits `a7c9e87`..`8c34924`; see `tasks/completed/sprint-4-1-ai-image-studio-backend.md`). A full internal image-generation pipeline now exists — provider abstraction, storage abstraction, ownership-scoped CRUD, and a `PENDING`/`COMPLETED`/`FAILED` lifecycle — validated end-to-end with a deterministic fake provider, with **zero external API calls made and zero cost incurred.** **Sprint 4.2 (real provider integration) is planned and awaiting approval** — see `tasks/backlog/sprint-4-2-provider-integration.md`.
+None active. **Sprint 4.2, Phase 0 — Image Studio Production Readiness — is complete** (see `tasks/completed/sprint-4-2-phase-0-production-readiness.md`), following **Sprint 4.1 — AI Image Studio (Backend Pipeline)**, also complete (5 phases, commits `a7c9e87`..`8c34924`; see `tasks/completed/sprint-4-1-ai-image-studio-backend.md`). The internal image-generation pipeline — provider abstraction, storage abstraction, ownership-scoped CRUD, `PENDING`/`COMPLETED`/`FAILED` lifecycle — is now hardened: fail-fast startup validation for storage config, differentiated and leak-safe error handling, full lifecycle logging, and 108/108 tests passing. Still **zero external API calls made and zero cost incurred** — Phase 0 explicitly excluded any real provider integration. **Sprint 4.2's remaining phases (real provider integration, starting with OpenAI Images) are planned and awaiting approval** — see `tasks/backlog/sprint-4-2-provider-integration.md`.
 
-**Not yet deployed.** Sprint 4.1's database migrations are already applied to the shared dev/production database (both additive, backward-compatible with the currently-running code). The application code itself has not been deployed — no `deploy.sh` run this sprint, per its explicit "no production deployment required" scope at every phase. The live, publicly-served API does not yet expose `/api/v1/images/*`.
+**Not yet deployed.** All of Sprint 4.1's and Sprint 4.2 Phase 0's changes are applied/committed to the shared dev/production database and codebase respectively, but the application code has not been deployed — no `deploy.sh` run since Sprint 3.5. The live, publicly-served API does not yet expose `/api/v1/images/*`. Recommend deploying before Sprint 4.2's next phase (the first real provider) begins.
 
 ---
 
 ## Status
+
+**Sprint 4.2, Phase 0 — Production Readiness (2026-07-24):** Hardened the Sprint 4.1 pipeline without changing its architecture, framed explicitly around this project's purpose as an AI Content Production / Content Moderation portfolio. `validateLocalDiskStorageConfig()` now fails the process at boot if the storage root isn't writable, mirroring the existing provider-config fail-fast check. `ImageService.generate()`'s error handling now attributes failures to a specific stage (initial record creation, provider call, storage call, final status update) instead of one generic catch-all, and — the most consequential fix — no longer forwards raw underlying error text (which could include vendor/internal detail) to the HTTP client; a fixed, safe message is thrown instead, while the full detail is still persisted to the owner-visible `errorMessage` column. Every lifecycle event (generation start, provider success/failure, storage success/failure, completion, deletion, provider resolution) now has a corresponding log line. All of it verified live against a throwaway instance, not just asserted in tests: an unwritable storage root crashes the process at boot with a clear message, and real log output was inspected directly to confirm the expected sequence fires. 108/108 tests passing (10 new), typecheck and build clean. Full detail in the sprint log.
 
 **Sprint 4.1 — AI Image Studio, Backend Pipeline (2026-07-24):** Five independently-reviewed phases built a complete internal image-generation pipeline before any real, billable AI provider was integrated. `GeneratedImage` hangs off `ContentProject` with ownership derived transitively (no duplicate `userId` column, extending ADR-0007). `ImageProvider` and `StorageProvider` are independent abstractions — a provider only ever produces bytes, storage only ever persists bytes it's handed, `ImageService` is the sole orchestrator. Unlike the single-provider `AIProvider` (ADR-0001, hardware-constrained), `ImageProviderFactory` is a real registry, since multiple hosted image providers are genuinely expected next. The full request → generate → store → persist → retrieve → delete cycle was proven correct using a deterministic, in-process `FakeImageProvider` — including failure paths (provider failure, storage failure, a DB-layer failure occurring *after* a successful generation, which a Phase 5 fix stopped from being mislabeled as a failed generation) — validated with real HTTP requests against a throwaway instance on a separate port, production never touched. 98/98 tests passing (46 new this sprint), typecheck and build clean throughout. Full detail in the sprint log.
 
@@ -34,17 +36,17 @@ Sprint 2 is complete and closed (see `tasks/completed/sprint-2-templates-and-pic
 
 ## Next Task
 
-Sprint 4.2 — real AI image provider integration (OpenAI Images, then FLUX, Gemini, Stability AI), building on the provider registry Sprint 4.1 established. Not started — planning only, awaiting explicit approval before any implementation. See `tasks/backlog/sprint-4-2-provider-integration.md` for the full roadmap, readiness review, risks, and required configuration.
+Sprint 4.2's first real-provider phase — OpenAI Images — building on the provider registry Sprint 4.1 established and the hardened error/logging/config foundation Phase 0 just added. Not started — planning only, awaiting explicit approval before any implementation. See `tasks/backlog/sprint-4-2-provider-integration.md` for the full roadmap, readiness review, risks, and required configuration (that plan's own Phase 0 — rate limiting, timeout reconciliation, error-mapping strategy, deploying to production — is still separate from and not satisfied by this now-completed hardening phase; see Open Risks below).
 
 ---
 
 ## Open Risks / Known Issues
 
-- **Sprint 4.1's application code is undeployed** while its migrations are already live — recommend deploying before or alongside Sprint 4.2's first implementation phase, so Sprint 4.2 doesn't build on an untested deploy of Sprint 4.1's own code.
-- No real image provider is configured (`IMAGE_PROVIDER` unset in production `.env`); only the internal `"fake"` provider is registered. Expected — this is exactly what Sprint 4.2 addresses.
-- No rate limiting or per-user/per-project generation caps exist for image generation. Harmless today (no external cost), but a hard prerequisite before any real, billable provider goes live — flagged in the Sprint 4.2 plan.
+- **Sprint 4.1's and Sprint 4.2 Phase 0's application code is undeployed** while Sprint 4.1's migrations are already live — recommend deploying before Sprint 4.2's first real-provider phase begins, so that phase doesn't build on an untested deploy of two sprints' worth of undeployed code.
+- No real image provider is configured (`IMAGE_PROVIDER` unset in production `.env`); only the internal `"fake"` provider is registered. Expected — this is exactly what Sprint 4.2's next phase addresses.
+- No rate limiting or per-user/per-project generation caps exist for image generation. Harmless today (no external cost), but a hard prerequisite before any real, billable provider goes live — deliberately out of scope for Phase 0 (explicitly excluded), flagged again here so it isn't lost before the first real provider ships.
 - No retention/cleanup policy for orphaned local-disk files (e.g. a crash between a successful storage write and the following DB write). Narrow window, not yet hardened against.
-- No frontend surface exists for Image Studio yet — by design, Sprint 4.1 was backend-only per the approved architecture.
+- No frontend surface exists for Image Studio yet — by design, Sprint 4.1 and 4.2 Phase 0 were backend-only per the approved architecture.
 - Frontend lint: 26 pre-existing errors, 3 pre-existing warnings, repo-wide (`chat.service.ts`, `use-login.ts`, `user-auth-form.tsx`, `use-projects.ts`, `model-card.tsx`, `stat-card.tsx`, `useHealth.ts`, `useModels.ts`, `useModelsList.ts`, `main.tsx`, `auth-provider.tsx`, `api.ts`, plus two React Compiler table-memoization warnings). None are in Content Studio's own files.
 - 2 pre-existing frontend test failures in `search-provider.test.tsx` (command palette navigation, timeout-based) in addition to the 2 long-standing `user-auth-form.test.tsx` failures — both confirmed pre-existing, neither caused by this project's Content Studio work.
 - No CI/CD auto-deploy exists yet (a standing risk since Sprint 1.1) — `deploy.sh` is manually triggered and requires sudo privileges this session does not have.
@@ -57,7 +59,7 @@ Sprint 4.2 — real AI image provider integration (OpenAI Images, then FLUX, Gem
 
 ## Pointers
 
-- Completed sprints: `tasks/completed/` (most recent: `sprint-4-1-ai-image-studio-backend.md`; also `sprint-3-5-security-hardening.md` and `sprint-3-prompt-library.md`, which includes the earlier production incident record)
+- Completed sprints: `tasks/completed/` (most recent: `sprint-4-2-phase-0-production-readiness.md`; also `sprint-4-1-ai-image-studio-backend.md`, `sprint-3-5-security-hardening.md`, and `sprint-3-prompt-library.md`, which includes the earlier production incident record)
 - Active sprint: none (`tasks/active/` is empty)
 - Sprint 4.2 plan: `tasks/backlog/sprint-4-2-provider-integration.md` (Sprint 4 readiness precursor: `tasks/backlog/sprint-4-readiness.md`)
 - Sprint log template: `tasks/templates/sprint-log-template.md`

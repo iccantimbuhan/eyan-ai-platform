@@ -20,9 +20,11 @@ import {
   registerImageProviders,
   validateImageProviderConfig,
 } from "./providers/register-image-providers.js";
+import { validateLocalDiskStorageConfig } from "./providers/local-disk/local-disk-storage.provider.js";
 
 registerImageProviders();
 validateImageProviderConfig();
+validateLocalDiskStorageConfig();
 
 const app: Express = express();
 
