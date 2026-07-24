@@ -2,7 +2,13 @@ import { useCallback, useState } from 'react'
 import type { ImageProviderOption } from '../types/image'
 
 const STORAGE_KEY = 'content-studio:image-provider'
-const VALID_VALUES: ImageProviderOption[] = ['auto', 'gemini', 'comfyui']
+const VALID_VALUES: ImageProviderOption[] = [
+  'auto',
+  'gemini',
+  'comfyui',
+  'huggingface',
+  'fake',
+]
 
 function isImageProviderOption(
   value: string | null

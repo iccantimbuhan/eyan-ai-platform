@@ -26,6 +26,10 @@ import {
   validateComfyUIProviderConfig,
   logComfyUIHealthCheck,
 } from "./providers/comfyui/comfyui.provider.js";
+import {
+  validateHuggingFaceProviderConfig,
+  logHuggingFaceHealthCheck,
+} from "./providers/huggingface/huggingface.provider.js";
 import { env } from "./config/env.js";
 
 registerImageProviders();
@@ -44,6 +48,11 @@ if (configuredImageProvider === "gemini") {
 if (configuredImageProvider === "comfyui") {
   validateComfyUIProviderConfig();
   logComfyUIHealthCheck();
+}
+
+if (configuredImageProvider === "huggingface") {
+  validateHuggingFaceProviderConfig();
+  logHuggingFaceHealthCheck();
 }
 
 const app: Express = express();

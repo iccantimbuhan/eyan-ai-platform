@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import path from "node:path";
+import { DEFAULT_HUGGINGFACE_MODEL } from "../providers/huggingface/model.config.js";
 
 dotenv.config();
 
@@ -37,6 +38,15 @@ const comfyuiPollInterval = Number(process.env.COMFYUI_POLL_INTERVAL ?? "2000");
 
 if (Number.isNaN(comfyuiPollInterval)) {
   throw new Error("COMFYUI_POLL_INTERVAL must be a valid number.");
+}
+
+// Single HTTP call timeout for Hugging Face's Inference Providers API, in
+// ms — generation is a single request/response round trip (unlike
+// ComfyUI's submit-then-poll), so there's no separate "overall budget".
+const huggingfaceTimeout = Number(process.env.HUGGINGFACE_TIMEOUT ?? "60000");
+
+if (Number.isNaN(huggingfaceTimeout)) {
+  throw new Error("HUGGINGFACE_TIMEOUT must be a valid number.");
 }
 
 export const env = {
@@ -100,4 +110,21 @@ export const env = {
   comfyuiTimeout,
 
   comfyuiPollInterval,
+
+  // Hugging Face ImageProvider. Only required when IMAGE_PROVIDER=huggingface
+  // (or a request explicitly requests provider "huggingface") — see
+  // validateHuggingFaceProviderConfig() in huggingface.provider.ts.
+  huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY ?? "",
+
+  // No specific model is assumed available on any given account — see
+  // model.config.ts, the single source of truth for the default value.
+  huggingfaceModel: process.env.HUGGINGFACE_MODEL ?? DEFAULT_HUGGINGFACE_MODEL,
+
+  // Hugging Face's official Inference Providers API, "hf-inference" —
+  // Hugging Face's own first-party serverless infrastructure (as opposed to
+  // a third-party-routed provider like fal-ai/replicate/together).
+  huggingfaceBaseUrl:
+    process.env.HUGGINGFACE_BASE_URL ?? "https://router.huggingface.co/hf-inference",
+
+  huggingfaceTimeout,
 };

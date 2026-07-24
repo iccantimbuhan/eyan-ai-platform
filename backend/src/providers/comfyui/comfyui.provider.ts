@@ -14,6 +14,7 @@ import type {
   ComfyUIOutputImage,
   WorkflowPlaceholderValues,
 } from "./comfyui.types.js";
+import { randomSeed } from "../random-seed.util.js";
 
 const PROMPT_LOG_PREVIEW_LENGTH = 80;
 
@@ -31,10 +32,6 @@ const SUPPORTED_IMAGE_FORMATS: ReadonlySet<string> = new Set([
   "jpg",
   "webp",
 ]);
-
-function randomSeed(): number {
-  return Math.floor(Math.random() * 1_000_000_000);
-}
 
 function truncatePrompt(prompt: string): string {
   return prompt.length > PROMPT_LOG_PREVIEW_LENGTH

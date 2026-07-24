@@ -9,6 +9,10 @@ vi.mock("../config/env.js", () => ({
     comfyuiWorkflow: "sdxl",
     comfyuiTimeout: 120_000,
     comfyuiPollInterval: 2_000,
+    huggingfaceApiKey: "hf_test_key",
+    huggingfaceModel: "black-forest-labs/FLUX.1-schnell",
+    huggingfaceBaseUrl: "https://router.huggingface.co/hf-inference",
+    huggingfaceTimeout: 60_000,
   },
 }));
 
@@ -21,6 +25,7 @@ import { ImageProviderFactory } from "./image-provider.factory.js";
 import { FakeImageProvider } from "./fake/fake-image.provider.js";
 import { GeminiImageProvider } from "./gemini/gemini-image.provider.js";
 import { ComfyUIProvider } from "./comfyui/comfyui.provider.js";
+import { HuggingFaceProvider } from "./huggingface/huggingface.provider.js";
 
 describe("registerImageProviders", () => {
   beforeEach(() => {
@@ -28,13 +33,14 @@ describe("registerImageProviders", () => {
     (env as { imageProvider: string }).imageProvider = "";
   });
 
-  it("registers the fake, gemini, and comfyui providers", () => {
+  it("registers the fake, gemini, comfyui, and huggingface providers", () => {
     registerImageProviders();
 
     expect(ImageProviderFactory.listRegistered().sort()).toEqual([
       "comfyui",
       "fake",
       "gemini",
+      "huggingface",
     ]);
     expect(ImageProviderFactory.create("fake")).toBeInstanceOf(
       FakeImageProvider
@@ -44,6 +50,9 @@ describe("registerImageProviders", () => {
     );
     expect(ImageProviderFactory.create("comfyui")).toBeInstanceOf(
       ComfyUIProvider
+    );
+    expect(ImageProviderFactory.create("huggingface")).toBeInstanceOf(
+      HuggingFaceProvider
     );
   });
 });

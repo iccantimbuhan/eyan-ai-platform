@@ -18,15 +18,60 @@ function createMutation(
 describe('ImageOutputViewer', () => {
   it('shows a skeleton while pending', async () => {
     const screen = await render(
-      <ImageOutputViewer generateImage={createMutation({ isPending: true })} />
+      <ImageOutputViewer
+        generateImage={createMutation({ isPending: true })}
+        provider='auto'
+      />
     )
 
     await expect.element(screen.getByText('Output')).toBeInTheDocument()
   })
 
+  it('shows a provider-specific hint while pending on ComfyUI', async () => {
+    const screen = await render(
+      <ImageOutputViewer
+        generateImage={createMutation({ isPending: true })}
+        provider='comfyui'
+      />
+    )
+
+    await expect
+      .element(screen.getByText(/ComfyUI can take a minute or more/i))
+      .toBeInTheDocument()
+  })
+
+  it('shows a provider-specific hint while pending on Hugging Face', async () => {
+    const screen = await render(
+      <ImageOutputViewer
+        generateImage={createMutation({ isPending: true })}
+        provider='huggingface'
+      />
+    )
+
+    await expect
+      .element(screen.getByText(/Hugging Face is usually fast/i))
+      .toBeInTheDocument()
+  })
+
+  it('shows no provider-specific hint while pending for "fake"', async () => {
+    const screen = await render(
+      <ImageOutputViewer
+        generateImage={createMutation({ isPending: true })}
+        provider='fake'
+      />
+    )
+
+    await expect
+      .element(screen.getByText(/ComfyUI can take a minute or more/i))
+      .not.toBeInTheDocument()
+    await expect
+      .element(screen.getByText(/Hugging Face is usually fast/i))
+      .not.toBeInTheDocument()
+  })
+
   it('shows an empty-state placeholder before anything has been generated', async () => {
     const screen = await render(
-      <ImageOutputViewer generateImage={createMutation()} />
+      <ImageOutputViewer generateImage={createMutation()} provider='auto' />
     )
 
     await expect
@@ -37,6 +82,7 @@ describe('ImageOutputViewer', () => {
   it('renders the generated image with a provider badge once completed', async () => {
     const screen = await render(
       <ImageOutputViewer
+        provider='gemini'
         generateImage={createMutation({
           data: {
             id: 'image-1',
@@ -71,13 +117,14 @@ describe('ImageOutputViewer', () => {
   it("shows the failure reason and a Failed badge when generation didn't complete", async () => {
     const screen = await render(
       <ImageOutputViewer
+        provider='huggingface'
         generateImage={createMutation({
           data: {
             id: 'image-2',
             projectId: 'project-1',
             prompt: 'A lighthouse at sunset',
             negativePrompt: null,
-            provider: 'comfyui',
+            provider: 'huggingface',
             model: null,
             width: 1024,
             height: 1024,

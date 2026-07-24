@@ -12,39 +12,59 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { useGenerateImage } from '../../hooks/use-generate-image'
-import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
-import { IMAGE_PROVIDER_OPTIONS } from '../../types/image'
+import {
+  IMAGE_PROVIDER_OPTIONS,
+  type ImageProviderOption,
+} from '../../types/image'
 
 interface ImageGenerateFormProps {
   projectId: string
   generateImage: ReturnType<typeof useGenerateImage>
+  provider: ImageProviderOption
+  onProviderChange: (provider: ImageProviderOption) => void
+}
+
+function providerLabel(provider: ImageProviderOption): string {
+  return (
+    IMAGE_PROVIDER_OPTIONS.find((option) => option.value === provider)?.label ??
+    provider
+  )
 }
 
 // The backend already sanitizes every generation failure into a safe,
 // specific message before it ever reaches the API response (differentiated
 // by failure stage — provider vs. storage vs. invalid request; see
 // backend/src/services/image.service.ts) — so it's safe to show that
-// message directly instead of one generic string. Falls back to a generic
-// message only when there's no server-provided one to show (e.g. the
-// request never reached the backend at all).
-function extractErrorMessage(error: unknown): string {
+// message directly instead of one generic string. Prefixed with the
+// selected provider's label (known client-side, from the form's own
+// selection — not something the backend needs to add) so the same
+// underlying safe message reads as provider-specific. Falls back to a
+// generic message only when there's no server-provided one to show (e.g.
+// the request never reached the backend at all).
+function extractErrorMessage(
+  error: unknown,
+  provider: ImageProviderOption
+): string {
+  const prefix = provider === 'auto' ? '' : `${providerLabel(provider)}: `
+
   if (isAxiosError(error)) {
     const serverMessage = (
       error.response?.data as { error?: string } | undefined
     )?.error
 
-    if (serverMessage) return serverMessage
+    if (serverMessage) return `${prefix}${serverMessage}`
   }
 
-  return 'Failed to generate image. Please try again.'
+  return `${prefix}Failed to generate image. Please try again.`
 }
 
 export function ImageGenerateForm({
   projectId,
   generateImage,
+  provider,
+  onProviderChange,
 }: ImageGenerateFormProps) {
   const [prompt, setPrompt] = useState('')
-  const { provider, setProvider } = useImageProviderPreference()
 
   const canGenerate = prompt.trim().length > 0
 
@@ -69,9 +89,7 @@ export function ImageGenerateForm({
           <Select
             value={provider}
             onValueChange={(value) =>
-              setProvider(
-                value as (typeof IMAGE_PROVIDER_OPTIONS)[number]['value']
-              )
+              onProviderChange(value as ImageProviderOption)
             }
           >
             <SelectTrigger id='image-provider' className='w-full sm:w-64'>
@@ -102,7 +120,7 @@ export function ImageGenerateForm({
 
         {generateImage.isError && (
           <p className='text-sm text-destructive'>
-            {extractErrorMessage(generateImage.error)}
+            {extractErrorMessage(generateImage.error, provider)}
           </p>
         )}
 

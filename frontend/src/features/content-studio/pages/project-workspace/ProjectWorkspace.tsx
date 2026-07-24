@@ -15,6 +15,7 @@ import { ImageGenerateForm } from '../../components/image-generator/ImageGenerat
 import { ImageOutputViewer } from '../../components/image-generator/ImageOutputViewer'
 import { useGenerateContent } from '../../hooks/use-generate-content'
 import { useGenerateImage } from '../../hooks/use-generate-image'
+import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
 import { useProject } from '../../hooks/use-project'
 
 function ProjectWorkspaceShell({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,8 @@ export function ProjectWorkspace() {
   const { data: project, isLoading, error } = useProject(projectId)
   const generateContent = useGenerateContent(projectId)
   const generateImage = useGenerateImage()
+  const { provider: imageProvider, setProvider: setImageProvider } =
+    useImageProviderPreference()
 
   if (isLoading) {
     return (
@@ -119,9 +122,14 @@ export function ProjectWorkspace() {
             <ImageGenerateForm
               projectId={projectId}
               generateImage={generateImage}
+              provider={imageProvider}
+              onProviderChange={setImageProvider}
             />
 
-            <ImageOutputViewer generateImage={generateImage} />
+            <ImageOutputViewer
+              generateImage={generateImage}
+              provider={imageProvider}
+            />
           </TabsContent>
         </Tabs>
       </div>

@@ -2,6 +2,7 @@ import { ImageProviderFactory } from "./image-provider.factory.js";
 import { FakeImageProvider } from "./fake/fake-image.provider.js";
 import { GeminiImageProvider } from "./gemini/gemini-image.provider.js";
 import { ComfyUIProvider } from "./comfyui/comfyui.provider.js";
+import { HuggingFaceProvider } from "./huggingface/huggingface.provider.js";
 import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
 
@@ -13,6 +14,7 @@ export function registerImageProviders(): void {
   ImageProviderFactory.register("fake", FakeImageProvider);
   ImageProviderFactory.register("gemini", GeminiImageProvider);
   ImageProviderFactory.register("comfyui", ComfyUIProvider);
+  ImageProviderFactory.register("huggingface", HuggingFaceProvider);
 }
 
 // Must run after registerImageProviders(), since it checks the registry

@@ -103,6 +103,7 @@ The platform is designed with scalability, security, and extensibility in mind, 
 - Ollama (text generation)
 - Google Gemini (image generation)
 - ComfyUI, self-hosted (image generation) — see [docs/COMFYUI_PROVIDER.md](docs/COMFYUI_PROVIDER.md) and [docs/COMFYUI_SETUP.md](docs/COMFYUI_SETUP.md)
+- Hugging Face Inference Providers (image generation) — see [docs/HUGGINGFACE_PROVIDER.md](docs/HUGGINGFACE_PROVIDER.md) and [docs/HUGGINGFACE_SETUP.md](docs/HUGGINGFACE_SETUP.md)
 
 ## Infrastructure
 
