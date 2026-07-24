@@ -448,6 +448,8 @@ Each real provider (`GeminiImageProvider`, `ComfyUIProvider`, `HuggingFaceProvid
 
 `HuggingFaceProvider` (Sprint 4.4) is a third real provider, closer in shape to `GeminiImageProvider` (a single request/response round trip) than to `ComfyUIProvider`'s submit-then-poll. It's the first provider whose *health check* genuinely validates three independent things over the network — reachability, token validity, and model availability/permission — none of which touch the inference API itself (both calls it makes are free Hub metadata lookups), satisfying "a health check must not generate an image" while still being a real, live check rather than just a config-shape check. Both `ComfyUIProvider` and `HuggingFaceProvider` needed a random seed with no field for it in the shared `GenerateImageRequest` contract — factored into one shared `random-seed.util.ts` once the second provider needed the exact same one-line implementation, rather than duplicating it.
 
+Generation itself goes through Hugging Face's official `@huggingface/inference` SDK (not a hand-rolled REST call — see [HUGGINGFACE_PROVIDER.md](HUGGINGFACE_PROVIDER.md#provider-migration) for why: Hugging Face's `hf-inference` provider dropped support for this provider's configured model outright, and each Inference Providers partner has its own bespoke request/response shape only the official SDK normalizes). `HUGGINGFACE_PROVIDER` (default `"auto"`) is passed straight through to the SDK, letting Hugging Face's own router pick whichever partner currently serves the configured model — `HuggingFaceProvider` itself never assumes a specific one.
+
 ---
 
 # Design Principles
