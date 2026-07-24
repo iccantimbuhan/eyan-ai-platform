@@ -25,6 +25,20 @@ if (Number.isNaN(ollamaMaxTokens)) {
   throw new Error("OLLAMA_MAX_TOKENS must be a valid number.");
 }
 
+// Overall budget for a single ComfyUI generation (submit + poll-until-
+// complete), in ms — distinct from any single HTTP call's own timeout.
+const comfyuiTimeout = Number(process.env.COMFYUI_TIMEOUT ?? "120000");
+
+if (Number.isNaN(comfyuiTimeout)) {
+  throw new Error("COMFYUI_TIMEOUT must be a valid number.");
+}
+
+const comfyuiPollInterval = Number(process.env.COMFYUI_POLL_INTERVAL ?? "2000");
+
+if (Number.isNaN(comfyuiPollInterval)) {
+  throw new Error("COMFYUI_POLL_INTERVAL must be a valid number.");
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
 
@@ -73,4 +87,17 @@ export const env = {
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
 
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash-image",
+
+  // ComfyUI ImageProvider. Only required when IMAGE_PROVIDER=comfyui (or a
+  // request explicitly requests provider "comfyui") — see
+  // validateComfyUIProviderConfig() in comfyui.provider.ts.
+  comfyuiUrl: process.env.COMFYUI_URL ?? "http://127.0.0.1:8188",
+
+  // Name of the workflow template file (without extension) under
+  // backend/resources/workflows/ — see workflow.loader.ts.
+  comfyuiWorkflow: process.env.COMFYUI_WORKFLOW ?? "sdxl",
+
+  comfyuiTimeout,
+
+  comfyuiPollInterval,
 };

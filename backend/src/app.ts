@@ -22,6 +22,10 @@ import {
 } from "./providers/register-image-providers.js";
 import { validateLocalDiskStorageConfig } from "./providers/local-disk/local-disk-storage.provider.js";
 import { validateGeminiProviderConfig } from "./providers/gemini/gemini-image.provider.js";
+import {
+  validateComfyUIProviderConfig,
+  logComfyUIHealthCheck,
+} from "./providers/comfyui/comfyui.provider.js";
 import { env } from "./config/env.js";
 
 registerImageProviders();
@@ -31,8 +35,15 @@ validateLocalDiskStorageConfig();
 // Provider-specific config checks run only when that provider is the
 // configured default — an explicit per-request override still works
 // without one (see validateGeminiProviderConfig()'s own comment).
-if (env.imageProvider.trim().toLowerCase() === "gemini") {
+const configuredImageProvider = env.imageProvider.trim().toLowerCase();
+
+if (configuredImageProvider === "gemini") {
   validateGeminiProviderConfig();
+}
+
+if (configuredImageProvider === "comfyui") {
+  validateComfyUIProviderConfig();
+  logComfyUIHealthCheck();
 }
 
 const app: Express = express();
@@ -65,6 +76,17 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Serves generated images saved by LocalDiskStorageProvider. Sprint 4.1/4.2
+// built and validated the full generate -> store -> persist pipeline
+// backend-only, so nothing ever actually served env.storagePublicBaseUrl —
+// discovered while wiring up Sprint 4.3's frontend slice, which is the
+// first thing that actually needs to load a generated image over HTTP.
+// Filenames are server-generated UUIDs (see LocalDiskStorageProvider.save()),
+// not sequential or guessable, so unauthenticated static serving — the same
+// trust model countless similar apps use for object storage — is
+// appropriate here without adding an authenticated file-streaming route.
+app.use(env.storagePublicBaseUrl, express.static(env.storageLocalRoot));
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/health", healthRoutes);

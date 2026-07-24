@@ -427,12 +427,13 @@ AI Image Studio (Sprint 4.1+) uses a separate provider abstraction from `AIProvi
 ImageProvider Interface (generate(request) -> bytes)
         ▲
         │
- ┌──────┴──────────┐
- │                 │
-Fake            Gemini
-(deterministic,  (real, hosted —
- zero cost,       Sprint 4.2 Phase 1)
- testing only)
+ ┌──────┼──────────┬──────────────────┐
+ │      │          │                  │
+Fake  Gemini    ComfyUI          (OpenAI/Stability/
+      (real,    (real, self-      FLUX — planned)
+       hosted —  hosted —
+       Sprint     Sprint 4.3)
+       4.2 Phase 1)
 ```
 
 - `ImageProvider` — one method, `generate()`, returns image bytes. Never touches storage or the database.
@@ -440,7 +441,9 @@ Fake            Gemini
 - `StorageProvider` — persists bytes a provider produced (`LocalDiskStorageProvider` today). Fully independent of which `ImageProvider` produced them.
 - `ImageService` — the only orchestrator. Calls a provider for bytes, calls storage to persist them, calls the repository to record metadata. Never knows which concrete provider or storage backend it's using.
 
-Each real provider (`GeminiImageProvider`, and later OpenAI/Stability/FLUX) also documents its own limitations against the shared `GenerateImageRequest`/`GenerateImageResponse` contract where a vendor doesn't support a field 1:1 (e.g. arbitrary width/height, negative prompts) — see each provider's own file and the sprint log that introduced it.
+Each real provider (`GeminiImageProvider`, `ComfyUIProvider`, and later OpenAI/Stability/FLUX) also documents its own limitations against the shared `GenerateImageRequest`/`GenerateImageResponse` contract where a vendor doesn't support a field 1:1 (e.g. arbitrary width/height, negative prompts) — see each provider's own file and the sprint log that introduced it.
+
+`ComfyUIProvider` (Sprint 4.3) is the first provider whose generation is asynchronous on the provider's own side — it submits a workflow, then polls for completion, rather than returning in a single HTTP round trip like Gemini. That asynchrony is fully contained inside the provider; `ImageService.generate()` still just calls `provider.generate()` and awaits one `Promise`, unaware that a submit-then-poll loop is happening underneath. It's also the first provider driven by an external, user-authored template (a JSON workflow graph, not backend code) rather than a hardcoded request mapping — see [COMFYUI_PROVIDER.md](COMFYUI_PROVIDER.md) for the workflow-template system this depends on.
 
 ---
 

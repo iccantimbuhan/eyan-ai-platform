@@ -1,18 +1,20 @@
 import { Link, useParams } from '@tanstack/react-router'
 import { ArrowLeft, FolderOpen } from 'lucide-react'
-
+import { Card, CardContent } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Card, CardContent } from '@/components/ui/card'
-
 import { GenerateForm } from '../../components/generator/GenerateForm'
 import { GenerationHistory } from '../../components/generator/GenerationHistory'
 import { OutputViewer } from '../../components/generator/OutputViewer'
+import { ImageGenerateForm } from '../../components/image-generator/ImageGenerateForm'
+import { ImageOutputViewer } from '../../components/image-generator/ImageOutputViewer'
 import { useGenerateContent } from '../../hooks/use-generate-content'
+import { useGenerateImage } from '../../hooks/use-generate-image'
 import { useProject } from '../../hooks/use-project'
 
 function ProjectWorkspaceShell({ children }: { children: React.ReactNode }) {
@@ -37,6 +39,7 @@ export function ProjectWorkspace() {
 
   const { data: project, isLoading, error } = useProject(projectId)
   const generateContent = useGenerateContent(projectId)
+  const generateImage = useGenerateImage()
 
   if (isLoading) {
     return (
@@ -88,19 +91,39 @@ export function ProjectWorkspace() {
                 </p>
 
                 <p className='text-sm text-muted-foreground'>
-                  Last Updated:{' '}
-                  {new Date(project.updatedAt).toLocaleString()}
+                  Last Updated: {new Date(project.updatedAt).toLocaleString()}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <GenerateForm projectId={projectId} generateContent={generateContent} />
+        <Tabs defaultValue='content'>
+          <TabsList>
+            <TabsTrigger value='content'>Content</TabsTrigger>
+            <TabsTrigger value='images'>Images</TabsTrigger>
+          </TabsList>
 
-        <OutputViewer generateContent={generateContent} />
+          <TabsContent value='content' className='space-y-6'>
+            <GenerateForm
+              projectId={projectId}
+              generateContent={generateContent}
+            />
 
-        <GenerationHistory projectId={projectId} />
+            <OutputViewer generateContent={generateContent} />
+
+            <GenerationHistory projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value='images' className='space-y-6'>
+            <ImageGenerateForm
+              projectId={projectId}
+              generateImage={generateImage}
+            />
+
+            <ImageOutputViewer generateImage={generateImage} />
+          </TabsContent>
+        </Tabs>
       </div>
     </ProjectWorkspaceShell>
   )

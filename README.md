@@ -100,7 +100,9 @@ The platform is designed with scalability, security, and extensibility in mind, 
 
 ## AI
 
-- Ollama
+- Ollama (text generation)
+- Google Gemini (image generation)
+- ComfyUI, self-hosted (image generation) — see [docs/COMFYUI_PROVIDER.md](docs/COMFYUI_PROVIDER.md) and [docs/COMFYUI_SETUP.md](docs/COMFYUI_SETUP.md)
 
 ## Infrastructure
 

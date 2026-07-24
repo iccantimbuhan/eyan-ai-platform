@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../config/env.js", () => ({
-  env: { imageProvider: "", geminiApiKey: "", geminiModel: "gemini-2.5-flash-image" },
+  env: {
+    imageProvider: "",
+    geminiApiKey: "",
+    geminiModel: "gemini-2.5-flash-image",
+    comfyuiUrl: "http://127.0.0.1:8188",
+    comfyuiWorkflow: "sdxl",
+    comfyuiTimeout: 120_000,
+    comfyuiPollInterval: 2_000,
+  },
 }));
 
 import { env } from "../config/env.js";
@@ -12,6 +20,7 @@ import {
 import { ImageProviderFactory } from "./image-provider.factory.js";
 import { FakeImageProvider } from "./fake/fake-image.provider.js";
 import { GeminiImageProvider } from "./gemini/gemini-image.provider.js";
+import { ComfyUIProvider } from "./comfyui/comfyui.provider.js";
 
 describe("registerImageProviders", () => {
   beforeEach(() => {
@@ -19,10 +28,11 @@ describe("registerImageProviders", () => {
     (env as { imageProvider: string }).imageProvider = "";
   });
 
-  it("registers the fake and gemini providers", () => {
+  it("registers the fake, gemini, and comfyui providers", () => {
     registerImageProviders();
 
     expect(ImageProviderFactory.listRegistered().sort()).toEqual([
+      "comfyui",
       "fake",
       "gemini",
     ]);
@@ -31,6 +41,9 @@ describe("registerImageProviders", () => {
     );
     expect(ImageProviderFactory.create("gemini")).toBeInstanceOf(
       GeminiImageProvider
+    );
+    expect(ImageProviderFactory.create("comfyui")).toBeInstanceOf(
+      ComfyUIProvider
     );
   });
 });
