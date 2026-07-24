@@ -2,7 +2,9 @@
 
 Prepared: 2026-07-24, at the close of Sprint 3 (including its post-deployment production incident). Candidate next feature named so far: AI Image Generation — not scoped or started.
 
-**Update (2026-07-24):** Recommendation 1 below (ownership retrofit) has been completed as Sprint 3.5 — Security Hardening, deployed and validated in production. See `tasks/completed/sprint-3-5-security-hardening.md` and `.claude/decisions/ADR-0007-content-project-ownership.md`. Sprint 4.1 (AI Image Studio) architecture is approved and Phase 1 is in progress. The "Known Limitations" and "Technical Debt" entries below referencing the ownership gap are now historical — left as-is for record-keeping rather than deleted, since this file is a point-in-time readiness snapshot, not a running status document (see `PROJECT_STATE.md` for current state).
+**Update (2026-07-24):** Recommendation 1 below (ownership retrofit) has been completed as Sprint 3.5 — Security Hardening, deployed and validated in production. See `tasks/completed/sprint-3-5-security-hardening.md` and `.claude/decisions/ADR-0007-content-project-ownership.md`. The "Known Limitations" and "Technical Debt" entries below referencing the ownership gap are now historical — left as-is for record-keeping rather than deleted, since this file is a point-in-time readiness snapshot, not a running status document (see `PROJECT_STATE.md` for current state).
+
+**Update 2 (2026-07-24):** Sprint 4.1 (AI Image Studio backend pipeline) is now complete — all 5 planned phases shipped, tested, and reviewed. See `tasks/completed/sprint-4-1-ai-image-studio-backend.md`. Recommendation 2 below (budget explicit time for the three-layer timeout question before shipping image generation) remains open and not yet addressed, since Sprint 4.1 never deployed to production or exercised a real, slow provider — this is now explicitly carried into `tasks/backlog/sprint-4-2-provider-integration.md`, which also picks up rate limiting / cost control as a new, higher-priority item once a real provider is registered.
 
 ---
 

@@ -18,6 +18,22 @@ Entry format:
 
 ---
 
+## AI Image Studio: Provider Architecture, Validated Before Spending a Cent — 2026-07-24
+
+**What was built**
+
+A complete internal image-generation pipeline for Content Studio — ownership-scoped CRUD, a `PENDING → COMPLETED/FAILED` lifecycle, and two independent provider abstractions (`ImageProvider` for generation, `StorageProvider` for persistence) — built across five independently reviewed and tested phases, with **zero external API calls and zero cost incurred**, because every phase was validated against a deterministic, in-process `FakeImageProvider` instead of a real AI service. A prerequisite phase (Sprint 3.5) closed the codebase's largest existing security gap — missing per-user ownership on Content Studio projects — before any new, billable resource was built on top of it.
+
+**Why it's a strong signal**
+
+This demonstrates a discipline that's easy to state and rare to actually follow: prove the architecture works before paying for the thing it's supposed to orchestrate. `ImageProvider` and `StorageProvider` are deliberately independent of each other and of the existing text-generation `AIProvider` — a provider only ever returns bytes, storage only ever persists bytes it's handed, and `ImageService` is the only class that knows both exist — so a real provider (OpenAI Images, Gemini, Stability AI, FLUX) or cloud storage backend (S3, R2, Azure) can be swapped in later without touching business logic, a claim backed by a passing test suite (98/98) and live HTTP validation against a throwaway server instance, not just asserted in a design doc. The work also caught and fixed a real lifecycle bug during its own review — a database failure occurring *after* a successful generation was being mislabeled as a failed one — the kind of edge case that only surfaces from actually reasoning through failure ordering, not from happy-path testing. Every phase was gated on explicit review before the next began; nothing was combined or rushed to "looks done."
+
+**Suggested talking point / screenshot**
+
+Talking point: "Before integrating any real, billable AI image provider, I built and fully validated the entire generation pipeline — ownership, storage, status lifecycle, error handling — using a deterministic fake provider, so every architectural decision was proven correct with real HTTP requests against a running server before a single dollar was spent on external APIs." Screenshot: the `ImageProvider`/`StorageProvider` interface files side by side with the five-phase sprint log's phase-by-phase validation results.
+
+---
+
 ## AI Collaboration Framework (ACF), Stage 1 — 2026-07-23
 
 **What was built**

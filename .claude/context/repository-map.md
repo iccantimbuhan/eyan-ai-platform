@@ -62,6 +62,12 @@ Prompt Templates
 - Default content templates (read-only catalog)
 - Organized by category and content type
 
+Images
+- AI-generated images (`GeneratedImage`), owned transitively through their parent Content Studio project (no separate `userId` column — see ADR-0007)
+- Generate, list, retrieve, delete
+- `PENDING` / `COMPLETED` / `FAILED` lifecycle; storage cleanup on delete
+- Provider abstraction (see AI Providers below); no real provider configured yet — Sprint 4.2
+
 Chat
 - AI Chat
 - Streaming
@@ -138,6 +144,8 @@ Default model: `qwen2.5-coder:7b` (see `ADR-0001`, `ADR-0002`). Configuration li
 Generation limits (max output tokens) are configurable via `OLLAMA_MAX_TOKENS`, not hardcoded — see `ADR-0002`.
 
 All AI-powered features (Chat, Content generation) go through `ChatService`, which wraps `ProviderFactory`. `ProviderFactory` returns an `AIProvider` (currently `OllamaProvider`). No feature calls Ollama directly.
+
+**Image generation is a separate, independent provider seam** (`ImageProvider`, distinct from `AIProvider` — different request/response shapes, and no local/GPU option exists for images at all). Unlike `ProviderFactory` (single-provider by design, ADR-0001), `ImageProviderFactory` is a real registry (`register`/`create`/`listRegistered`) since multiple hosted image providers are expected (OpenAI Images, Gemini, Stability AI, FLUX — see `tasks/backlog/sprint-4-2-provider-integration.md`). Only an internal deterministic `FakeImageProvider` is registered as of Sprint 4.1; `IMAGE_PROVIDER` is unset in production. Image bytes are persisted via a separate `StorageProvider` abstraction (currently `LocalDiskStorageProvider`; cloud storage can replace it without touching `ImageService`).
 
 ---
 

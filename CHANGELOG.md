@@ -12,6 +12,7 @@ Entries are added when a sprint ships a user-visible or API-visible change — s
 
 ### Added
 
+- **AI Image Studio backend** (Sprint 4.1): generate, list, view, and delete AI-generated images within a project (`POST /images/generate`, `GET /images`, `GET /images/:id`, `DELETE /images/:id`), built on a provider-agnostic architecture — `ImageProvider` (image generation) and `StorageProvider` (file persistence) are both independent, swappable abstractions, so a real AI provider (OpenAI Images, Gemini, Stability AI, FLUX) or cloud storage backend (S3, R2, Azure, GCS) can be added later without changing business logic. Currently ships with only a deterministic internal test provider — no real provider is configured, so this is not yet usable for real image generation. No frontend yet.
 - Content generation within a project: generate, list, view, and delete AI-generated content (`POST /content/generate`, `GET /content`, `GET /content/:id`, `DELETE /content/:id`).
 - Prompt Templates: browse default templates by category (`GET /prompt-templates`) — Blog Post, SEO Description, Facebook Post, Instagram Caption, LinkedIn Post, Product Description, Email, Cold Outreach, Meeting Summary.
 - Template Picker with category and "Recent" tabs, Template Preview, and dynamic variable fields wired into the content generation form — selecting a template fills in its `{{variables}}` and pre-selects the right content type; writing a custom prompt still works exactly as before.
@@ -19,6 +20,10 @@ Entries are added when a sprint ships a user-visible or API-visible change — s
 - Saved Prompts API: create, list, view, update, and delete your own personal prompts (`POST /saved-prompts`, `GET /saved-prompts`, `GET /saved-prompts/:id`, `PATCH /saved-prompts/:id`, `DELETE /saved-prompts/:id`). Each user only ever sees their own.
 - Prompt Library page: browse, save, edit, and delete your own prompts. Reachable from the sidebar.
 - "Reuse a Saved Prompt" in the content generation form — pick one of your saved prompts to fill in the prompt text and content type, without leaving the generator.
+
+### Security
+
+- **Per-user data ownership enforced on Content Studio projects and generated content** (Sprint 3.5): previously, any authenticated user could read, list, or delete any other user's project or generated content by ID. `POST /projects`, `GET /projects`, `GET /projects/:id`, `DELETE /projects/:id`, `GET /content`, `GET /content/:id`, and `DELETE /content/:id` now all scope to the requesting user; a project or content item that exists but belongs to someone else returns `404` (not `403`), consistent with how this ownership pattern already worked for Saved Prompts.
 
 ### Changed
 

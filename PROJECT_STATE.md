@@ -8,11 +8,15 @@ This file contains **only the current state** of the project. It is overwritten 
 
 ## Current Sprint
 
-None active. **Sprint 3.5 — Security Hardening — is complete, deployed, and validated in production** (commit `be20870bb299fcd4d202b2377a6d09f44a9e6fd3`, deployed 2026-07-24; see `tasks/completed/sprint-3-5-security-hardening.md` and `.claude/decisions/ADR-0007-content-project-ownership.md`). This closed the platform's previously-largest-known gap — `ContentProject`/`GeneratedContent` now enforce per-user ownership — as a prerequisite before Sprint 4.1. **Sprint 4.1 (AI Image Studio) is next, architecture already approved; Phase 1 (backend module skeleton) is in progress.**
+None active. **Sprint 4.1 — AI Image Studio (Backend Pipeline) — is complete** (5 phases, commits `a7c9e87`..`8c34924`; see `tasks/completed/sprint-4-1-ai-image-studio-backend.md`). A full internal image-generation pipeline now exists — provider abstraction, storage abstraction, ownership-scoped CRUD, and a `PENDING`/`COMPLETED`/`FAILED` lifecycle — validated end-to-end with a deterministic fake provider, with **zero external API calls made and zero cost incurred.** **Sprint 4.2 (real provider integration) is planned and awaiting approval** — see `tasks/backlog/sprint-4-2-provider-integration.md`.
+
+**Not yet deployed.** Sprint 4.1's database migrations are already applied to the shared dev/production database (both additive, backward-compatible with the currently-running code). The application code itself has not been deployed — no `deploy.sh` run this sprint, per its explicit "no production deployment required" scope at every phase. The live, publicly-served API does not yet expose `/api/v1/images/*`.
 
 ---
 
 ## Status
+
+**Sprint 4.1 — AI Image Studio, Backend Pipeline (2026-07-24):** Five independently-reviewed phases built a complete internal image-generation pipeline before any real, billable AI provider was integrated. `GeneratedImage` hangs off `ContentProject` with ownership derived transitively (no duplicate `userId` column, extending ADR-0007). `ImageProvider` and `StorageProvider` are independent abstractions — a provider only ever produces bytes, storage only ever persists bytes it's handed, `ImageService` is the sole orchestrator. Unlike the single-provider `AIProvider` (ADR-0001, hardware-constrained), `ImageProviderFactory` is a real registry, since multiple hosted image providers are genuinely expected next. The full request → generate → store → persist → retrieve → delete cycle was proven correct using a deterministic, in-process `FakeImageProvider` — including failure paths (provider failure, storage failure, a DB-layer failure occurring *after* a successful generation, which a Phase 5 fix stopped from being mislabeled as a failed generation) — validated with real HTTP requests against a throwaway instance on a separate port, production never touched. 98/98 tests passing (46 new this sprint), typecheck and build clean throughout. Full detail in the sprint log.
 
 **Sprint 3.5 — Security Hardening (2026-07-24):** `ContentProject` gained required, enforced `userId` ownership (ADR-0007), following the exact pattern ADR-0006 established for `SavedPrompt`. `GeneratedContent` ownership is derived transitively through its parent project rather than a duplicated column. All affected routes now scope reads/writes to the requesting user and return `404` (not `403`) for rows that exist but aren't theirs. Migration backfilled the 3 pre-existing production `ContentProject` rows against real data (not guessed). Added 46 new unit tests for previously-untested `projects`/`content` service and repository layers (52/52 passing). Deployed via the standard `deploy.sh` flow and validated live in production against two disposable test accounts, covering project creation, listing, content generation, content history, and cross-user access on read and delete paths — all correct, backend logs clean. One operational note: a brief live regression window occurred when the migration was applied directly to production ahead of the code deploy (the environment was initially mistaken for non-production); no data loss, closed within the same session. Full detail in the sprint log.
 
@@ -30,12 +34,17 @@ Sprint 2 is complete and closed (see `tasks/completed/sprint-2-templates-and-pic
 
 ## Next Task
 
-Sprint 4.1 (AI Image Studio), Phase 1 only: `GeneratedImage` Prisma model, migration, and backend module skeleton (routes/controller/service/repository/validator/dto), wired into the app but with no provider, storage, generation endpoint, or frontend yet — those are later phases, each requiring separate approval before starting. See `tasks/backlog/sprint-4-readiness.md` for the full incremental plan.
+Sprint 4.2 — real AI image provider integration (OpenAI Images, then FLUX, Gemini, Stability AI), building on the provider registry Sprint 4.1 established. Not started — planning only, awaiting explicit approval before any implementation. See `tasks/backlog/sprint-4-2-provider-integration.md` for the full roadmap, readiness review, risks, and required configuration.
 
 ---
 
 ## Open Risks / Known Issues
 
+- **Sprint 4.1's application code is undeployed** while its migrations are already live — recommend deploying before or alongside Sprint 4.2's first implementation phase, so Sprint 4.2 doesn't build on an untested deploy of Sprint 4.1's own code.
+- No real image provider is configured (`IMAGE_PROVIDER` unset in production `.env`); only the internal `"fake"` provider is registered. Expected — this is exactly what Sprint 4.2 addresses.
+- No rate limiting or per-user/per-project generation caps exist for image generation. Harmless today (no external cost), but a hard prerequisite before any real, billable provider goes live — flagged in the Sprint 4.2 plan.
+- No retention/cleanup policy for orphaned local-disk files (e.g. a crash between a successful storage write and the following DB write). Narrow window, not yet hardened against.
+- No frontend surface exists for Image Studio yet — by design, Sprint 4.1 was backend-only per the approved architecture.
 - Frontend lint: 26 pre-existing errors, 3 pre-existing warnings, repo-wide (`chat.service.ts`, `use-login.ts`, `user-auth-form.tsx`, `use-projects.ts`, `model-card.tsx`, `stat-card.tsx`, `useHealth.ts`, `useModels.ts`, `useModelsList.ts`, `main.tsx`, `auth-provider.tsx`, `api.ts`, plus two React Compiler table-memoization warnings). None are in Content Studio's own files.
 - 2 pre-existing frontend test failures in `search-provider.test.tsx` (command palette navigation, timeout-based) in addition to the 2 long-standing `user-auth-form.test.tsx` failures — both confirmed pre-existing, neither caused by this project's Content Studio work.
 - No CI/CD auto-deploy exists yet (a standing risk since Sprint 1.1) — `deploy.sh` is manually triggered and requires sudo privileges this session does not have.
@@ -48,9 +57,9 @@ Sprint 4.1 (AI Image Studio), Phase 1 only: `GeneratedImage` Prisma model, migra
 
 ## Pointers
 
-- Completed sprints: `tasks/completed/` (most recent: `sprint-3-5-security-hardening.md`; also `sprint-3-prompt-library.md`, which includes the earlier production incident record)
-- Active sprint: none (`tasks/active/` is empty) — Sprint 4.1 Phase 1 is in progress but not yet logged as its own file until Phase 1 completes
-- Sprint 4 readiness: `tasks/backlog/sprint-4-readiness.md`
+- Completed sprints: `tasks/completed/` (most recent: `sprint-4-1-ai-image-studio-backend.md`; also `sprint-3-5-security-hardening.md` and `sprint-3-prompt-library.md`, which includes the earlier production incident record)
+- Active sprint: none (`tasks/active/` is empty)
+- Sprint 4.2 plan: `tasks/backlog/sprint-4-2-provider-integration.md` (Sprint 4 readiness precursor: `tasks/backlog/sprint-4-readiness.md`)
 - Sprint log template: `tasks/templates/sprint-log-template.md`
 - Architecture decisions: `.claude/decisions/ADR-0001` through `ADR-0007`
 - Operations playbook: `.claude/engineering/10_OPERATIONS.md` (updated with reverse-proxy timeout and Ollama warm-up requirements)
