@@ -18,6 +18,9 @@ import savedPromptsRoutes from "./routes/v1/saved-prompts.routes.js";
 import brandKitsRoutes from "./routes/v1/brand-kits.routes.js";
 import videoAssetsRoutes from "./routes/v1/video-assets.routes.js";
 import analyticsRoutes from "./routes/v1/analytics.routes.js";
+import automationConnectionsRoutes from "./routes/v1/automation-connections.routes.js";
+import automationMcpServersRoutes from "./routes/v1/automation-mcp-servers.routes.js";
+import automationAuditLogsRoutes from "./routes/v1/automation-audit-logs.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
 import {
@@ -25,6 +28,10 @@ import {
   validateImageProviderConfig,
 } from "./providers/register-image-providers.js";
 import { registerPlatformProviders } from "./providers/register-platform-providers.js";
+import {
+  registerMcpConnectors,
+  validateMcpConnectorConfig,
+} from "./providers/register-mcp-connectors.js";
 import { validateLocalDiskStorageConfig } from "./providers/local-disk/local-disk-storage.provider.js";
 import { validateGeminiProviderConfig } from "./providers/gemini/gemini-image.provider.js";
 import {
@@ -41,6 +48,8 @@ registerImageProviders();
 validateImageProviderConfig();
 validateLocalDiskStorageConfig();
 registerPlatformProviders();
+registerMcpConnectors();
+validateMcpConnectorConfig();
 
 // Provider-specific config checks run only when that provider is the
 // configured default — an explicit per-request override still works
@@ -120,6 +129,9 @@ app.use("/api/v1/saved-prompts", savedPromptsRoutes);
 app.use("/api/v1/brand-kits", brandKitsRoutes);
 app.use("/api/v1/video-assets", videoAssetsRoutes);
 app.use("/api/v1/analytics", analyticsRoutes);
+app.use("/api/v1/automation/connections", automationConnectionsRoutes);
+app.use("/api/v1/automation/mcp-servers", automationMcpServersRoutes);
+app.use("/api/v1/automation/audit-logs", automationAuditLogsRoutes);
 
 app.use(errorHandler);
 

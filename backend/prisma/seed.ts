@@ -18,6 +18,8 @@ const permissions = [
   ['conversations', 'View conversations'], ['users', 'Access users'], ['roles', 'Access roles'],
   ['providers', 'Access AI providers'], ['settings', 'Access settings'], ['apikeys', 'Access API keys'],
   ['analytics', 'View analytics'], ['auditlogs', 'View audit logs'],
+  ['automation', 'Access the MCP automation foundation'],
+  ['automationcredentials', 'Manage automation connection credentials'],
 ] as const
 
 const promptTemplates = [

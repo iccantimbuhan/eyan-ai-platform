@@ -13,6 +13,11 @@ import {
   Bell,
   Cpu,
   ShieldCheck,
+  Plug,
+  KeyRound,
+  Server,
+  HeartPulse,
+  ScrollText,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -79,6 +84,42 @@ export const sidebarData: SidebarData = {
           title: 'Prompt Library',
           url: '/content-studio/prompt-library',
           icon: BookOpen,
+        },
+      ],
+    },
+
+    {
+      title: 'Automation',
+      items: [
+        {
+          title: 'Providers',
+          url: '/automation/providers',
+          icon: Plug,
+          permission: 'automation',
+        },
+        {
+          title: 'Connections',
+          url: '/automation/connections',
+          icon: KeyRound,
+          permission: 'automation',
+        },
+        {
+          title: 'MCP Servers',
+          url: '/automation/mcp-servers',
+          icon: Server,
+          permission: 'automation',
+        },
+        {
+          title: 'Health',
+          url: '/automation/health',
+          icon: HeartPulse,
+          permission: 'automation',
+        },
+        {
+          title: 'Audit Logs',
+          url: '/automation/audit-logs',
+          icon: ScrollText,
+          permission: 'auditlogs',
         },
       ],
     },

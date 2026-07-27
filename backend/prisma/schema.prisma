@@ -141,6 +141,10 @@ model User {
   publishingRecords PublishingRecord[]
   analyticsEvents   AnalyticsEvent[]
 
+  automationConnections AutomationConnection[]
+  mcpServersCreated     McpServerConfig[]
+  automationAuditEvents AutomationAuditEvent[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -677,4 +681,135 @@ model AnalyticsEvent {
   @@index([assetType, sourceId])
   @@index([createdAt])
   @@index([provider])
+}
+
+// ---------------------------------------------------------------------------
+// MCP Foundation (Sprint 7.1)
+//
+// The integration layer future automation providers (Canva, GitHub, Docker,
+// Slack, ...) will register into — see McpServerConfig and
+// McpConnectorFactory (backend/src/providers/mcp-connector.factory.ts), which
+// mirrors ImageProviderFactory's registry shape exactly. No real provider is
+// implemented yet; only "fake" is registered (FakeMcpConnector), the same
+// posture FakeImageProvider had before Sprint 4.2's first real provider.
+// ---------------------------------------------------------------------------
+
+enum ConnectionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+enum McpTransport {
+  STDIO
+  HTTP
+  SSE
+}
+
+enum McpHealthStatus {
+  UNKNOWN
+  HEALTHY
+  UNREACHABLE
+  ERROR
+}
+
+enum AutomationAuditAction {
+  CONNECTION_CREATED
+  CONNECTION_TESTED
+  CONNECTION_REVOKED
+  MCP_SERVER_REGISTERED
+  MCP_SERVER_UPDATED
+  MCP_SERVER_REMOVED
+  MCP_SERVER_HEALTH_CHECKED
+  CREDENTIAL_ACCESSED
+}
+
+// A credential a user has stored for an external service, always encrypted
+// at rest (encryptedCredentials/credentialsIv — see utils/encryption.ts).
+// Strictly private to its owner: no role, Admin included, can read
+// encryptedCredentials through any API response. Sprint 7.1 only supports
+// storing an opaque credential blob (e.g. an API key) — OAuth authorize/
+// callback flows are out of scope until a real provider needs them.
+model AutomationConnection {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider String // McpConnectorFactory registry key, e.g. "fake", "github"
+  label    String
+  status   ConnectionStatus @default(PENDING)
+
+  encryptedCredentials String
+  credentialsIv        String
+
+  metadata       Json?
+  lastVerifiedAt DateTime?
+
+  mcpServers McpServerConfig[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, provider, label])
+  @@index([userId])
+  @@index([provider])
+}
+
+// One row per configured MCP server instance. `provider` is a
+// McpConnectorFactory registry key (mirrors ImageProviderFactory's
+// provider-name convention). Credentials, if the provider needs any, are
+// referenced via connectionId rather than duplicated here.
+model McpServerConfig {
+  id   String @id @default(cuid())
+  name String @unique
+
+  provider  String
+  transport McpTransport
+  command   String? // stdio: spawned command
+  args      String[] // stdio: args
+  url       String? // http/sse: endpoint
+
+  connectionId String?
+  connection   AutomationConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  isEnabled         Boolean         @default(true)
+  healthStatus      McpHealthStatus @default(UNKNOWN)
+  lastHealthCheckAt DateTime?
+  lastHealthMessage String?
+
+  config Json? // non-secret settings only
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([provider])
+  @@index([connectionId])
+}
+
+// Append-only activity log for the MCP Foundation — same posture as
+// AssetReviewEvent (ADR-0009): never updated or deleted except cascade.
+// Covers machine-initiated access (CREDENTIAL_ACCESSED), not just direct
+// user actions, since that's the realistic threat model for a credential
+// store.
+model AutomationAuditEvent {
+  id String @id @default(cuid())
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  action     AutomationAuditAction
+  targetType String
+  targetId   String
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

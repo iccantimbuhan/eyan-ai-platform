@@ -132,4 +132,13 @@ export const env = {
   huggingfaceProvider: process.env.HUGGINGFACE_PROVIDER ?? "auto",
 
   huggingfaceTimeout,
+
+  // Encrypts AutomationConnection.encryptedCredentials (Sprint 7.1 MCP
+  // Foundation) — base64-encoded, must decode to exactly 32 bytes (AES-256).
+  // No default, and not required via requireEnv(): the server must still
+  // boot for developers not touching the Automation module, exactly like
+  // every other provider secret above. CredentialManagerService fails fast
+  // with a clear error the first time it's actually needed without one
+  // configured, rather than at startup.
+  automationEncryptionKey: process.env.AUTOMATION_ENCRYPTION_KEY ?? "",
 };

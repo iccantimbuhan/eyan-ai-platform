@@ -485,6 +485,38 @@ Full design rationale, the "why not a unified Asset table" reasoning, and the ex
 
 ---
 
+# MCP Foundation Architecture
+
+Sprint 7.1 adds the MCP Foundation — the reusable integration layer future automation providers (Canva, CapCut, GitHub, Docker, Filesystem, Google Drive, Slack, Discord, Notion, PostgreSQL, Redis, n8n) will register into. No real provider is implemented yet; only a deterministic `FakeMcpConnector` exists, the same role `FakeImageProvider` played before Sprint 4.2's first real image provider.
+
+```
+McpConnector Interface (connect / listTools / callTool / disconnect / healthCheck)
+        ▲
+        │
+   ┌────┴─────┬──────────┬─────────┬── ... (Canva/GitHub/Docker/Slack/... — future sprints)
+   │           │          │         │
+ Fake       Canva      GitHub    Docker
+(real,     (future)   (future)  (future)
+ Sprint
+ 7.1)
+```
+
+- `McpConnector` — one interface, five methods. `McpConnectorFactory` — a registry (`register()`/`create()`/`listRegistered()`/`reset()`), mirroring `ImageProviderFactory`'s shape exactly, with one deliberate difference: `create()` has **no env-var default** (mirroring `PlatformProviderFactory` instead), since many MCP servers are meant to run simultaneously — there is no single "the" MCP provider a call could default to. Adding a real connector later is one class + one `register()` call, zero changes to `McpConnectorFactory`, any service, any route, or any validator.
+- `AutomationConnection` — an encrypted, user-owned credential (AES-256-GCM, `encryptedCredentials`/`credentialsIv`). Strictly private to its owner at every layer: the repository's `findById(id, userId)` is owner-scoped, and no API response ever includes the raw credential. Only `CredentialManagerService` touches the encryption key or the crypto primitives anywhere in the codebase — connectors receive an already-decrypted `McpConnectorConfig.credentials` object, never the ciphertext.
+- `McpServerConfig` — a platform-level (not per-user) registered server instance, referencing an `AutomationConnection` via optional `connectionId` when the provider needs auth. Owns its own health snapshot (`healthStatus`/`lastHealthCheckAt`/`lastHealthMessage`).
+- `McpHealthService` — orchestrates a connector's `connect()` → `healthCheck()` → `disconnect()` lifecycle and persists the result; the connector itself never writes to the database, the same split `ImageService` already has with `ImageProvider` (a provider only ever returns bytes/a result, the service decides what to do with it).
+- `AutomationAuditService` — the single, standardized entry point every other MCP Foundation service calls to write an audit row (`AutomationAuditEvent`, append-only, same posture as `AssetReviewEvent` — see ADR-0009) — no service imports `AutomationAuditEventRepository` directly.
+
+**RBAC**: two new permissions, `automation` (page-level read access, matching this repo's usual coarse convention) and `automationcredentials` (gates every mutation of a credential-bearing resource — creating/updating/deleting/rotating an `AutomationConnection`, registering/updating/removing an `McpServerConfig`) — a deliberate, narrower exception to the otherwise page-level RBAC model, justified by what's actually at stake (another party's live credential). Audit log routes reuse the pre-existing, previously-unwired `auditlogs` permission rather than inventing a third one.
+
+**API**: `/api/v1/automation/{connections,mcp-servers,audit-logs}` — see `backend/src/routes/v1/automation-*.routes.ts`. No `/connections/:id/reveal` route exists anywhere, by design — `AutomationConnectionService.reveal()` is real and tested but is only ever called by system-internal code, never exposed over HTTP.
+
+**Frontend**: `features/automation/` — Providers (read-only registry listing), Connections, MCP Servers, Health (reuses the MCP Servers query, since health fields already live on that same row), and Audit Logs pages, under a new "Automation" sidebar group. Contains no business logic — credentials are entered as generic JSON and sent to the backend as plaintext over HTTPS for server-side encryption; permission checks (`useCan`) mirror the backend's actual route gates and are a UI convenience, never a security boundary.
+
+Full design rationale — why the registry mirrors `PlatformProviderFactory` rather than `ImageProviderFactory`, why connectors never decrypt credentials, why business logic stays in services, and how a future real provider (starting with Sprint 7.2's Canva) should integrate: `.claude/decisions/ADR-0012-mcp-foundation.md`.
+
+---
+
 # Design Principles
 
 ## Separation of Concerns

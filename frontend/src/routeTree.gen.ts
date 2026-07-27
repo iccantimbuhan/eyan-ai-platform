@@ -42,6 +42,11 @@ import { Route as AuthenticatedSettingsProvidersRouteImport } from './routes/_au
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
+import { Route as AuthenticatedAutomationAuditLogsIndexRouteImport } from './routes/_authenticated/automation/audit-logs/index'
+import { Route as AuthenticatedAutomationConnectionsIndexRouteImport } from './routes/_authenticated/automation/connections/index'
+import { Route as AuthenticatedAutomationHealthIndexRouteImport } from './routes/_authenticated/automation/health/index'
+import { Route as AuthenticatedAutomationMcpServersIndexRouteImport } from './routes/_authenticated/automation/mcp-servers/index'
+import { Route as AuthenticatedAutomationProvidersIndexRouteImport } from './routes/_authenticated/automation/providers/index'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -219,6 +224,36 @@ const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
+const AuthenticatedAutomationAuditLogsIndexRoute =
+  AuthenticatedAutomationAuditLogsIndexRouteImport.update({
+    id: '/automation/audit-logs/',
+    path: '/automation/audit-logs/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAutomationConnectionsIndexRoute =
+  AuthenticatedAutomationConnectionsIndexRouteImport.update({
+    id: '/automation/connections/',
+    path: '/automation/connections/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAutomationHealthIndexRoute =
+  AuthenticatedAutomationHealthIndexRouteImport.update({
+    id: '/automation/health/',
+    path: '/automation/health/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAutomationMcpServersIndexRoute =
+  AuthenticatedAutomationMcpServersIndexRouteImport.update({
+    id: '/automation/mcp-servers/',
+    path: '/automation/mcp-servers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAutomationProvidersIndexRoute =
+  AuthenticatedAutomationProvidersIndexRouteImport.update({
+    id: '/automation/providers/',
+    path: '/automation/providers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -251,6 +286,11 @@ export interface FileRoutesByFullPath {
   '/roles/': typeof AuthenticatedRolesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/automation/audit-logs/': typeof AuthenticatedAutomationAuditLogsIndexRoute
+  '/automation/connections/': typeof AuthenticatedAutomationConnectionsIndexRoute
+  '/automation/health/': typeof AuthenticatedAutomationHealthIndexRoute
+  '/automation/mcp-servers/': typeof AuthenticatedAutomationMcpServersIndexRoute
+  '/automation/providers/': typeof AuthenticatedAutomationProvidersIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkauthRouteRouteWithChildren
@@ -282,6 +322,11 @@ export interface FileRoutesByTo {
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/automation/audit-logs': typeof AuthenticatedAutomationAuditLogsIndexRoute
+  '/automation/connections': typeof AuthenticatedAutomationConnectionsIndexRoute
+  '/automation/health': typeof AuthenticatedAutomationHealthIndexRoute
+  '/automation/mcp-servers': typeof AuthenticatedAutomationMcpServersIndexRoute
+  '/automation/providers': typeof AuthenticatedAutomationProvidersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -318,6 +363,11 @@ export interface FileRoutesById {
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/automation/audit-logs/': typeof AuthenticatedAutomationAuditLogsIndexRoute
+  '/_authenticated/automation/connections/': typeof AuthenticatedAutomationConnectionsIndexRoute
+  '/_authenticated/automation/health/': typeof AuthenticatedAutomationHealthIndexRoute
+  '/_authenticated/automation/mcp-servers/': typeof AuthenticatedAutomationMcpServersIndexRoute
+  '/_authenticated/automation/providers/': typeof AuthenticatedAutomationProvidersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -352,6 +402,11 @@ export interface FileRouteTypes {
     | '/roles/'
     | '/settings/'
     | '/users/'
+    | '/automation/audit-logs/'
+    | '/automation/connections/'
+    | '/automation/health/'
+    | '/automation/mcp-servers/'
+    | '/automation/providers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -383,6 +438,11 @@ export interface FileRouteTypes {
     | '/roles'
     | '/settings'
     | '/users'
+    | '/automation/audit-logs'
+    | '/automation/connections'
+    | '/automation/health'
+    | '/automation/mcp-servers'
+    | '/automation/providers'
   id:
     | '__root__'
     | '/_authenticated'
@@ -418,6 +478,11 @@ export interface FileRouteTypes {
     | '/_authenticated/roles/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
+    | '/_authenticated/automation/audit-logs/'
+    | '/_authenticated/automation/connections/'
+    | '/_authenticated/automation/health/'
+    | '/_authenticated/automation/mcp-servers/'
+    | '/_authenticated/automation/providers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -668,6 +733,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignUpRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
+    '/_authenticated/automation/audit-logs/': {
+      id: '/_authenticated/automation/audit-logs/'
+      path: '/automation/audit-logs'
+      fullPath: '/automation/audit-logs/'
+      preLoaderRoute: typeof AuthenticatedAutomationAuditLogsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automation/connections/': {
+      id: '/_authenticated/automation/connections/'
+      path: '/automation/connections'
+      fullPath: '/automation/connections/'
+      preLoaderRoute: typeof AuthenticatedAutomationConnectionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automation/health/': {
+      id: '/_authenticated/automation/health/'
+      path: '/automation/health'
+      fullPath: '/automation/health/'
+      preLoaderRoute: typeof AuthenticatedAutomationHealthIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automation/mcp-servers/': {
+      id: '/_authenticated/automation/mcp-servers/'
+      path: '/automation/mcp-servers'
+      fullPath: '/automation/mcp-servers/'
+      preLoaderRoute: typeof AuthenticatedAutomationMcpServersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automation/providers/': {
+      id: '/_authenticated/automation/providers/'
+      path: '/automation/providers'
+      fullPath: '/automation/providers/'
+      preLoaderRoute: typeof AuthenticatedAutomationProvidersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -708,6 +808,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModelsIndexRoute: typeof AuthenticatedModelsIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedAutomationAuditLogsIndexRoute: typeof AuthenticatedAutomationAuditLogsIndexRoute
+  AuthenticatedAutomationConnectionsIndexRoute: typeof AuthenticatedAutomationConnectionsIndexRoute
+  AuthenticatedAutomationHealthIndexRoute: typeof AuthenticatedAutomationHealthIndexRoute
+  AuthenticatedAutomationMcpServersIndexRoute: typeof AuthenticatedAutomationMcpServersIndexRoute
+  AuthenticatedAutomationProvidersIndexRoute: typeof AuthenticatedAutomationProvidersIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -725,6 +830,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModelsIndexRoute: AuthenticatedModelsIndexRoute,
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedAutomationAuditLogsIndexRoute:
+    AuthenticatedAutomationAuditLogsIndexRoute,
+  AuthenticatedAutomationConnectionsIndexRoute:
+    AuthenticatedAutomationConnectionsIndexRoute,
+  AuthenticatedAutomationHealthIndexRoute:
+    AuthenticatedAutomationHealthIndexRoute,
+  AuthenticatedAutomationMcpServersIndexRoute:
+    AuthenticatedAutomationMcpServersIndexRoute,
+  AuthenticatedAutomationProvidersIndexRoute:
+    AuthenticatedAutomationProvidersIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
