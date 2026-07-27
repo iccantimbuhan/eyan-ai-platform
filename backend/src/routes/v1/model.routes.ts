@@ -10,7 +10,7 @@ const router: ExpressRouter = Router();
 router.get(
   "/",
   authenticate,
-  requirePermission("models.read"),
+  requirePermission("models"),
   ModelController.getModels
 );
 
