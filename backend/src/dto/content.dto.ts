@@ -4,6 +4,10 @@ export interface GenerateContentDto {
   projectId: string;
   type: ContentType;
   prompt: string;
+  // Omitted -> unchanged existing behavior. Set -> ContentService folds the
+  // kit's tone/terminology/restricted-words guidance into the system
+  // prompt. See docs/ASSET_LIBRARY.md.
+  brandKitId?: string;
 }
 
 export interface ContentResponseDto {

@@ -28,6 +28,7 @@ import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_aut
 import { Route as AuthenticatedAiChatIndexRouteImport } from './routes/_authenticated/ai-chat/index'
 import { Route as AuthenticatedContentStudioIndexRouteImport } from './routes/_authenticated/content-studio/index'
 import { Route as AuthenticatedContentStudioProjectIdRouteImport } from './routes/_authenticated/content-studio/$projectId'
+import { Route as AuthenticatedContentStudioDashboardRouteImport } from './routes/_authenticated/content-studio/dashboard'
 import { Route as AuthenticatedContentStudioPromptLibraryRouteImport } from './routes/_authenticated/content-studio/prompt-library'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
@@ -138,6 +139,12 @@ const AuthenticatedContentStudioProjectIdRoute =
     path: '/content-studio/$projectId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedContentStudioDashboardRoute =
+  AuthenticatedContentStudioDashboardRouteImport.update({
+    id: '/content-studio/dashboard',
+    path: '/content-studio/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedContentStudioPromptLibraryRoute =
   AuthenticatedContentStudioPromptLibraryRouteImport.update({
     id: '/content-studio/prompt-library',
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/content-studio/$projectId': typeof AuthenticatedContentStudioProjectIdRoute
+  '/content-studio/dashboard': typeof AuthenticatedContentStudioDashboardRoute
   '/content-studio/prompt-library': typeof AuthenticatedContentStudioPromptLibraryRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -258,6 +266,7 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/content-studio/$projectId': typeof AuthenticatedContentStudioProjectIdRoute
+  '/content-studio/dashboard': typeof AuthenticatedContentStudioDashboardRoute
   '/content-studio/prompt-library': typeof AuthenticatedContentStudioPromptLibraryRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -293,6 +302,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/content-studio/$projectId': typeof AuthenticatedContentStudioProjectIdRoute
+  '/_authenticated/content-studio/dashboard': typeof AuthenticatedContentStudioDashboardRoute
   '/_authenticated/content-studio/prompt-library': typeof AuthenticatedContentStudioPromptLibraryRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/content-studio/$projectId'
+    | '/content-studio/dashboard'
     | '/content-studio/prompt-library'
     | '/errors/$error'
     | '/settings/account'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/content-studio/$projectId'
+    | '/content-studio/dashboard'
     | '/content-studio/prompt-library'
     | '/errors/$error'
     | '/settings/account'
@@ -390,6 +402,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/content-studio/$projectId'
+    | '/_authenticated/content-studio/dashboard'
     | '/_authenticated/content-studio/prompt-library'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
@@ -557,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContentStudioProjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/content-studio/dashboard': {
+      id: '/_authenticated/content-studio/dashboard'
+      path: '/content-studio/dashboard'
+      fullPath: '/content-studio/dashboard'
+      preLoaderRoute: typeof AuthenticatedContentStudioDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/content-studio/prompt-library': {
       id: '/_authenticated/content-studio/prompt-library'
       path: '/content-studio/prompt-library'
@@ -680,6 +700,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedContentStudioProjectIdRoute: typeof AuthenticatedContentStudioProjectIdRoute
+  AuthenticatedContentStudioDashboardRoute: typeof AuthenticatedContentStudioDashboardRoute
   AuthenticatedContentStudioPromptLibraryRoute: typeof AuthenticatedContentStudioPromptLibraryRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedAiChatIndexRoute: typeof AuthenticatedAiChatIndexRoute
@@ -694,6 +715,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedContentStudioProjectIdRoute:
     AuthenticatedContentStudioProjectIdRoute,
+  AuthenticatedContentStudioDashboardRoute:
+    AuthenticatedContentStudioDashboardRoute,
   AuthenticatedContentStudioPromptLibraryRoute:
     AuthenticatedContentStudioPromptLibraryRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,

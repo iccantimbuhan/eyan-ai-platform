@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { REVIEW_STATUS_OPTIONS, type ReviewStatus } from '../../types/asset'
 
@@ -25,6 +26,14 @@ export function AssetStatusBadge({ status }: Props) {
 
     case 'NEEDS_REVIEW':
       return <Badge variant='outline'>{statusLabel(status)}</Badge>
+
+    case 'REVISION_REQUESTED':
+      return (
+        <Badge variant='outline' className='gap-1'>
+          <RotateCcw className='size-3' />
+          {statusLabel(status)}
+        </Badge>
+      )
 
     default:
       return <Badge variant='outline'>{statusLabel(status)}</Badge>

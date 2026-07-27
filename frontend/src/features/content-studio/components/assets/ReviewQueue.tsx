@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 
+import { useAuthStore } from '@/stores/auth-store'
 import { useAssets } from '../../hooks/use-assets'
 import { useReviewAsset } from '../../hooks/use-review-asset'
 import {
@@ -28,6 +30,7 @@ import { AssetStatusBadge } from './AssetStatusBadge'
 
 const REVIEW_QUEUE_FILTERS: { value: ReviewStatus; label: string }[] = [
   { value: 'NEEDS_REVIEW', label: 'Needs Review' },
+  { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
   { value: 'APPROVED', label: 'Approved' },
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'PUBLISHED', label: 'Published' },
@@ -58,6 +61,8 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
   const [viewingAsset, setViewingAsset] = useState<AssetSummary | null>(null)
   const [notesTarget, setNotesTarget] = useState<AssetSummary | null>(null)
   const [notesDraft, setNotesDraft] = useState('')
+  const [mineOnly, setMineOnly] = useState(false)
+  const currentUserId = useAuthStore((state) => state.auth.user?.id)
 
   // Reset to page 1 whenever the status filter changes — a synchronous
   // setState during render (React's "adjusting state when a prop changes"
@@ -70,6 +75,10 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
 
   const assets = useAssets(projectId, { status, page, pageSize: PAGE_SIZE })
   const reviewAsset = useReviewAsset(projectId)
+
+  const items = mineOnly
+    ? (assets.data?.items ?? []).filter((item) => item.assignee?.id === currentUserId)
+    : (assets.data?.items ?? [])
 
   function updateStatus(item: AssetSummary, next: ReviewStatus) {
     reviewAsset.mutate(
@@ -100,15 +109,25 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
   return (
     <Card>
       <CardContent className='space-y-4 p-4'>
-        <Tabs value={status} onValueChange={(value) => setStatus(value as ReviewStatus)}>
-          <TabsList>
-            {REVIEW_QUEUE_FILTERS.map((filter) => (
-              <TabsTrigger key={filter.value} value={filter.value}>
-                {filter.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <Tabs value={status} onValueChange={(value) => setStatus(value as ReviewStatus)}>
+            <TabsList>
+              {REVIEW_QUEUE_FILTERS.map((filter) => (
+                <TabsTrigger key={filter.value} value={filter.value}>
+                  {filter.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <label className='flex items-center gap-2 text-sm'>
+            <Checkbox
+              checked={mineOnly}
+              onCheckedChange={(checked) => setMineOnly(checked === true)}
+            />
+            My assignments
+          </label>
+        </div>
 
         {assets.isLoading && (
           <div role='status' aria-label='Loading review queue' className='space-y-3'>
@@ -123,7 +142,7 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
           </p>
         )}
 
-        {!assets.isLoading && !assets.isError && assets.data?.items.length === 0 && (
+        {!assets.isLoading && !assets.isError && assets.data && items.length === 0 && (
           <div className='flex flex-col items-center justify-center gap-2 py-12 text-center'>
             <ClipboardCheck className='h-8 w-8 text-muted-foreground' />
             <p className='text-sm text-muted-foreground'>
@@ -132,10 +151,10 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
           </div>
         )}
 
-        {!assets.isLoading && !assets.isError && assets.data && assets.data.items.length > 0 && (
+        {!assets.isLoading && !assets.isError && assets.data && items.length > 0 && (
           <>
             <div className='space-y-2'>
-              {assets.data.items.map((item) => (
+              {items.map((item) => (
                 <div
                   key={`${item.assetType}:${item.id}`}
                   className='flex flex-wrap items-center justify-between gap-3 rounded-md border p-3'
@@ -144,6 +163,12 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
                     <div className='flex flex-wrap items-center gap-2'>
                       <Badge variant='outline'>{assetTypeLabel(item.assetType)}</Badge>
                       <AssetStatusBadge status={item.status} />
+                      {item.assignee && (
+                        <Badge variant='secondary'>Assigned: {item.assignee.name}</Badge>
+                      )}
+                      {item.openCommentCount > 0 && (
+                        <Badge variant='outline'>{item.openCommentCount} comment(s)</Badge>
+                      )}
                     </div>
 
                     <button

@@ -37,4 +37,7 @@ export interface GenerateImageDto {
   height?: number;
   format?: ImageFormat;
   provider?: string;
+  // Omitted -> unchanged existing behavior. Set -> ImageService folds the
+  // kit's image style guidance into the prompt. See docs/ASSET_LIBRARY.md.
+  brandKitId?: string;
 }

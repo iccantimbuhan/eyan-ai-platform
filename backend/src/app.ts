@@ -15,12 +15,16 @@ import imageRoutes from "./routes/v1/image.routes.js";
 import assetRoutes from "./routes/v1/asset.routes.js";
 import promptTemplatesRoutes from "./routes/v1/prompt-templates.routes.js";
 import savedPromptsRoutes from "./routes/v1/saved-prompts.routes.js";
+import brandKitsRoutes from "./routes/v1/brand-kits.routes.js";
+import videoAssetsRoutes from "./routes/v1/video-assets.routes.js";
+import analyticsRoutes from "./routes/v1/analytics.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
 import {
   registerImageProviders,
   validateImageProviderConfig,
 } from "./providers/register-image-providers.js";
+import { registerPlatformProviders } from "./providers/register-platform-providers.js";
 import { validateLocalDiskStorageConfig } from "./providers/local-disk/local-disk-storage.provider.js";
 import { validateGeminiProviderConfig } from "./providers/gemini/gemini-image.provider.js";
 import {
@@ -36,6 +40,7 @@ import { env } from "./config/env.js";
 registerImageProviders();
 validateImageProviderConfig();
 validateLocalDiskStorageConfig();
+registerPlatformProviders();
 
 // Provider-specific config checks run only when that provider is the
 // configured default — an explicit per-request override still works
@@ -112,6 +117,9 @@ app.use("/api/v1/images", imageRoutes);
 app.use("/api/v1/assets", assetRoutes);
 app.use("/api/v1/prompt-templates", promptTemplatesRoutes);
 app.use("/api/v1/saved-prompts", savedPromptsRoutes);
+app.use("/api/v1/brand-kits", brandKitsRoutes);
+app.use("/api/v1/video-assets", videoAssetsRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
 
 app.use(errorHandler);
 

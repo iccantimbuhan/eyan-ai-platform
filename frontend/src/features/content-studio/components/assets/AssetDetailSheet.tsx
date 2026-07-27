@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 
 import { resolveImageUrl } from '../../api/images.api'
@@ -37,6 +38,13 @@ import {
   type ChecklistItemValue,
   type ReviewStatus,
 } from '../../types/asset'
+import { AssigneePicker } from '../review-workspace/AssigneePicker'
+import { CommentThread } from '../review-workspace/CommentThread'
+import { ImageAnnotationOverlay } from '../review-workspace/ImageAnnotationOverlay'
+import { RequestRevisionDialog } from '../review-workspace/RequestRevisionDialog'
+import { ReviewTimeline } from '../review-workspace/ReviewTimeline'
+import { VideoTimestampAnnotations } from '../review-workspace/VideoTimestampAnnotations'
+import { PublishingStatusPanel } from '../publishing/PublishingStatusPanel'
 import { AssetStatusBadge } from './AssetStatusBadge'
 import { QaChecklist } from './QaChecklist'
 import { VersionHistory } from './VersionHistory'
@@ -122,10 +130,19 @@ function AssetDetailContent({
   onClose: () => void
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [revisionOpen, setRevisionOpen] = useState(false)
   const [status, setStatus] = useState<ReviewStatus>(asset.status)
   const [notes, setNotes] = useState(asset.notes ?? '')
   const [qaScore, setQaScore] = useState(asset.qaScore?.toString() ?? '')
   const [checklist, setChecklist] = useState<ChecklistItemValue[]>(asset.checklist ?? [])
+
+  // A VIDEO asset's kind isn't on AssetDetail directly — image kinds
+  // (Storyboard/Thumbnail) populate thumbnailUrl exactly like GeneratedImage,
+  // text kinds (Script/Captions/...) populate output instead. Same
+  // discriminator the image preview below already relies on.
+  const isImageLike =
+    asset.assetType === 'IMAGE' || (asset.assetType === 'VIDEO' && Boolean(asset.thumbnailUrl))
+  const isTextVideo = asset.assetType === 'VIDEO' && !asset.thumbnailUrl
 
   const reviewAsset = useReviewAsset(projectId)
   const duplicateAsset = useDuplicateAsset(projectId)
@@ -200,189 +217,278 @@ function AssetDetailContent({
         </SheetDescription>
       </SheetHeader>
 
-      <div className='space-y-6 px-4 pb-4'>
-        {asset.assetType === 'IMAGE' && asset.thumbnailUrl && (
-          <img
-            src={resolveImageUrl(asset.thumbnailUrl)}
+      <div className='space-y-4 px-4 pb-4'>
+        {isImageLike && asset.thumbnailUrl && (
+          <ImageAnnotationOverlay
+            projectId={projectId}
+            assetType={asset.assetType}
+            sourceId={asset.id}
+            imageUrl={resolveImageUrl(asset.thumbnailUrl)}
             alt={asset.title}
-            className='w-full rounded-lg border'
           />
         )}
 
-        <section className='space-y-2'>
-          <h3 className='text-sm font-semibold'>General</h3>
+        <Tabs defaultValue='details'>
+          <TabsList>
+            <TabsTrigger value='details'>Details</TabsTrigger>
+            <TabsTrigger value='qa'>QA</TabsTrigger>
+            <TabsTrigger value='comments'>
+              Comments{asset.openCommentCount > 0 ? ` (${asset.openCommentCount})` : ''}
+            </TabsTrigger>
+            <TabsTrigger value='timeline'>Timeline</TabsTrigger>
+            <TabsTrigger value='publishing'>Publishing</TabsTrigger>
+          </TabsList>
 
-          <dl className='space-y-2 text-sm'>
-            <div>
-              <dt className='text-muted-foreground'>Prompt</dt>
-              <dd className='whitespace-pre-wrap'>{asset.prompt}</dd>
-            </div>
+          <TabsContent value='details' className='space-y-6'>
+            <section className='space-y-2'>
+              <h3 className='text-sm font-semibold'>General</h3>
 
-            {asset.negativePrompt && (
-              <div>
-                <dt className='text-muted-foreground'>Negative Prompt</dt>
-                <dd className='whitespace-pre-wrap'>{asset.negativePrompt}</dd>
+              <dl className='space-y-2 text-sm'>
+                <div>
+                  <dt className='text-muted-foreground'>Prompt</dt>
+                  <dd className='whitespace-pre-wrap'>{asset.prompt}</dd>
+                </div>
+
+                {asset.negativePrompt && (
+                  <div>
+                    <dt className='text-muted-foreground'>Negative Prompt</dt>
+                    <dd className='whitespace-pre-wrap'>{asset.negativePrompt}</dd>
+                  </div>
+                )}
+
+                {asset.output && !isImageLike && (
+                  <div>
+                    <dt className='text-muted-foreground'>Output</dt>
+                    <dd className='whitespace-pre-wrap'>{asset.output}</dd>
+                  </div>
+                )}
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Provider</dt>
+                  <dd>{asset.provider ?? '—'}</dd>
+                </div>
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Model</dt>
+                  <dd>{asset.model ?? '—'}</dd>
+                </div>
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Created</dt>
+                  <dd>{new Date(asset.createdAt).toLocaleString()}</dd>
+                </div>
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Updated</dt>
+                  <dd>{new Date(asset.updatedAt).toLocaleString()}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className='space-y-2'>
+              <h3 className='text-sm font-semibold'>Metadata</h3>
+
+              <dl className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Generation Time</dt>
+                  <dd>
+                    {asset.generationTimeMs !== null
+                      ? `${(asset.generationTimeMs / 1000).toFixed(1)}s`
+                      : '—'}
+                  </dd>
+                </div>
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Asset Type</dt>
+                  <dd>{assetTypeLabel(asset.assetType)}</dd>
+                </div>
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Project</dt>
+                  <dd>{asset.projectName}</dd>
+                </div>
+
+                <div className='flex justify-between'>
+                  <dt className='text-muted-foreground'>Version</dt>
+                  <dd>v{asset.version}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <VersionHistory assetType={asset.assetType} sourceId={asset.id} />
+
+            <section className='space-y-2'>
+              <h3 className='text-sm font-semibold'>Actions</h3>
+
+              <div className='flex flex-wrap gap-2'>
+                <Button size='sm' variant='outline' onClick={handleDownload}>
+                  Download
+                </Button>
+                <Button size='sm' variant='outline' onClick={handleCopy}>
+                  Copy
+                </Button>
+                <Button size='sm' variant='outline' onClick={handleDuplicate}>
+                  Duplicate
+                </Button>
+                {supportsRegeneration(asset.assetType) && (
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    onClick={handleRegenerate}
+                    disabled={regenerateAsset.isPending}
+                  >
+                    {regenerateAsset.isPending ? 'Regenerating...' : 'Regenerate'}
+                  </Button>
+                )}
+                <Button
+                  size='sm'
+                  variant='outline'
+                  className='text-destructive'
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  Delete
+                </Button>
               </div>
-            )}
+            </section>
+          </TabsContent>
 
-            {asset.output && asset.assetType !== 'IMAGE' && (
-              <div>
-                <dt className='text-muted-foreground'>Output</dt>
-                <dd className='whitespace-pre-wrap'>{asset.output}</dd>
+          <TabsContent value='qa' className='space-y-4'>
+            <section className='space-y-2'>
+              <h3 className='text-sm font-semibold'>Assignment</h3>
+              <AssigneePicker
+                projectId={projectId}
+                assetType={asset.assetType}
+                sourceId={asset.id}
+                assignee={asset.assignee}
+              />
+            </section>
+
+            <section className='space-y-3'>
+              <h3 className='text-sm font-semibold'>Quality Assurance</h3>
+
+              <div className='space-y-2'>
+                <Label htmlFor='asset-review-status'>Status</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as ReviewStatus)}>
+                  <SelectTrigger id='asset-review-status' className='w-full'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REVIEW_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              <QaChecklist assetType={asset.assetType} value={checklist} onChange={setChecklist} />
+
+              <div className='space-y-2'>
+                <Label htmlFor='asset-review-notes'>Reviewer Notes</Label>
+                <Textarea
+                  id='asset-review-notes'
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className='min-h-20'
+                />
+              </div>
+
+              <div className='space-y-2'>
+                <Label htmlFor='asset-review-score'>QA Score (0–100)</Label>
+                <Input
+                  id='asset-review-score'
+                  type='number'
+                  min={0}
+                  max={100}
+                  value={qaScore}
+                  onChange={(e) => setQaScore(e.target.value)}
+                  className='w-24'
+                />
+              </div>
+
+              {asset.reviewerName && (
+                <p className='text-xs text-muted-foreground'>
+                  Last reviewed by {asset.reviewerName}
+                  {asset.reviewedAt
+                    ? ` on ${new Date(asset.reviewedAt).toLocaleString()}`
+                    : ''}
+                  .
+                </p>
+              )}
+
+              <div className='flex flex-wrap gap-2'>
+                <Button
+                  size='sm'
+                  onClick={handleSaveReview}
+                  disabled={reviewAsset.isPending}
+                >
+                  {reviewAsset.isPending ? 'Saving...' : 'Save Review'}
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => setRevisionOpen(true)}
+                >
+                  Request Revision
+                </Button>
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value='comments' className='space-y-4'>
+            <CommentThread
+              projectId={projectId}
+              assetType={asset.assetType}
+              sourceId={asset.id}
+            />
+
+            {isImageLike && (
+              <section className='space-y-2'>
+                <h3 className='text-sm font-semibold'>Annotations</h3>
+                <CommentThread
+                  projectId={projectId}
+                  assetType={asset.assetType}
+                  sourceId={asset.id}
+                  filter='annotations'
+                />
+              </section>
             )}
 
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Provider</dt>
-              <dd>{asset.provider ?? '—'}</dd>
-            </div>
-
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Model</dt>
-              <dd>{asset.model ?? '—'}</dd>
-            </div>
-
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Created</dt>
-              <dd>{new Date(asset.createdAt).toLocaleString()}</dd>
-            </div>
-
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Updated</dt>
-              <dd>{new Date(asset.updatedAt).toLocaleString()}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className='space-y-2'>
-          <h3 className='text-sm font-semibold'>Metadata</h3>
-
-          <dl className='space-y-2 text-sm'>
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Generation Time</dt>
-              <dd>
-                {asset.generationTimeMs !== null
-                  ? `${(asset.generationTimeMs / 1000).toFixed(1)}s`
-                  : '—'}
-              </dd>
-            </div>
-
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Asset Type</dt>
-              <dd>{assetTypeLabel(asset.assetType)}</dd>
-            </div>
-
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Project</dt>
-              <dd>{asset.projectName}</dd>
-            </div>
-
-            <div className='flex justify-between'>
-              <dt className='text-muted-foreground'>Version</dt>
-              <dd>v{asset.version}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className='space-y-3'>
-          <h3 className='text-sm font-semibold'>Quality Assurance</h3>
-
-          <div className='space-y-2'>
-            <Label htmlFor='asset-review-status'>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as ReviewStatus)}>
-              <SelectTrigger id='asset-review-status' className='w-full'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REVIEW_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <QaChecklist assetType={asset.assetType} value={checklist} onChange={setChecklist} />
-
-          <div className='space-y-2'>
-            <Label htmlFor='asset-review-notes'>Reviewer Notes</Label>
-            <Textarea
-              id='asset-review-notes'
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className='min-h-20'
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='asset-review-score'>QA Score (0–100)</Label>
-            <Input
-              id='asset-review-score'
-              type='number'
-              min={0}
-              max={100}
-              value={qaScore}
-              onChange={(e) => setQaScore(e.target.value)}
-              className='w-24'
-            />
-          </div>
-
-          {asset.reviewerName && (
-            <p className='text-xs text-muted-foreground'>
-              Last reviewed by {asset.reviewerName}
-              {asset.reviewedAt
-                ? ` on ${new Date(asset.reviewedAt).toLocaleString()}`
-                : ''}
-              .
-            </p>
-          )}
-
-          <Button
-            size='sm'
-            onClick={handleSaveReview}
-            disabled={reviewAsset.isPending}
-          >
-            {reviewAsset.isPending ? 'Saving...' : 'Save Review'}
-          </Button>
-        </section>
-
-        <VersionHistory assetType={asset.assetType} sourceId={asset.id} />
-
-        <section className='space-y-2'>
-          <h3 className='text-sm font-semibold'>Actions</h3>
-
-          <div className='flex flex-wrap gap-2'>
-            <Button size='sm' variant='outline' onClick={handleDownload}>
-              Download
-            </Button>
-            <Button size='sm' variant='outline' onClick={handleCopy}>
-              Copy
-            </Button>
-            <Button size='sm' variant='outline' onClick={handleDuplicate}>
-              Duplicate
-            </Button>
-            {supportsRegeneration(asset.assetType) && (
-              <Button
-                size='sm'
-                variant='outline'
-                onClick={handleRegenerate}
-                disabled={regenerateAsset.isPending}
-              >
-                {regenerateAsset.isPending ? 'Regenerating...' : 'Regenerate'}
-              </Button>
+            {isTextVideo && (
+              <section className='space-y-2'>
+                <h3 className='text-sm font-semibold'>Timestamp Annotations</h3>
+                <VideoTimestampAnnotations
+                  projectId={projectId}
+                  assetType={asset.assetType}
+                  sourceId={asset.id}
+                />
+              </section>
             )}
-            <Button
-              size='sm'
-              variant='outline'
-              className='text-destructive'
-              onClick={() => setDeleteOpen(true)}
-            >
-              Delete
-            </Button>
-          </div>
-        </section>
+          </TabsContent>
+
+          <TabsContent value='timeline'>
+            <ReviewTimeline assetType={asset.assetType} sourceId={asset.id} />
+          </TabsContent>
+
+          <TabsContent value='publishing'>
+            <PublishingStatusPanel
+              projectId={projectId}
+              assetType={asset.assetType}
+              sourceId={asset.id}
+              status={asset.status}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <RequestRevisionDialog
+        projectId={projectId}
+        assetType={asset.assetType}
+        sourceId={asset.id}
+        open={revisionOpen}
+        onOpenChange={setRevisionOpen}
+      />
 
       <ConfirmDialog
         open={deleteOpen}

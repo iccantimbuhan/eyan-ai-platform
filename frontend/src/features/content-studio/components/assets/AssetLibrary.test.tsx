@@ -88,6 +88,10 @@ const asset1: AssetSummary = {
   thumbnailUrl: null,
   createdAt: '2026-01-02T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
+  commentCount: 0,
+  openCommentCount: 0,
+  assignee: null,
+  publishing: [],
 }
 
 const asset2: AssetSummary = {

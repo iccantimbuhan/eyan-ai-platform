@@ -7,8 +7,10 @@ import {
   ImageIcon,
   MoreHorizontal,
   NotebookText,
+  Palette,
   RefreshCw,
   Trash2,
+  Video,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -52,6 +54,8 @@ function AssetTypeIcon({ assetType }: { assetType: AssetSummary['assetType'] }) 
   if (assetType === 'IMAGE') return <ImageIcon className='h-6 w-6 text-primary' />
   if (assetType === 'PROMPT_TEMPLATE')
     return <NotebookText className='h-6 w-6 text-primary' />
+  if (assetType === 'BRAND_KIT') return <Palette className='h-6 w-6 text-primary' />
+  if (assetType === 'VIDEO') return <Video className='h-6 w-6 text-primary' />
   return <FileText className='h-6 w-6 text-primary' />
 }
 

@@ -38,6 +38,12 @@ export const generateImageValidator = [
     .withMessage("Provider name must not exceed 100 characters.")
     .matches(/^[a-zA-Z0-9_-]+$/)
     .withMessage("Provider name may only contain letters, numbers, hyphens, and underscores."),
+
+  body("brandKitId")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Brand kit ID must not be empty when provided."),
 ];
 
 export const imageIdParamValidator = [

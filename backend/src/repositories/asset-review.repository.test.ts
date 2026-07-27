@@ -131,4 +131,14 @@ describe("AssetReviewRepository", () => {
       where: { assetType: "IMAGE", sourceId: "image-1" },
     });
   });
+
+  it("finds many by project", async () => {
+    findManyMock.mockResolvedValue([]);
+
+    await repository.findManyByProject("project-1");
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { projectId: "project-1" },
+    });
+  });
 });

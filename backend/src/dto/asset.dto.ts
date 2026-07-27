@@ -1,4 +1,8 @@
-import type { AssetType, ReviewStatus } from "../generated/prisma/enums.js";
+import type {
+  AssetType,
+  PublishingStatus,
+  ReviewStatus,
+} from "../generated/prisma/enums.js";
 
 // One QA checklist item's captured result. category groups items in the UI
 // (Content vs Images vs the reserved, not-yet-reachable Videos set) — see
@@ -28,6 +32,16 @@ export interface AssetSummaryDto {
   thumbnailUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
+  // Sprint 6.3 (Creative Review Workspace) — batch-fetched alongside
+  // review/version, same shape. assignee is informational only: it does
+  // not grant the assignee access to the project. See ADR-0009.
+  commentCount: number;
+  openCommentCount: number;
+  assignee: { id: string; name: string } | null;
+  // Sprint 6.4 (Publishing Pipeline) — one entry per platform this asset
+  // has a PublishingRecord for. Independent of `status` (QA), which stays
+  // ReviewStatus-only. See ADR-0010.
+  publishing: { platform: string; status: PublishingStatus }[];
 }
 
 export interface AssetDetailDto extends AssetSummaryDto {
@@ -56,6 +70,10 @@ export interface ListAssetsQueryDto {
   projectId: string;
   type?: AssetType;
   status?: ReviewStatus;
+  // Sprint 6.4 (Publishing Pipeline) — filters in-memory, after aggregation,
+  // same boundary as every other list() filter (see ADR-0008). Matches on
+  // any of the asset's publishing records having this status.
+  publishingStatus?: PublishingStatus;
   provider?: string;
   model?: string;
   search?: string;

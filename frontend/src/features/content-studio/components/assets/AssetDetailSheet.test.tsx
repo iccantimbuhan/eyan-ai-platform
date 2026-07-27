@@ -4,11 +4,32 @@ import { userEvent } from 'vitest/browser'
 import type { AssetDetail, AssetSummary } from '../../types/asset'
 import { AssetDetailSheet } from './AssetDetailSheet'
 
-// VersionHistory has its own dependencies (useAssetVersions,
-// VersionCompareDialog) and its own test coverage — stubbed here so this
-// file only exercises AssetDetailSheet's own sections and actions.
+// VersionHistory and the Sprint 6.3 review-workspace panels each have their
+// own dependencies and their own test coverage — stubbed here so this file
+// only exercises AssetDetailSheet's own tab structure and actions.
 vi.mock('./VersionHistory', () => ({
   VersionHistory: () => <div>Version History Stub</div>,
+}))
+vi.mock('../review-workspace/AssigneePicker', () => ({
+  AssigneePicker: () => <div>Assignee Picker Stub</div>,
+}))
+vi.mock('../review-workspace/CommentThread', () => ({
+  CommentThread: () => <div>Comment Thread Stub</div>,
+}))
+vi.mock('../review-workspace/ImageAnnotationOverlay', () => ({
+  ImageAnnotationOverlay: () => <div>Image Annotation Overlay Stub</div>,
+}))
+vi.mock('../review-workspace/VideoTimestampAnnotations', () => ({
+  VideoTimestampAnnotations: () => <div>Video Timestamp Annotations Stub</div>,
+}))
+vi.mock('../review-workspace/ReviewTimeline', () => ({
+  ReviewTimeline: () => <div>Review Timeline Stub</div>,
+}))
+vi.mock('../review-workspace/RequestRevisionDialog', () => ({
+  RequestRevisionDialog: () => <div>Request Revision Dialog Stub</div>,
+}))
+vi.mock('../publishing/PublishingStatusPanel', () => ({
+  PublishingStatusPanel: () => <div>Publishing Status Panel Stub</div>,
 }))
 
 let mockUseAssetReturn: {
@@ -65,6 +86,10 @@ const baseAsset: AssetDetail = {
   notes: null,
   qaScore: null,
   checklist: null,
+  commentCount: 0,
+  openCommentCount: 0,
+  assignee: null,
+  publishing: [],
 }
 
 const summary: AssetSummary = baseAsset
@@ -107,17 +132,19 @@ describe('AssetDetailSheet', () => {
       .toBeInTheDocument()
   })
 
-  it('shows General, Metadata, QA, and Actions sections once loaded', async () => {
+  it('shows General, Metadata, and Actions on the Details tab, Quality Assurance on the QA tab', async () => {
     const screen = await render(
       <AssetDetailSheet asset={summary} projectId='project-1' onOpenChange={vi.fn()} />
     )
 
     await expect.element(screen.getByText('General')).toBeInTheDocument()
     await expect.element(screen.getByText('Metadata')).toBeInTheDocument()
-    await expect.element(screen.getByText('Quality Assurance')).toBeInTheDocument()
     await expect.element(screen.getByText('Actions')).toBeInTheDocument()
     await expect.element(screen.getByText('blurry')).toBeInTheDocument()
     await expect.element(screen.getByText('4.2s')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('tab', { name: 'QA' }))
+    await expect.element(screen.getByText('Quality Assurance')).toBeInTheDocument()
   })
 
   it('saves a review with the selected status', async () => {
@@ -125,6 +152,7 @@ describe('AssetDetailSheet', () => {
       <AssetDetailSheet asset={summary} projectId='project-1' onOpenChange={vi.fn()} />
     )
 
+    await userEvent.click(screen.getByRole('tab', { name: 'QA' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save Review' }))
 
     expect(reviewMutate).toHaveBeenCalledWith(

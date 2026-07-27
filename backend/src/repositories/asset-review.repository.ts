@@ -90,6 +90,16 @@ export class AssetReviewRepository {
       where: { assetType, sourceId },
     });
   }
+
+  // Sprint 6.5 (Analytics Foundation) — review-status counts for a project,
+  // grouped in the service layer (ADR-0008's existing aggregation-in-the-
+  // service-layer posture) rather than a groupBy query, since this also
+  // feeds review-performance computation which needs the full rows anyway.
+  async findManyByProject(projectId: string) {
+    return prisma.assetReview.findMany({
+      where: { projectId },
+    });
+  }
 }
 
 function toJsonInput(

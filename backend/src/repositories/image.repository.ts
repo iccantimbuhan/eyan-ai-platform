@@ -7,6 +7,7 @@ import type {
 export class ImageRepository {
   async create(data: {
     projectId: string;
+    brandKitId?: string | null;
     prompt: string;
     negativePrompt?: string | null;
     provider: string;

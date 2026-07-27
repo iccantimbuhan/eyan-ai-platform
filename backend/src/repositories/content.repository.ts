@@ -4,6 +4,7 @@ import type { ContentType } from "../generated/prisma/enums.js";
 export class ContentRepository {
   async create(data: {
     projectId: string;
+    brandKitId?: string | null;
     type: ContentType;
     prompt: string;
     output: string;

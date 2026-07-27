@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bot,
   LayoutDashboard,
   MessageSquare,
@@ -68,6 +69,11 @@ export const sidebarData: SidebarData = {
           title: 'Content Studio',
           url: '/content-studio',
           icon: FolderOpen,
+        },
+        {
+          title: 'Production Dashboard',
+          url: '/content-studio/dashboard',
+          icon: BarChart3,
         },
         {
           title: 'Prompt Library',

@@ -1,9 +1,11 @@
+import type { PublishingStatus } from './publishing'
+
 // Mirrors backend/src/generated/prisma/enums.ts' AssetType exactly. The
 // first five values are ContentType's values (a generated content item's
-// own `type` doubles as its assetType) plus IMAGE and PROMPT_TEMPLATE, the
-// two other real asset sources the Asset Library aggregates. Adding a
-// future asset type (e.g. VIDEO) only ever means adding one more value
-// here plus one more backend enum value + mapper case — see
+// own `type` doubles as its assetType) plus IMAGE, PROMPT_TEMPLATE,
+// BRAND_KIT, and VIDEO, the other real asset sources the Asset Library
+// aggregates. Adding a future asset type only ever means adding one more
+// value here plus one more backend enum value + mapper case — see
 // docs/ASSET_LIBRARY.md.
 export type AssetType =
   | 'BLOG'
@@ -13,6 +15,8 @@ export type AssetType =
   | 'DOCUMENTATION'
   | 'IMAGE'
   | 'PROMPT_TEMPLATE'
+  | 'BRAND_KIT'
+  | 'VIDEO'
 
 export const ASSET_TYPE_OPTIONS: { value: AssetType; label: string }[] = [
   { value: 'BLOG', label: 'Blog' },
@@ -22,6 +26,8 @@ export const ASSET_TYPE_OPTIONS: { value: AssetType; label: string }[] = [
   { value: 'DOCUMENTATION', label: 'Documentation' },
   { value: 'IMAGE', label: 'Image' },
   { value: 'PROMPT_TEMPLATE', label: 'Prompt Template' },
+  { value: 'BRAND_KIT', label: 'Brand Kit' },
+  { value: 'VIDEO', label: 'Video' },
 ]
 
 export type ReviewStatus =
@@ -30,6 +36,7 @@ export type ReviewStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'PUBLISHED'
+  | 'REVISION_REQUESTED'
 
 export const REVIEW_STATUS_OPTIONS: { value: ReviewStatus; label: string }[] = [
   { value: 'DRAFT', label: 'Draft' },
@@ -37,6 +44,7 @@ export const REVIEW_STATUS_OPTIONS: { value: ReviewStatus; label: string }[] = [
   { value: 'APPROVED', label: 'Approved' },
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'PUBLISHED', label: 'Published' },
+  { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
 ]
 
 export type ChecklistCategory = 'content' | 'images' | 'videos'
@@ -50,8 +58,7 @@ export interface ChecklistItemValue {
 }
 
 // Fixed per-category checklist items (brief-defined, not user-configurable
-// this sprint). "videos" is reserved for future-ready video assets — not
-// reachable in this sprint's UI since no video asset type exists yet.
+// this sprint).
 export const CHECKLIST_ITEMS: Record<ChecklistCategory, string[]> = {
   content: ['Grammar', 'Brand Consistency', 'Tone', 'Readability'],
   images: ['Prompt Accuracy', 'Composition', 'Visual Quality', 'Safety'],
@@ -64,13 +71,18 @@ export const CHECKLIST_ITEMS: Record<ChecklistCategory, string[]> = {
 export function checklistCategoryForAssetType(
   assetType: AssetType
 ): ChecklistCategory {
-  return assetType === 'IMAGE' ? 'images' : 'content'
+  if (assetType === 'IMAGE') return 'images'
+  if (assetType === 'VIDEO') return 'videos'
+  return 'content'
 }
 
-// Neither Regenerate nor Duplicate makes sense for a prompt template: it's
-// user-authored, not provider-generated, so there's nothing to re-run.
+// Neither Regenerate nor Duplicate makes sense for a prompt template or a
+// brand kit: both are user-authored, not provider-generated, so there's
+// nothing to re-run. A VIDEO asset, unlike those two, is provider/AI
+// generated (both its text and image kinds), so it does support
+// regeneration.
 export function supportsRegeneration(assetType: AssetType): boolean {
-  return assetType !== 'PROMPT_TEMPLATE'
+  return assetType !== 'PROMPT_TEMPLATE' && assetType !== 'BRAND_KIT'
 }
 
 export interface AssetSummary {
@@ -87,6 +99,14 @@ export interface AssetSummary {
   thumbnailUrl: string | null
   createdAt: string
   updatedAt: string
+  // Sprint 6.3 (Creative Review Workspace). assignee is informational only
+  // — it never grants the assignee access to the project. See ADR-0009.
+  commentCount: number
+  openCommentCount: number
+  assignee: { id: string; name: string } | null
+  // Sprint 6.4 (Publishing Pipeline). Independent of `status` (QA) — see
+  // ADR-0010. One entry per platform this asset has a publishing record for.
+  publishing: { platform: string; status: PublishingStatus }[]
 }
 
 export interface AssetDetail extends AssetSummary {
@@ -114,6 +134,7 @@ export interface AssetVersionSummary {
 export interface ListAssetsParams {
   type?: AssetType
   status?: ReviewStatus
+  publishingStatus?: PublishingStatus
   provider?: string
   model?: string
   search?: string

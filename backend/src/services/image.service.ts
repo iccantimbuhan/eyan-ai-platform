@@ -11,11 +11,14 @@ import type {
 
 import { ImageRepository } from "../repositories/image.repository.js";
 import { ProjectRepository } from "../repositories/project.repository.js";
+import { BrandKitRepository } from "../repositories/brand-kit.repository.js";
+import { AnalyticsEventRepository } from "../repositories/analytics-event.repository.js";
 import { ImageProviderFactory } from "../providers/image-provider.factory.js";
 import { StorageProviderFactory } from "../providers/storage-provider.factory.js";
 import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
 import { NotFoundError } from "../errors/auth.error.js";
+import { buildImageBrandGuidance } from "../dto/brand-kit-guidance.js";
 import {
   ImageGenerationError,
   ImageProviderNotConfiguredError,
@@ -35,6 +38,8 @@ export class ImageService {
     private readonly projectRepository = new ProjectRepository(),
     private readonly imageProviderFactory: ImageProviderResolver = ImageProviderFactory,
     private readonly storageProvider: StorageProvider = StorageProviderFactory.create(),
+    private readonly brandKitRepository = new BrandKitRepository(),
+    private readonly analyticsEventRepository = new AnalyticsEventRepository(),
   ) {}
 
   async generate(data: GenerateImageDto, userId: string) {
@@ -51,6 +56,30 @@ export class ImageService {
     const height = data.height ?? DEFAULT_HEIGHT;
     const format = data.format ?? DEFAULT_FORMAT;
 
+    // The row always stores the user's original prompt (data.prompt);
+    // generationPrompt is what's actually sent to the provider — keeps
+    // "what did the user ask for" and "what did we actually generate from"
+    // distinguishable, matching how ContentService keeps data.prompt
+    // separate from its brand-augmented system prompt.
+    let generationPrompt = data.prompt;
+
+    if (data.brandKitId) {
+      const brandKit = await this.brandKitRepository.findById(
+        data.brandKitId,
+        userId
+      );
+
+      if (!brandKit || brandKit.projectId !== data.projectId) {
+        throw new NotFoundError("Brand kit not found.");
+      }
+
+      const guidance = buildImageBrandGuidance(brandKit);
+
+      if (guidance) {
+        generationPrompt = `${guidance}\n\n${generationPrompt}`;
+      }
+    }
+
     // Configuration errors (unset/unknown provider) surface before anything
     // is persisted — there's no partial row to clean up or mark FAILED.
     const provider = this.imageProviderFactory.create(
@@ -62,6 +91,7 @@ export class ImageService {
     try {
       image = await this.repository.create({
         projectId: data.projectId,
+        brandKitId: data.brandKitId ?? null,
         prompt: data.prompt,
         negativePrompt: data.negativePrompt ?? null,
         provider: provider.name,
@@ -89,7 +119,7 @@ export class ImageService {
 
     try {
       result = await provider.generate({
-        prompt: data.prompt,
+        prompt: generationPrompt,
         negativePrompt: data.negativePrompt,
         width,
         height,
@@ -150,6 +180,27 @@ export class ImageService {
       });
 
       logger.info(`[ImageService] Image ${image.id} completed successfully.`);
+
+      // Fire-and-forget: analytics must never interrupt the generation
+      // workflow, and there's no invariant (unlike a file delete) requiring
+      // this write to finish before responding. See ADR-0011.
+      void this.analyticsEventRepository
+        .create({
+          projectId: data.projectId,
+          assetType: "IMAGE",
+          sourceId: image.id,
+          type: "GENERATED",
+          actorId: userId,
+          provider: provider.name,
+          model: result.model,
+          generationTimeMs,
+          brandKitId: data.brandKitId ?? null,
+        })
+        .catch((error) =>
+          logger.error(
+            `[ImageService] Failed to record analytics event for ${image.id}: ${errorMessageOf(error)}`
+          )
+        );
 
       return completed;
     } catch (error) {

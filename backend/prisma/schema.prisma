@@ -34,12 +34,28 @@ enum GenerationStatus {
   FAILED
 }
 
+// Discriminates VideoAsset rows. SCRIPT/SCENE_BREAKDOWN/SHOT_LIST/
+// VOICE_OVER_SCRIPT/CAPTIONS/SUBTITLES are text artifacts (ChatService,
+// like GeneratedContent); STORYBOARD/THUMBNAIL are image artifacts
+// (ImageProviderFactory, like GeneratedImage). See VideoAsset and
+// src/config/video-prompts.ts.
+enum VideoAssetKind {
+  SCRIPT
+  SCENE_BREAKDOWN
+  SHOT_LIST
+  VOICE_OVER_SCRIPT
+  CAPTIONS
+  SUBTITLES
+  STORYBOARD
+  THUMBNAIL
+}
+
 // Mirrors ContentType's five values exactly (a GeneratedContent.type value
-// casts straight across, no mapping table) plus IMAGE and PROMPT_TEMPLATE —
-// the two additional real asset sources aggregated by the Asset Library.
-// Adding a future asset type (e.g. VIDEO) is one new enum value + one
-// migration + one case in asset.mapper.ts, never a redesign of this enum's
-// existing consumers — see docs/ASSET_LIBRARY.md.
+// casts straight across, no mapping table) plus IMAGE, PROMPT_TEMPLATE,
+// BRAND_KIT, and VIDEO — the additional real asset sources aggregated by
+// the Asset Library. Adding a future asset type is one new enum value +
+// one migration + one case in asset.mapper.ts, never a redesign of this
+// enum's existing consumers — see docs/ASSET_LIBRARY.md.
 enum AssetType {
   BLOG
   EMAIL
@@ -48,6 +64,8 @@ enum AssetType {
   DOCUMENTATION
   IMAGE
   PROMPT_TEMPLATE
+  BRAND_KIT
+  VIDEO
 }
 
 enum ReviewStatus {
@@ -56,62 +74,110 @@ enum ReviewStatus {
   APPROVED
   REJECTED
   PUBLISHED
+  REVISION_REQUESTED
+}
+
+// Append-only activity log for AssetReviewEvent — one row per
+// review-relevant action (never updated/deleted except cascade). See
+// ADR-0009. PUBLISH_* values added in Sprint 6.4 (ADR-0010) — the
+// Publishing Pipeline feeds this same timeline rather than a second one.
+enum ReviewEventType {
+  STATUS_CHANGED
+  COMMENT_ADDED
+  COMMENT_RESOLVED
+  ANNOTATION_ADDED
+  ASSIGNED
+  UNASSIGNED
+  VERSION_CREATED
+  PUBLISH_SCHEDULED
+  PUBLISH_STARTED
+  PUBLISHED
+  PUBLISH_FAILED
+}
+
+// PublishingRecord's lifecycle — deliberately independent of ReviewStatus
+// (QA and Publishing are separate workflows connected only via the shared
+// (assetType, sourceId) key and the AssetReviewEvent timeline). See
+// ADR-0010.
+enum PublishingStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  ARCHIVED
+}
+
+// AnalyticsEvent's discriminator — deliberately separate from
+// ReviewEventType (AssetReviewEvent is scoped to review-relevant activity
+// by ADR-0009; generation happens before an asset ever enters that
+// workflow). Room to grow additively, same posture as ReviewEventType. See
+// ADR-0011.
+enum AnalyticsEventType {
+  GENERATED
 }
 
 model User {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  email           String   @unique
-  passwordHash    String
-  name            String
+  email        String @unique
+  passwordHash String
+  name         String
 
-  refreshToken    String?
+  refreshToken String?
 
-  isActive        Boolean  @default(true)
-  emailVerified   Boolean  @default(false)
+  isActive      Boolean @default(true)
+  emailVerified Boolean @default(false)
 
-  roles           UserRole[]
-  savedPrompts    SavedPrompt[]
-  contentProjects ContentProject[]
-  reviewedAssets  AssetReview[]
+  roles             UserRole[]
+  savedPrompts      SavedPrompt[]
+  contentProjects   ContentProject[]
+  reviewedAssets    AssetReview[]
+  brandKits         BrandKit[]
+  comments          AssetComment[]
+  assignedReviews   AssetReviewAssignment[] @relation("AssetAssignee")
+  assignmentsGiven  AssetReviewAssignment[] @relation("AssetAssignedBy")
+  reviewEvents      AssetReviewEvent[]
+  publishingRecords PublishingRecord[]
+  analyticsEvents   AnalyticsEvent[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Role {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  name        String   @unique
+  name        String  @unique
   description String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean @default(true)
 
   users       UserRole[]
   permissions RolePermission[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Permission {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  name        String   @unique
+  name        String  @unique
   description String?
 
-  roles       RolePermission[]
+  roles RolePermission[]
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model UserRole {
-  userId      String
-  roleId      String
+  userId String
+  roleId String
 
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role        Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  assignedAt  DateTime @default(now())
+  assignedAt DateTime @default(now())
 
   @@id([userId, roleId])
 }
@@ -120,78 +186,96 @@ model RolePermission {
   roleId       String
   permissionId String
 
-  role         Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
 }
 
 model ContentProject {
-  id          String        @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId      String
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name        String
   description String?
 
-  status      ProjectStatus @default(DRAFT)
+  status ProjectStatus @default(DRAFT)
 
-  generatedContent GeneratedContent[]
-  generatedImages  GeneratedImage[]
-  savedPrompts     SavedPrompt[]
-  assetReviews     AssetReview[]
-  assetVersions    AssetVersion[]
+  generatedContent  GeneratedContent[]
+  generatedImages   GeneratedImage[]
+  savedPrompts      SavedPrompt[]
+  assetReviews      AssetReview[]
+  assetVersions     AssetVersion[]
+  brandKits         BrandKit[]
+  videoAssets       VideoAsset[]
+  comments          AssetComment[]
+  reviewAssignments AssetReviewAssignment[]
+  reviewEvents      AssetReviewEvent[]
+  publishingRecords PublishingRecord[]
+  analyticsEvents   AnalyticsEvent[]
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
 
 model GeneratedImage {
-  id             String           @id @default(cuid())
+  id String @id @default(cuid())
 
-  projectId      String
-  project        ContentProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Optional: when set, generation folded this kit's tone/terminology/style
+  // guidance into the prompt. SetNull, not Cascade — deleting a Brand Kit
+  // must never delete the content generated while it was referenced. See
+  // docs/ASSET_LIBRARY.md.
+  brandKitId String?
+  brandKit   BrandKit? @relation(fields: [brandKitId], references: [id], onDelete: SetNull)
 
   prompt         String
   negativePrompt String?
 
-  provider       String
-  model          String?
+  provider String
+  model    String?
 
-  width          Int
-  height         Int
-  format         ImageFormat
+  width  Int
+  height Int
+  format ImageFormat
 
-  storagePath    String?
-  thumbnailPath  String?
+  storagePath   String?
+  thumbnailPath String?
 
-  status         GenerationStatus @default(PENDING)
-  errorMessage   String?
+  status       GenerationStatus @default(PENDING)
+  errorMessage String?
 
   // Wall-clock time spent inside provider.generate(), captured in
   // ImageService.generate() around the existing call — null for rows
   // created before this column existed. See docs/ASSET_LIBRARY.md.
   generationTimeMs Int?
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
 }
 
 model GeneratedContent {
-  id        String      @id @default(cuid())
+  id String @id @default(cuid())
 
   projectId String
   project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  type      ContentType
-  prompt    String
-  output    String
-  model     String
+  // See GeneratedImage.brandKitId — same optional, SetNull relation.
+  brandKitId String?
+  brandKit   BrandKit? @relation(fields: [brandKitId], references: [id], onDelete: SetNull)
+
+  type   ContentType
+  prompt String
+  output String
+  model  String
 
   createdBy String?
 
@@ -199,50 +283,156 @@ model GeneratedContent {
   // backfill story for pre-existing rows.
   generationTimeMs Int?
 
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
 }
 
 model PromptTemplate {
-  id          String      @id @default(cuid())
+  id String @id @default(cuid())
 
   name        String      @unique
   category    String
   contentType ContentType
 
-  promptBody  String
+  promptBody String
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([category])
 }
 
 model SavedPrompt {
-  id          String      @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Nullable: null means a global, reusable prompt (the original, unchanged
   // behavior — still what the standalone Prompt Library page shows). A
   // non-null value scopes this prompt to one project, making it a real,
   // reviewable PROMPT_TEMPLATE asset in that project's Asset Library. See
   // docs/ASSET_LIBRARY.md.
-  projectId   String?
-  project     ContentProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?
+  project   ContentProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   name        String
   promptBody  String
   contentType ContentType
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([projectId])
+}
+
+// A reusable set of brand guidance a ContentProject can own one or more of.
+// Generation (ContentService/ImageService) optionally references one via
+// brandKitId, folding tone/terminology/style into the prompt — see those
+// services' generate() methods. A BrandKit is itself a first-class Asset
+// Library entry (AssetType.BRAND_KIT, sourceId = BrandKit.id), reviewed and
+// versioned through the same polymorphic AssetReview/AssetVersion tables as
+// every other asset type — no schema change needed there. See
+// docs/ASSET_LIBRARY.md.
+model BrandKit {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdBy String
+  creator   User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  name   String
+  client String?
+
+  // Simple {url, label}[] metadata rather than a stored file — no upload
+  // pipeline exists yet for user-supplied assets (StorageProvider today
+  // only ever persists provider-generated image bytes). See sprint log.
+  logos Json?
+
+  primaryColors   Json?
+  secondaryColors Json?
+  fonts           Json?
+  typography      String?
+
+  toneOfVoice  String?
+  writingStyle String?
+  audience     String?
+  ctaStyle     String?
+
+  approvedTerminology String[]
+  restrictedWords     String[]
+
+  brandGuidelines       String?
+  imageStyle            String?
+  socialMediaGuidelines String?
+
+  isDefault Boolean @default(false)
+
+  generatedContent GeneratedContent[]
+  generatedImages  GeneratedImage[]
+  videoAssets      VideoAsset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+// A single video-production artifact belonging directly to a ContentProject
+// (no VideoProject header entity — reaffirms this repo's single-project-
+// hierarchy rule). videoGroupId groups artifacts that belong to "one video"
+// without a second entity: a plain string, not a real relation. kind
+// discriminates two shapes sharing this one table: text artifacts (output/
+// model populated, status always COMPLETED at creation, same posture as
+// GeneratedContent — no partial row ever exists) and image artifacts
+// (provider/width/height/format/storagePath/status/errorMessage populated,
+// full PENDING -> COMPLETED/FAILED lifecycle, same as GeneratedImage). See
+// VideoAssetKind and src/services/video-asset.service.ts.
+model VideoAsset {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // See GeneratedImage.brandKitId — same optional, SetNull relation.
+  brandKitId String?
+  brandKit   BrandKit? @relation(fields: [brandKitId], references: [id], onDelete: SetNull)
+
+  videoGroupId String
+  kind         VideoAssetKind
+
+  prompt String
+
+  // Text-kind output (SCRIPT/SCENE_BREAKDOWN/SHOT_LIST/VOICE_OVER_SCRIPT/
+  // CAPTIONS/SUBTITLES) — mirrors GeneratedContent.output.
+  output String?
+
+  // Image-kind output (STORYBOARD/THUMBNAIL) — mirrors GeneratedImage.
+  provider      String?
+  width         Int?
+  height        Int?
+  format        ImageFormat?
+  storagePath   String?
+  thumbnailPath String?
+
+  model String?
+
+  status       GenerationStatus @default(PENDING)
+  errorMessage String?
+
+  generationTimeMs Int?
+  createdBy        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([videoGroupId])
 }
 
 // One row per underlying asset (GeneratedContent / GeneratedImage /
@@ -252,26 +442,26 @@ model SavedPrompt {
 // column on the source tables: one polymorphic table serves every current
 // and future asset type without altering any of them.
 model AssetReview {
-  id         String        @id @default(cuid())
+  id String @id @default(cuid())
 
-  projectId  String
-  project    ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  assetType  AssetType
-  sourceId   String
+  assetType AssetType
+  sourceId  String
 
-  status     ReviewStatus  @default(DRAFT)
+  status ReviewStatus @default(DRAFT)
 
   reviewerId String?
-  reviewer   User?         @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewer   User?     @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
   reviewedAt DateTime?
 
-  notes      String?
-  qaScore    Int?
-  checklist  Json?
+  notes     String?
+  qaScore   Int?
+  checklist Json?
 
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([assetType, sourceId])
   @@index([projectId])
@@ -284,24 +474,207 @@ model AssetReview {
 // indexed findMany, not a chain walk. An asset with no row here is
 // implicitly version 1 (created lazily on first regenerate).
 model AssetVersion {
-  id                String         @id @default(cuid())
+  id String @id @default(cuid())
 
-  projectId         String
-  project           ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  assetType         AssetType
-  sourceId          String
+  assetType AssetType
+  sourceId  String
 
-  lineageId         String
-  versionNumber     Int
+  lineageId     String
+  versionNumber Int
 
   previousVersionId String?
   previousVersion   AssetVersion?  @relation("VersionLineage", fields: [previousVersionId], references: [id], onDelete: SetNull)
   nextVersions      AssetVersion[] @relation("VersionLineage")
 
-  createdAt         DateTime       @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([assetType, sourceId])
   @@index([projectId])
   @@index([lineageId])
+}
+
+// General comments and annotations, unified in one table (an annotation is
+// just a comment with an anchor). At most one anchor kind is set per row —
+// region* for an image-region pin (normalized 0-1 floats), timestampMs for
+// a video-artifact comment (a manually-entered logical marker; no real
+// video file exists to sync playback against). Neither set = a general
+// comment. See ADR-0009.
+model AssetComment {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType AssetType
+  sourceId  String
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body       String
+  isInternal Boolean @default(false)
+
+  regionX      Float?
+  regionY      Float?
+  regionWidth  Float?
+  regionHeight Float?
+  timestampMs  Int?
+
+  resolvedAt DateTime?
+  resolvedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([assetType, sourceId])
+}
+
+// Informational-only reviewer assignment — records who is intended to
+// review an asset for planning/queue/timeline purposes. Does NOT grant the
+// assignee access to the project; ContentProject remains single-owner
+// (ADR-0007) unchanged. One active assignment per asset (assigning again
+// replaces it). See ADR-0009.
+model AssetReviewAssignment {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType AssetType
+  sourceId  String
+
+  assigneeId String
+  assignee   User   @relation("AssetAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  assignedById String
+  assignedBy   User   @relation("AssetAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([assetType, sourceId])
+  @@index([projectId])
+  @@index([assigneeId])
+}
+
+// Append-only activity log — one row per review-relevant action (status
+// change, comment/annotation, resolve, assignment change, new version).
+// Never updated or deleted except cascade on project delete. See ADR-0009.
+model AssetReviewEvent {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType AssetType
+  sourceId  String
+
+  type ReviewEventType
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  fromStatus ReviewStatus?
+  toStatus   ReviewStatus?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([assetType, sourceId])
+  @@index([createdAt])
+}
+
+// One row per (asset, platform) publishing target — upsert-style like
+// AssetReviewAssignment, not append-only (history of what happened lives in
+// AssetReviewEvent, reused rather than duplicated). Publishing is gated on
+// the asset's current AssetReview.status being APPROVED, checked in
+// AssetService at schedule/publish time — deliberately not a DB constraint,
+// since QA and Publishing are independent tables/workflows. platform is a
+// PlatformProviderFactory registry key ("fake" today; real platforms are
+// pluggable later without a schema change). See ADR-0010.
+model PublishingRecord {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType AssetType
+  sourceId  String
+
+  platform String
+
+  status       PublishingStatus @default(DRAFT)
+  scheduledFor DateTime?
+  publishedAt  DateTime?
+
+  externalId  String?
+  externalUrl String?
+
+  errorMessage String?
+  attempts     Int     @default(0)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([assetType, sourceId, platform])
+  @@index([projectId])
+  @@index([assetType, sourceId])
+  @@index([status])
+}
+
+// One row per first-time generation — the one genuine gap in existing
+// data: ContentService/ImageService/VideoAssetService.generate() never
+// touch AssetReviewEvent (that table is only entered later, once the
+// Asset Library/QA workflow is used). Deliberately a separate table from
+// AssetReviewEvent, which ADR-0009 scoped to review-relevant activity
+// specifically. provider/model/generationTimeMs/brandKitId are real
+// columns, not buried in metadata, so provider-usage and generation-
+// duration aggregation can group/average on them directly — mirroring
+// GeneratedImage/VideoAsset's own provider/model columns rather than a
+// JSON blob nothing can efficiently query. Written best-effort/fire-and-
+// forget from the generation services — a failure here must never fail
+// the generation request itself. See ADR-0011.
+model AnalyticsEvent {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetType AssetType
+  sourceId  String
+
+  type AnalyticsEventType
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  provider         String?
+  model            String?
+  generationTimeMs Int?
+  // Deliberately a plain string, not a FK — an AnalyticsEvent must survive
+  // its referenced BrandKit being deleted later (same reasoning
+  // GeneratedImage.brandKitId's SetNull relation already establishes,
+  // just without a relation at all here since this is a historical
+  // snapshot, not a live reference).
+  brandKitId       String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([assetType, sourceId])
+  @@index([createdAt])
+  @@index([provider])
 }

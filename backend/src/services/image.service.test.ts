@@ -8,6 +8,20 @@ vi.mock("../config/env.js", () => ({
   },
 }));
 
+// Sprint 6.5 (Analytics Foundation) — ImageService's constructor now
+// default-instantiates a real AnalyticsEventRepository as its trailing
+// param. Every `new ImageService(...)` call site in this file omits it
+// (there's no shared buildService() here, unlike content.service.test.ts),
+// so mocking the module is the one place this needs faking rather than
+// touching 28+ call sites.
+const analyticsCreateMock = vi.fn().mockResolvedValue({});
+
+vi.mock("../repositories/analytics-event.repository.js", () => ({
+  AnalyticsEventRepository: vi.fn().mockImplementation(function AnalyticsEventRepository() {
+    return { create: analyticsCreateMock };
+  }),
+}));
+
 import { env } from "../config/env.js";
 import { ImageService } from "./image.service.js";
 import { logger } from "../lib/logger.js";
@@ -72,9 +86,19 @@ function createStorageProvider(
   };
 }
 
+function createBrandKitRepository(
+  overrides: Partial<Record<string, unknown>> = {}
+) {
+  return {
+    findById: vi.fn().mockResolvedValue(null),
+    ...overrides,
+  };
+}
+
 describe("ImageService", () => {
   beforeEach(() => {
     (env as { imageProvider: string }).imageProvider = "fake-default";
+    analyticsCreateMock.mockReset().mockResolvedValue({});
   });
 
   describe("generate()", () => {
@@ -118,6 +142,7 @@ describe("ImageService", () => {
 
       expect(repository.create).toHaveBeenCalledWith({
         projectId: "proj-1",
+        brandKitId: null,
         prompt: "A cat",
         negativePrompt: null,
         provider: "fake",
@@ -419,6 +444,80 @@ describe("ImageService", () => {
       });
     });
 
+    describe("brand kit", () => {
+      it("throws NotFoundError when brandKitId doesn't resolve to a kit owned by the caller", async () => {
+        const imageProviderFactory = createImageProviderFactory();
+        const brandKitRepository = createBrandKitRepository();
+        const service = new ImageService(
+          createRepository() as never,
+          createProjectRepository() as never,
+          imageProviderFactory as never,
+          createStorageProvider() as never,
+          brandKitRepository as never
+        );
+
+        await expect(
+          service.generate(
+            { projectId: "proj-1", prompt: "A cat", brandKitId: "bk-1" },
+            "user-1"
+          )
+        ).rejects.toThrow("Brand kit not found.");
+
+        expect(imageProviderFactory.create).not.toHaveBeenCalled();
+      });
+
+      it("throws NotFoundError when the brand kit belongs to a different project", async () => {
+        const brandKitRepository = createBrandKitRepository({
+          findById: vi.fn().mockResolvedValue({ id: "bk-1", projectId: "proj-other" }),
+        });
+        const service = new ImageService(
+          createRepository() as never,
+          createProjectRepository() as never,
+          createImageProviderFactory() as never,
+          createStorageProvider() as never,
+          brandKitRepository as never
+        );
+
+        await expect(
+          service.generate(
+            { projectId: "proj-1", prompt: "A cat", brandKitId: "bk-1" },
+            "user-1"
+          )
+        ).rejects.toThrow("Brand kit not found.");
+      });
+
+      it("folds imageStyle guidance into the provider prompt but keeps the stored prompt as the user's original", async () => {
+        const brandKitRepository = createBrandKitRepository({
+          findById: vi
+            .fn()
+            .mockResolvedValue({ id: "bk-1", projectId: "proj-1", name: "Acme", imageStyle: "Bright, minimalist" }),
+        });
+        const repository = createRepository();
+        const imageProviderFactory = createImageProviderFactory();
+        const service = new ImageService(
+          repository as never,
+          createProjectRepository() as never,
+          imageProviderFactory as never,
+          createStorageProvider() as never,
+          brandKitRepository as never
+        );
+
+        await service.generate(
+          { projectId: "proj-1", prompt: "A cat", brandKitId: "bk-1" },
+          "user-1"
+        );
+
+        expect(repository.create).toHaveBeenCalledWith(
+          expect.objectContaining({ brandKitId: "bk-1", prompt: "A cat" })
+        );
+
+        const provider = imageProviderFactory.create.mock.results[0].value;
+        expect(provider.generate).toHaveBeenCalledWith(
+          expect.objectContaining({ prompt: expect.stringContaining("Bright, minimalist") })
+        );
+      });
+    });
+
     describe("provider selection", () => {
       it("uses the explicit per-request provider when given, even if a default is configured", async () => {
         const imageProviderFactory = createImageProviderFactory();
@@ -553,6 +652,55 @@ describe("ImageService", () => {
     await expect(service.getById("image-1", "user-2")).rejects.toThrow(
       "Generated image not found."
     );
+  });
+
+  // Sprint 6.5 (Analytics Foundation) — the analytics write is fire-and-
+  // forget and must never interrupt generation. See ADR-0011.
+  describe("generate() — analytics", () => {
+    it("records a GENERATED analytics event with the image's provider/model/duration", async () => {
+      const repository = createRepository();
+      const service = new ImageService(
+        repository as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        createStorageProvider() as never
+      );
+
+      await service.generate({ projectId: "proj-1", prompt: "A cat" }, "user-1");
+
+      expect(analyticsCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: "proj-1",
+          assetType: "IMAGE",
+          sourceId: "image-1",
+          type: "GENERATED",
+          actorId: "user-1",
+          provider: "fake",
+          model: "fake-image-v1",
+          generationTimeMs: expect.any(Number),
+          brandKitId: null,
+        })
+      );
+    });
+
+    it("still returns the completed image successfully even when the analytics write rejects", async () => {
+      analyticsCreateMock.mockRejectedValue(new Error("db unavailable"));
+
+      const repository = createRepository();
+      const service = new ImageService(
+        repository as never,
+        createProjectRepository() as never,
+        createImageProviderFactory() as never,
+        createStorageProvider() as never
+      );
+
+      const result = await service.generate(
+        { projectId: "proj-1", prompt: "A cat" },
+        "user-1"
+      );
+
+      expect(result).toEqual({ id: "image-1", status: "COMPLETED" });
+    });
   });
 
   describe("delete()", () => {

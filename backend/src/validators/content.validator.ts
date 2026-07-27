@@ -23,6 +23,12 @@ export const generateContentValidator = [
     .withMessage("Prompt is required.")
     .isLength({ max: 4000 })
     .withMessage("Prompt must not exceed 4000 characters."),
+
+  body("brandKitId")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Brand kit ID must not be empty when provided."),
 ];
 
 export const contentIdParamValidator = [

@@ -15,8 +15,14 @@ import { ImageGenerateForm } from '../../components/image-generator/ImageGenerat
 import { ImageOutputViewer } from '../../components/image-generator/ImageOutputViewer'
 import { AssetLibrary } from '../../components/assets/AssetLibrary'
 import { ReviewQueue } from '../../components/assets/ReviewQueue'
+import { PublishingQueue } from '../../components/publishing/PublishingQueue'
+import { ProjectAnalytics } from '../../components/analytics/ProjectAnalytics'
+import { BrandKitList } from '../../components/brand-kits/BrandKitList'
+import { VideoGenerateForm } from '../../components/video-studio/VideoGenerateForm'
+import { VideoAssetList } from '../../components/video-studio/VideoAssetList'
 import { useGenerateContent } from '../../hooks/use-generate-content'
 import { useGenerateImage } from '../../hooks/use-generate-image'
+import { useGenerateVideoAsset } from '../../hooks/use-generate-video-asset'
 import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
 import { useProject } from '../../hooks/use-project'
 
@@ -43,6 +49,7 @@ export function ProjectWorkspace() {
   const { data: project, isLoading, error } = useProject(projectId)
   const generateContent = useGenerateContent(projectId)
   const generateImage = useGenerateImage(projectId)
+  const generateVideoAsset = useGenerateVideoAsset(projectId)
   const { provider: imageProvider, setProvider: setImageProvider } =
     useImageProviderPreference()
 
@@ -107,8 +114,12 @@ export function ProjectWorkspace() {
           <TabsList>
             <TabsTrigger value='content'>Content</TabsTrigger>
             <TabsTrigger value='images'>Images</TabsTrigger>
+            <TabsTrigger value='brand-kits'>Brand Kit</TabsTrigger>
+            <TabsTrigger value='video'>Video</TabsTrigger>
             <TabsTrigger value='assets'>Assets</TabsTrigger>
             <TabsTrigger value='review'>Review</TabsTrigger>
+            <TabsTrigger value='publishing'>Publishing</TabsTrigger>
+            <TabsTrigger value='analytics'>Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value='content' className='space-y-6'>
@@ -137,12 +148,33 @@ export function ProjectWorkspace() {
             />
           </TabsContent>
 
+          <TabsContent value='brand-kits' className='space-y-6'>
+            <BrandKitList projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value='video' className='space-y-6'>
+            <VideoGenerateForm
+              projectId={projectId}
+              generateVideoAsset={generateVideoAsset}
+            />
+
+            <VideoAssetList projectId={projectId} />
+          </TabsContent>
+
           <TabsContent value='assets' className='space-y-6'>
             <AssetLibrary projectId={projectId} />
           </TabsContent>
 
           <TabsContent value='review' className='space-y-6'>
             <ReviewQueue projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value='publishing' className='space-y-6'>
+            <PublishingQueue projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value='analytics' className='space-y-6'>
+            <ProjectAnalytics projectId={projectId} />
           </TabsContent>
         </Tabs>
       </div>
