@@ -21,6 +21,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // recharts (Sprint 6.6) must be pre-bundled before the browser-mode test
+  // runner starts — otherwise Vite's dependency optimizer discovers it
+  // mid-test-run and reloads, duplicating the React instance the page was
+  // already rendered with ("Invalid hook call").
+  optimizeDeps: {
+    include: ['recharts'],
+  },
   test: {
     silent: 'passed-only',
     unstubEnvs: true,

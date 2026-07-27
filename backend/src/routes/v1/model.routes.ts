@@ -1,8 +1,17 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
+
 import { ModelController } from "../../controllers/model.controller.js";
 
-const router = Router();
+import { authenticate } from "../../middleware/auth.middleware.js";
+import { requirePermission } from "../../middleware/permission.middleware.js";
 
-router.get("/", ModelController.getModels);
+const router: ExpressRouter = Router();
+
+router.get(
+  "/",
+  authenticate,
+  requirePermission("models"),
+  ModelController.getModels
+);
 
 export default router;

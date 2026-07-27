@@ -20,12 +20,20 @@ export interface AIModel {
   capabilities: string[];
 }
 
+export interface ChatOptions {
+  maxTokens?: number;
+}
+
 export interface AIProvider {
   listModels(): Promise<any>;
 
-  chat(messages: OllamaMessage[]): Promise<ChatResponse>;
+  chat(
+    messages: OllamaMessage[],
+    options?: ChatOptions
+  ): Promise<ChatResponse>;
 
   streamChat?(
-    messages: OllamaMessage[]
+    messages: OllamaMessage[],
+    options?: ChatOptions
   ): Promise<AxiosResponse<any>>;
 }

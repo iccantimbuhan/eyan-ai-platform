@@ -27,25 +27,25 @@ function CodeBlock({
   }
 
   return (
-    <div className="relative my-3 overflow-hidden rounded-lg border bg-muted/60">
+    <div className='relative my-3 overflow-hidden rounded-lg border bg-muted/60'>
       {language && (
-        <div className="flex items-center justify-between border-b bg-muted/80 px-4 py-1.5">
-          <span className="text-xs text-muted-foreground">{language}</span>
+        <div className='flex items-center justify-between border-b bg-muted/80 px-4 py-1.5'>
+          <span className='text-xs text-muted-foreground'>{language}</span>
           <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
+            variant='ghost'
+            size='sm'
+            className='h-6 w-6 p-0'
             onClick={handleCopy}
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5 text-emerald-500" />
+              <Check className='h-3.5 w-3.5 text-emerald-500' />
             ) : (
-              <Copy className="h-3.5 w-3.5" />
+              <Copy className='h-3.5 w-3.5' />
             )}
           </Button>
         </div>
       )}
-      <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
+      <pre className='overflow-x-auto p-4 text-sm leading-relaxed'>
         <code className={className} {...props}>
           {children}
         </code>
@@ -92,10 +92,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
           )}
         >
           {isUser ? (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p className='break-words whitespace-pre-wrap'>{message.content}</p>
           ) : message.isError ? (
-            <div className="flex items-start gap-2 text-destructive">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className='flex items-start gap-2 text-destructive'>
+              <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0' />
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {message.content}
               </ReactMarkdown>
@@ -106,12 +106,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
               components={{
                 code: ({ className, children, ...props }) => {
                   const isInline =
-                    !className &&
-                    String(children).indexOf('\n') === -1
+                    !className && String(children).indexOf('\n') === -1
                   if (isInline) {
                     return (
                       <code
-                        className="rounded bg-muted-foreground/15 px-1.5 py-0.5 text-sm font-mono"
+                        className='rounded bg-muted-foreground/15 px-1.5 py-0.5 font-mono text-sm'
                         {...props}
                       >
                         {children}
@@ -125,45 +124,43 @@ export function ChatMessage({ message }: ChatMessageProps) {
                   )
                 },
                 p: ({ children }) => (
-                  <p className="mb-2 last:mb-0">{children}</p>
+                  <p className='mb-2 last:mb-0'>{children}</p>
                 ),
                 ul: ({ children }) => (
-                  <ul className="mb-2 ml-4 list-disc space-y-1 last:mb-0">
+                  <ul className='mb-2 ml-4 list-disc space-y-1 last:mb-0'>
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="mb-2 ml-4 list-decimal space-y-1 last:mb-0">
+                  <ol className='mb-2 ml-4 list-decimal space-y-1 last:mb-0'>
                     {children}
                   </ol>
                 ),
-                li: ({ children }) => (
-                  <li className="text-sm">{children}</li>
-                ),
+                li: ({ children }) => <li className='text-sm'>{children}</li>,
                 blockquote: ({ children }) => (
-                  <blockquote className="my-2 border-l-2 border-muted-foreground/30 pl-4 italic text-muted-foreground">
+                  <blockquote className='my-2 border-l-2 border-muted-foreground/30 pl-4 text-muted-foreground italic'>
                     {children}
                   </blockquote>
                 ),
                 table: ({ children }) => (
-                  <div className="my-3 overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">{children}</table>
+                  <div className='my-3 overflow-x-auto rounded-lg border'>
+                    <table className='w-full text-sm'>{children}</table>
                   </div>
                 ),
                 th: ({ children }) => (
-                  <th className="border-b bg-muted px-3 py-2 text-left font-medium">
+                  <th className='border-b bg-muted px-3 py-2 text-left font-medium'>
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="border-b px-3 py-2">{children}</td>
+                  <td className='border-b px-3 py-2'>{children}</td>
                 ),
                 a: ({ href, children }) => (
                   <a
                     href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline underline-offset-2"
+                    target='_blank'
+                    rel='noreferrer'
+                    className='text-primary underline underline-offset-2'
                   >
                     {children}
                   </a>

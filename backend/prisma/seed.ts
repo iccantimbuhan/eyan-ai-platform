@@ -1,0 +1,45 @@
+import 'dotenv/config'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../src/generated/prisma/client'
+
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
+
+const roles = [
+  { name: 'Owner', description: 'Full system owner' },
+  { name: 'Admin', description: 'System administrator' },
+  { name: 'Developer', description: 'Software developer' },
+  { name: 'QA Engineer', description: 'Quality Assurance' },
+  { name: 'Viewer', description: 'Read-only user' },
+]
+
+// Page-level permissions. Granular keys can be added later without a schema change.
+const permissions = [
+  ['dashboard', 'View the dashboard'], ['chat', 'Use AI Chat'], ['models', 'View models'],
+  ['conversations', 'View conversations'], ['users', 'Access users'], ['roles', 'Access roles'],
+  ['providers', 'Access AI providers'], ['settings', 'Access settings'], ['apikeys', 'Access API keys'],
+  ['analytics', 'View analytics'], ['auditlogs', 'View audit logs'],
+] as const
+
+const promptTemplates = [
+  { name: 'Blog Post', category: 'Blogging', contentType: 'BLOG', promptBody: 'Write a blog post about {{topic}} for {{business}}. Target audience: {{audience}}. Tone: {{tone}}. Write in {{language}}.' },
+  { name: 'SEO Description', category: 'Blogging', contentType: 'MARKETING_COPY', promptBody: 'Write an SEO meta description for {{business}} about {{topic}}. Include these keywords naturally: {{keywords}}. Keep it under 160 characters.' },
+  { name: 'Facebook Post', category: 'Social Media', contentType: 'SOCIAL_MEDIA', promptBody: 'Write a Facebook post for {{business}} about {{topic}}. Audience: {{audience}}. Tone: {{tone}}.' },
+  { name: 'Instagram Caption', category: 'Social Media', contentType: 'SOCIAL_MEDIA', promptBody: 'Write an Instagram caption for {{business}} about {{topic}}. Tone: {{tone}}. Include hashtags related to {{keywords}}.' },
+  { name: 'LinkedIn Post', category: 'Social Media', contentType: 'SOCIAL_MEDIA', promptBody: 'Write a LinkedIn post for {{business}} about {{topic}}, targeting {{audience}}. Tone: {{tone}}. Goal: {{goal}}.' },
+  { name: 'Product Description', category: 'Marketing', contentType: 'MARKETING_COPY', promptBody: "Write a product description for {{business}}'s product: {{topic}}. Target audience: {{audience}}. Highlight benefits related to: {{keywords}}." },
+  { name: 'Email', category: 'Business Communication', contentType: 'EMAIL', promptBody: 'Write an email from {{business}} to {{audience}} about {{topic}}. Tone: {{tone}}. Goal: {{goal}}.' },
+  { name: 'Cold Outreach', category: 'Business Communication', contentType: 'EMAIL', promptBody: 'Write a cold outreach email from {{business}} to {{audience}} about {{topic}}. Goal: {{goal}}. Keep the tone {{tone}} and concise.' },
+  { name: 'Meeting Summary', category: 'Business Communication', contentType: 'DOCUMENTATION', promptBody: 'Summarize a meeting about {{topic}} for {{audience}}. Include key decisions and next steps. Tone: {{tone}}.' },
+] as const
+
+async function main() {
+  for (const role of roles) await prisma.role.upsert({ where: { name: role.name }, update: {}, create: role })
+  for (const [name, description] of permissions) await prisma.permission.upsert({ where: { name }, update: { description }, create: { name, description } })
+  const owner = await prisma.role.findUniqueOrThrow({ where: { name: 'Owner' } })
+  for (const [name] of permissions) {
+    const permission = await prisma.permission.findUniqueOrThrow({ where: { name } })
+    await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: owner.id, permissionId: permission.id } }, update: {}, create: { roleId: owner.id, permissionId: permission.id } })
+  }
+  for (const template of promptTemplates) await prisma.promptTemplate.upsert({ where: { name: template.name }, update: template, create: template })
+}
+main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

@@ -2,6 +2,7 @@ import axios from "axios";
 import { env } from "../../config/env.js";
 import type {
   AIProvider,
+  ChatOptions,
   ChatResponse,
   OllamaMessage,
 } from "../interfaces/ai-provider.js";
@@ -9,9 +10,18 @@ import type {
 export const SYSTEM_PROMPT =
   "You are Open Source AI Platform, a helpful AI assistant.";
 
+// 300s: on the production VPS (CPU-only, memory-constrained), the first
+// request after a backend restart can hit a cold model load — Ollama
+// unloads idle models, and reloading qwen2.5-coder:7b from disk plus
+// generating a response has been observed to exceed the previous 180s
+// ceiling, surfacing as a false "Unable to connect to AI provider" error
+// even though Ollama was reachable and healthy the whole time.
+const REQUEST_TIMEOUT_MS = 300_000;
+
 export class OllamaProvider implements AIProvider {
   private readonly client = axios.create({
     baseURL: env.ollamaBaseUrl,
+    timeout: REQUEST_TIMEOUT_MS,
   });
 
   async listModels() {
@@ -19,7 +29,10 @@ export class OllamaProvider implements AIProvider {
     return response.data;
   }
 
-  async chat(messages: OllamaMessage[]): Promise<ChatResponse> {
+  async chat(
+    messages: OllamaMessage[],
+    options?: ChatOptions
+  ): Promise<ChatResponse> {
     const allMessages: OllamaMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       ...messages,
@@ -29,6 +42,9 @@ export class OllamaProvider implements AIProvider {
       model: env.ollamaModel,
       messages: allMessages,
       stream: false,
+      options: {
+        num_predict: options?.maxTokens ?? env.ollamaMaxTokens,
+      },
     });
 
     return {
@@ -38,7 +54,7 @@ export class OllamaProvider implements AIProvider {
     };
   }
 
-  async streamChat(messages: OllamaMessage[]) {
+  async streamChat(messages: OllamaMessage[], options?: ChatOptions) {
     const allMessages: OllamaMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       ...messages,
@@ -50,6 +66,9 @@ export class OllamaProvider implements AIProvider {
         model: env.ollamaModel,
         messages: allMessages,
         stream: true,
+        options: {
+          num_predict: options?.maxTokens ?? env.ollamaMaxTokens,
+        },
       },
       {
         responseType: "stream",

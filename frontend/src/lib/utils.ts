@@ -60,6 +60,20 @@ export function getPageNumbers(currentPage: number, totalPages: number) {
 }
 
 /**
+ * Formats a millisecond duration for display (e.g. "2.3s", "1m 30s").
+ * `null` (no sample yet) renders as an em dash rather than "0s" or "NaNs".
+ */
+export function formatDurationMs(ms: number | null): string {
+  if (ms === null) return '—'
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`
+
+  const totalSeconds = Math.round(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}m ${seconds}s`
+}
+
+/**
  * Initials from a display name: first character of the first word + first
  * character of the last word. One word only: first two characters. Empty: `?`.
  */

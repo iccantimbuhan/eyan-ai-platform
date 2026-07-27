@@ -1,32 +1,65 @@
 import type { Response } from "express";
+import { AxiosError } from "axios";
 import { ProviderFactory } from "../providers/provider.factory.js";
 import { ApiError } from "../errors/api-error.js";
-import type { OllamaMessage } from "../providers/interfaces/ai-provider.js";
+import type {
+  ChatOptions,
+  OllamaMessage,
+} from "../providers/interfaces/ai-provider.js";
 
 export class ChatService {
   private provider = ProviderFactory.create();
 
-  async chat(messages: OllamaMessage[]) {
+  async chat(messages: OllamaMessage[], options?: ChatOptions) {
     try {
-      return await this.provider.chat(messages);
-    } catch {
+      return await this.provider.chat(messages, options);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      // The client only ever sees the generic message below — this is
+      // purely for server-side diagnosis, since without it a real cause
+      // (e.g. a cold-start timeout) is indistinguishable from Ollama being
+      // genuinely unreachable.
+      console.error("[chat] AI provider request failed", {
+        type: error instanceof AxiosError ? "AxiosError" : error?.constructor?.name,
+        message: error instanceof Error ? error.message : String(error),
+        code: error instanceof AxiosError ? error.code : undefined,
+        timeoutMs: error instanceof AxiosError ? error.config?.timeout : undefined,
+      });
+
       throw new ApiError(503, "Unable to connect to AI provider.");
     }
   }
 
-  async stream(messages: OllamaMessage[], res: Response) {
+  async stream(messages: OllamaMessage[], res: Response, options?: ChatOptions) {
     try {
-      const response = await this.provider.streamChat?.(messages);
+      const response = await this.provider.streamChat?.(messages, options);
 
       if (!response) {
         throw new ApiError(501, "Streaming not supported.");
       }
 
-      res.setHeader("Content-Type", "text/plain");
+      res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("X-Accel-Buffering", "no");
       res.setHeader("Transfer-Encoding", "chunked");
+      res.flushHeaders();
+
+      response.data.on("error", (error: Error) => {
+        console.error("[stream] Upstream stream error", error);
+        if (!res.destroyed) {
+          res.destroy(error);
+        }
+      });
 
       response.data.pipe(res);
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(503, "Unable to connect to AI provider.");
     }
   }

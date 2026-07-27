@@ -1,33 +1,234 @@
-# Open Source AI Platform
+# 🚀 Eyan AI Platform
 
-## Overview
+> An open-source, self-hosted AI platform for building, deploying, and managing modern conversational AI applications.
 
-This project is part of my AI Engineering Bootcamp.
+![Status](https://img.shields.io/badge/status-active%20development-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Backend](https://img.shields.io/badge/backend-Node.js-success)
+![Frontend](https://img.shields.io/badge/frontend-React-61DAFB)
+![Language](https://img.shields.io/badge/language-TypeScript-blue)
 
-The goal is to learn how to build a complete AI platform using open-source technologies from scratch.
+---
 
-## Technologies
+## 🌟 Vision
 
-- Ollama
-- Llama
-- Qwen (Coming Soon)
+Eyan AI Platform aims to provide developers with a production-ready, self-hosted alternative for building AI-powered applications.
+
+The platform is designed with scalability, security, and extensibility in mind, allowing developers to integrate local or cloud-based Large Language Models (LLMs) while maintaining full control over their infrastructure.
+
+---
+
+## ✨ Planned Features
+
+### 🤖 AI
+
+- ChatGPT-style interface
+- Ollama integration
+- Multiple AI providers
+- Streaming responses
+- Conversation history
+- Prompt templates
+
+### 🗂 Content Production & QA
+
+- Asset Library — every generated content item, image, and project-scoped prompt template in one searchable, filterable, batch-actionable view (see [docs/ASSET_LIBRARY.md](docs/ASSET_LIBRARY.md))
+- QA review workflow — Draft → Needs Review → Approved/Rejected → Published, with a reusable checklist, reviewer notes, and a QA score
+- Per-project Review Queue
+- Version history on regeneration, with side-by-side compare
+
+### 🔐 Authentication
+
+- User registration
+- Login / Logout
+- JWT Authentication
+- Refresh Tokens
+- Protected Routes
+- Role-Based Access Control (RBAC)
+
+### 📚 Knowledge Base
+
+- File uploads
+- Document indexing
+- Retrieval-Augmented Generation (RAG)
+- Vector database integration
+
+### ⚙️ Administration
+
+- Admin dashboard
+- User management
+- API key management
+- Usage analytics
+- System monitoring
+
+### 🛠 Developer Experience
+
+- REST API
+- OpenAPI / Swagger
+- Docker deployment
+- GitHub Actions
+- Automated testing
+- CI/CD pipeline
+
+---
+
+# 🏗 Architecture
+
+```text
+                ┌─────────────────────────────┐
+                │        React Frontend       │
+                └──────────────┬──────────────┘
+                               │
+                        REST / Streaming
+                               │
+                ┌──────────────▼──────────────┐
+                │      Express Backend        │
+                └──────────────┬──────────────┘
+                               │
+        ┌──────────────────────┼──────────────────────┐
+        │                      │                      │
+     Ollama               Future Providers        Database
+```
+
+---
+
+# 🧰 Tech Stack
+
+## Frontend
+
 - React
+- TypeScript
+- Vite
+
+## Backend
+
 - Node.js
-- PostgreSQL
+- Express
+- TypeScript
+
+## AI
+
+- Ollama (text generation)
+- Google Gemini (image generation)
+- ComfyUI, self-hosted (image generation) — see [docs/COMFYUI_PROVIDER.md](docs/COMFYUI_PROVIDER.md) and [docs/COMFYUI_SETUP.md](docs/COMFYUI_SETUP.md)
+- Hugging Face Inference Providers (image generation) — see [docs/HUGGINGFACE_PROVIDER.md](docs/HUGGINGFACE_PROVIDER.md) and [docs/HUGGINGFACE_SETUP.md](docs/HUGGINGFACE_SETUP.md)
+
+## Infrastructure
+
 - Docker
-- Linux
+- Ubuntu Linux
+- pnpm
 
-## Roadmap
+---
 
-- [x] Setup project structure
-- [x] Install Ollama
-- [ ] Learn LLM fundamentals
-- [ ] Build Node API
-- [ ] Build React Chat
-- [ ] Learn RAG
-- [ ] CSV AI Analyzer
-- [ ] Deploy to Linux
+# 📁 Repository Structure
 
-## Status
+```text
+eyan-ai-platform/
+├── backend/
+├── frontend/
+├── .github/
+├── docker-compose.yml
+├── README.md
+└── LICENSE
+```
 
-🚧 Under Development
+---
+
+# 🚀 Getting Started
+
+## Clone the repository
+
+```bash
+git clone https://github.com/iccantimbuhan/eyan-ai-platform.git
+cd eyan-ai-platform
+```
+
+## Backend
+
+```bash
+cd backend
+pnpm install
+pnpm dev
+```
+
+## Frontend
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+---
+
+# 🗺 Roadmap
+
+## ✅ Phase 1 — Repository Foundation
+
+- Repository structure
+- TypeScript setup
+- Express backend
+- React frontend
+- Community health files
+
+## 🚧 Phase 2 — Engineering Excellence
+
+- GitHub Actions
+- ESLint
+- Prettier
+- Husky
+- lint-staged
+- Automated testing
+
+## 📅 Phase 3 — Core Platform
+
+- Authentication
+- Database
+- User Management
+- Sessions
+
+## 📅 Phase 4 — AI Features
+
+- Chat
+- Multi-provider support
+- Conversation history
+- Knowledge base
+
+## 📅 Phase 5 — Production
+
+- Monitoring
+- Scaling
+- High availability
+- Deployment automation
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome!
+
+Please read:
+
+- `.github/CONTRIBUTING.md`
+
+before submitting issues or pull requests.
+
+---
+
+# 🔒 Security
+
+If you discover a security vulnerability, please follow the instructions in:
+
+- `.github/SECURITY.md`
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## ⭐ Support
+
+If you find this project useful, consider giving it a ⭐ on GitHub.

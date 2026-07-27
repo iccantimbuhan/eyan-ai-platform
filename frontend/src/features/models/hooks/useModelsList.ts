@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useModels as useModelsFetch } from '@/features/dashboard/hooks/useModels'
 import { type ModelInfo } from '@/features/ai-chat/services/chat.service'
+import { useModels as useModelsFetch } from '@/features/dashboard/hooks/useModels'
 
 type SortKey = 'name' | 'size' | 'parameters' | 'family'
 type SortDirection = 'asc' | 'desc'

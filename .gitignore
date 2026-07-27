@@ -36,6 +36,9 @@ coverage/
 # Build
 build/
 
+# Local disk storage (LocalDiskStorageProvider) — generated files, not source
+backend/storage/
+
 # Temporary
 tmp/
 temp/
@@ -45,3 +48,4 @@ temp/
 
 # OS Files
 Thumbs.db
+.aider*

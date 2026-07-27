@@ -20,10 +20,8 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
         className
       )}
     >
-      <span
-        className={cn('h-2 w-2 rounded-full', statusConfig[status].dot)}
-      />
-      <span className="text-sm">{label}</span>
+      <span className={cn('h-2 w-2 rounded-full', statusConfig[status].dot)} />
+      <span className='text-sm'>{label}</span>
     </div>
   )
 }
