@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import type { useExecuteWorkflow } from '../../hooks/use-execute-workflow'
+import type { VideoAsset } from '../../types/video-asset'
 import { VideoWorkflowExecutor } from './VideoWorkflowExecutor'
 
 type ExecuteMutation = ReturnType<typeof useExecuteWorkflow>
@@ -29,7 +30,7 @@ const PLAN = {
   createdAt: '2026-01-01T00:00:00.000Z',
 }
 
-const SOURCE_ASSET = {
+const SOURCE_ASSET: VideoAsset = {
   id: 'video-1',
   projectId: 'project-1',
   brandKitId: null,
@@ -175,7 +176,7 @@ describe('VideoWorkflowExecutor', () => {
       .toBeInTheDocument()
   })
 
-  const EDITED_ASSET = {
+  const EDITED_ASSET: VideoAsset = {
     id: 'video-2',
     projectId: 'project-1',
     brandKitId: null,

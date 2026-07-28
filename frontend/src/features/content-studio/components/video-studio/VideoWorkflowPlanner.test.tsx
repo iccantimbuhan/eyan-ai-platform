@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import type { usePlanVideoWorkflow } from '../../hooks/use-plan-video-workflow'
+import type { VideoAsset } from '../../types/video-asset'
 import { VideoWorkflowPlanner } from './VideoWorkflowPlanner'
 
 type PlanMutation = ReturnType<typeof usePlanVideoWorkflow>
@@ -12,7 +13,7 @@ vi.mock('../../hooks/use-video-assets', () => ({
   useVideoAssets: (...args: unknown[]) => useVideoAssetsMock(...args),
 }))
 
-const UPLOADED_SOURCE = {
+const UPLOADED_SOURCE: VideoAsset = {
   id: 'video-1',
   projectId: 'project-1',
   brandKitId: null,
