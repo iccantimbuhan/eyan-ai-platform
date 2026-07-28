@@ -41,6 +41,16 @@ export function resolveImageUrl(storagePath: string): string {
   return `${apiOrigin()}${IMAGE_PUBLIC_BASE_PATH}/${storagePath}`
 }
 
+// Same static-file base path serves every StorageProvider-persisted file,
+// not just images — video sources (Sprint 7.2.1) land under the identical
+// storageLocalRoot/storagePublicBaseUrl. A separate, identically-named
+// export (rather than reusing resolveImageUrl by its image-specific name
+// from a video component) keeps the call site honest about what it's
+// resolving.
+export function resolveStoredFileUrl(storagePath: string): string {
+  return resolveImageUrl(storagePath)
+}
+
 export const imagesApi = {
   async generateImage(
     payload: GenerateImageRequest

@@ -78,7 +78,19 @@ api.interceptors.request.use((config) => {
   const accessToken = useAuthStore.getState().auth.accessToken
 
   config.headers.set('Accept', 'application/json')
-  config.headers.set('Content-Type', 'application/json')
+
+  // A FormData body (video source uploads — see video-sources.api.ts) must
+  // get the multipart boundary Content-Type axios derives on its own; the
+  // 'application/json' default this instance was created with (see
+  // axios.create() below) has to be removed, not just left unset, or it
+  // would silently corrupt every such request. Every other request in
+  // this app sends a JSON body, so this is the sole exception.
+  if (config.data instanceof FormData) {
+    config.headers.delete('Content-Type')
+  } else {
+    config.headers.set('Content-Type', 'application/json')
+  }
+
   config.headers.set(NGROK_SKIP_HEADER, 'true')
 
   if (accessToken) {

@@ -299,6 +299,8 @@ const VIDEO_KIND_LABELS: Record<VideoAssetKind, string> = {
   SUBTITLES: "Subtitles",
   STORYBOARD: "Storyboard",
   THUMBNAIL: "Thumbnail",
+  UPLOADED_SOURCE: "Uploaded Source",
+  EDITED_VIDEO: "Edited Video",
 };
 
 // A VideoAsset is AI-generated like GeneratedContent/GeneratedImage — kind

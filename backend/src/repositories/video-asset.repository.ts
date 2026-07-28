@@ -21,6 +21,18 @@ export class VideoAssetRepository {
     status?: GenerationStatus;
     generationTimeMs?: number | null;
     createdBy?: string | null;
+    // UPLOADED_SOURCE-only (Sprint 7.2.1) — see VideoSourceService. Unlike
+    // the image-kind path (PENDING row created first, storagePath added by
+    // a later update() once the provider/storage calls succeed),
+    // ingestion only ever creates a row after storage has already
+    // succeeded, so storagePath is a create()-time field here.
+    storagePath?: string | null;
+    durationMs?: number | null;
+    videoFormat?: string | null;
+    sourceFileName?: string | null;
+    // Sprint 7.2.4 — EDITED_VIDEO-only, set when the executed workflow
+    // included a "subtitles" step. See VideoExecutionEngineService.
+    subtitlePath?: string | null;
   }) {
     return prisma.videoAsset.create({
       data,

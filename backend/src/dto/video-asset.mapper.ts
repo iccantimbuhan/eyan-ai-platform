@@ -20,6 +20,10 @@ export function mapVideoAssetToResponse(row: VideoAsset): VideoAssetResponseDto 
     status: row.status,
     errorMessage: row.errorMessage,
     generationTimeMs: row.generationTimeMs,
+    durationMs: row.durationMs,
+    videoFormat: row.videoFormat,
+    sourceFileName: row.sourceFileName,
+    subtitlePath: row.subtitlePath,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

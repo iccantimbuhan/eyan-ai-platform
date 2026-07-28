@@ -42,6 +42,10 @@ const scriptAsset: VideoAsset = {
   status: 'COMPLETED',
   errorMessage: null,
   generationTimeMs: 900,
+  durationMs: null,
+  videoFormat: null,
+  sourceFileName: null,
+  subtitlePath: null,
   createdAt: '2026-07-27T00:00:01.000Z',
   updatedAt: '2026-07-27T00:00:01.000Z',
 }
@@ -58,6 +62,23 @@ const storyboardAsset: VideoAsset = {
   storagePath: 'project-1/frame.png',
   status: 'COMPLETED',
   updatedAt: '2026-07-27T00:00:02.000Z',
+}
+
+const uploadedSourceAsset: VideoAsset = {
+  ...scriptAsset,
+  id: 'video-4',
+  kind: 'UPLOADED_SOURCE',
+  prompt: 'my-video.mp4',
+  output: null,
+  provider: 'upload',
+  width: 640,
+  height: 360,
+  storagePath: 'project-1/uuid.mp4',
+  status: 'COMPLETED',
+  durationMs: 12500,
+  videoFormat: 'mp4',
+  sourceFileName: 'my-video.mp4',
+  updatedAt: '2026-07-27T00:00:04.000Z',
 }
 
 const failedAsset: VideoAsset = {
@@ -135,6 +156,21 @@ describe('VideoAssetList', () => {
     await expect
       .element(image)
       .toHaveAttribute('src', '/uploads/images/project-1/frame.png')
+  })
+
+  it('renders an uploaded source as a video player with its real metadata', async () => {
+    setVideoAssetsState({ data: { items: [uploadedSourceAsset] } })
+
+    const screen = await render(<VideoAssetList projectId='project-1' />)
+
+    await expect.element(screen.getByText('Uploaded Source')).toBeInTheDocument()
+    await expect
+      .element(screen.getByText(/640×360 · 12\.5s · mp4/))
+      .toBeInTheDocument()
+
+    const video = document.querySelector('video')
+    expect(video).not.toBeNull()
+    expect(video?.getAttribute('src')).toBe('/uploads/images/project-1/uuid.mp4')
   })
 
   it('shows a Failed badge and the error message for a failed artifact', async () => {

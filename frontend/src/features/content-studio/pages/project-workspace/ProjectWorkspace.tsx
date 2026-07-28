@@ -19,10 +19,16 @@ import { PublishingQueue } from '../../components/publishing/PublishingQueue'
 import { ProjectAnalytics } from '../../components/analytics/ProjectAnalytics'
 import { BrandKitList } from '../../components/brand-kits/BrandKitList'
 import { VideoGenerateForm } from '../../components/video-studio/VideoGenerateForm'
+import { VideoSourceUpload } from '../../components/video-studio/VideoSourceUpload'
+import { VideoWorkflowPlanner } from '../../components/video-studio/VideoWorkflowPlanner'
+import { VideoWorkflowExecutor } from '../../components/video-studio/VideoWorkflowExecutor'
 import { VideoAssetList } from '../../components/video-studio/VideoAssetList'
 import { useGenerateContent } from '../../hooks/use-generate-content'
 import { useGenerateImage } from '../../hooks/use-generate-image'
 import { useGenerateVideoAsset } from '../../hooks/use-generate-video-asset'
+import { useUploadVideoSource } from '../../hooks/use-upload-video-source'
+import { usePlanVideoWorkflow } from '../../hooks/use-plan-video-workflow'
+import { useExecuteWorkflow } from '../../hooks/use-execute-workflow'
 import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
 import { useProject } from '../../hooks/use-project'
 
@@ -50,6 +56,9 @@ export function ProjectWorkspace() {
   const generateContent = useGenerateContent(projectId)
   const generateImage = useGenerateImage(projectId)
   const generateVideoAsset = useGenerateVideoAsset(projectId)
+  const uploadVideoSource = useUploadVideoSource(projectId)
+  const planVideoWorkflow = usePlanVideoWorkflow(projectId)
+  const executeWorkflow = useExecuteWorkflow(projectId)
   const { provider: imageProvider, setProvider: setImageProvider } =
     useImageProviderPreference()
 
@@ -153,6 +162,21 @@ export function ProjectWorkspace() {
           </TabsContent>
 
           <TabsContent value='video' className='space-y-6'>
+            <VideoSourceUpload
+              projectId={projectId}
+              uploadVideoSource={uploadVideoSource}
+            />
+
+            <VideoWorkflowPlanner
+              projectId={projectId}
+              planWorkflow={planVideoWorkflow}
+            />
+
+            <VideoWorkflowExecutor
+              projectId={projectId}
+              executeWorkflow={executeWorkflow}
+            />
+
             <VideoGenerateForm
               projectId={projectId}
               generateVideoAsset={generateVideoAsset}

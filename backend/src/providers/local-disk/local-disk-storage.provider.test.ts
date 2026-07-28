@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mkdirMock = vi.fn().mockResolvedValue(undefined);
 const writeFileMock = vi.fn().mockResolvedValue(undefined);
 const rmMock = vi.fn().mockResolvedValue(undefined);
+const renameMock = vi.fn().mockResolvedValue(undefined);
+const statMock = vi.fn().mockResolvedValue({ size: 123 });
+const unlinkMock = vi.fn().mockResolvedValue(undefined);
+const copyFileMock = vi.fn().mockResolvedValue(undefined);
 const randomUUIDMock = vi.fn().mockReturnValue("fixed-uuid");
 const mkdirSyncMock = vi.fn();
 const accessSyncMock = vi.fn();
@@ -11,6 +15,10 @@ vi.mock("node:fs/promises", () => ({
   mkdir: mkdirMock,
   writeFile: writeFileMock,
   rm: rmMock,
+  rename: renameMock,
+  stat: statMock,
+  unlink: unlinkMock,
+  copyFile: copyFileMock,
 }));
 
 vi.mock("node:fs", () => ({
@@ -27,6 +35,7 @@ vi.mock("../../config/env.js", () => ({
   env: {
     storageLocalRoot: "/test-storage-root",
     storagePublicBaseUrl: "/uploads/images",
+    videoUploadTempDir: "/test-video-tmp",
   },
 }));
 
@@ -40,6 +49,10 @@ describe("LocalDiskStorageProvider", () => {
     mkdirMock.mockClear();
     writeFileMock.mockClear();
     rmMock.mockClear();
+    renameMock.mockClear().mockResolvedValue(undefined);
+    statMock.mockClear().mockResolvedValue({ size: 123 });
+    unlinkMock.mockClear();
+    copyFileMock.mockClear();
     mkdirSyncMock.mockReset();
     accessSyncMock.mockReset();
   });
@@ -125,6 +138,50 @@ describe("LocalDiskStorageProvider", () => {
       "/uploads/images/proj-1/fixed-uuid.png"
     );
   });
+
+  it("moves a sourcePath file into the storage root instead of buffering it", async () => {
+    const result = await provider.save({
+      sourcePath: "/test-video-tmp/upload-1.mp4",
+      projectId: "proj-1",
+      extension: "mp4",
+    });
+
+    expect(statMock).toHaveBeenCalledWith("/test-video-tmp/upload-1.mp4");
+    expect(renameMock).toHaveBeenCalledWith(
+      "/test-video-tmp/upload-1.mp4",
+      "/test-storage-root/proj-1/fixed-uuid.mp4"
+    );
+    expect(writeFileMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      path: "proj-1/fixed-uuid.mp4",
+      url: "/uploads/images/proj-1/fixed-uuid.mp4",
+      bytes: 123,
+    });
+  });
+
+  it("falls back to copy+unlink when sourcePath is on a different filesystem (EXDEV)", async () => {
+    const exdev = Object.assign(new Error("cross-device link"), { code: "EXDEV" });
+    renameMock.mockRejectedValueOnce(exdev);
+
+    const result = await provider.save({
+      sourcePath: "/test-video-tmp/upload-1.mp4",
+      projectId: "proj-1",
+      extension: "mp4",
+    });
+
+    expect(copyFileMock).toHaveBeenCalledWith(
+      "/test-video-tmp/upload-1.mp4",
+      "/test-storage-root/proj-1/fixed-uuid.mp4"
+    );
+    expect(unlinkMock).toHaveBeenCalledWith("/test-video-tmp/upload-1.mp4");
+    expect(result.bytes).toBe(123);
+  });
+
+  it("rejects when neither buffer nor sourcePath is provided", async () => {
+    await expect(
+      provider.save({ projectId: "proj-1", extension: "mp4" } as never)
+    ).rejects.toThrow("requires either buffer or sourcePath");
+  });
 });
 
 describe("validateLocalDiskStorageConfig", () => {
@@ -133,7 +190,7 @@ describe("validateLocalDiskStorageConfig", () => {
     accessSyncMock.mockReset();
   });
 
-  it("does not throw when the storage root can be created and is writable", () => {
+  it("does not throw when the storage root and video temp dir can be created and are writable", () => {
     mkdirSyncMock.mockReturnValue(undefined);
     accessSyncMock.mockReturnValue(undefined);
 
@@ -143,6 +200,23 @@ describe("validateLocalDiskStorageConfig", () => {
       recursive: true,
     });
     expect(accessSyncMock).toHaveBeenCalledWith("/test-storage-root", 2);
+    expect(mkdirSyncMock).toHaveBeenCalledWith("/test-video-tmp", {
+      recursive: true,
+    });
+    expect(accessSyncMock).toHaveBeenCalledWith("/test-video-tmp", 2);
+  });
+
+  it("throws a clear error when the video upload temp dir isn't writable", () => {
+    mkdirSyncMock.mockReturnValue(undefined);
+    accessSyncMock.mockImplementation((dir: string) => {
+      if (dir === "/test-video-tmp") {
+        throw new Error("EACCES: permission denied");
+      }
+    });
+
+    expect(() => validateLocalDiskStorageConfig()).toThrow(
+      /Video upload temp directory .* is not writable/
+    );
   });
 
   it("throws a clear error when the storage root can't be created", () => {

@@ -513,7 +513,32 @@ McpConnector Interface (connect / listTools / callTool / disconnect / healthChec
 
 **Frontend**: `features/automation/` — Providers (read-only registry listing), Connections, MCP Servers, Health (reuses the MCP Servers query, since health fields already live on that same row), and Audit Logs pages, under a new "Automation" sidebar group. Contains no business logic — credentials are entered as generic JSON and sent to the backend as plaintext over HTTPS for server-side encryption; permission checks (`useCan`) mirror the backend's actual route gates and are a UI convenience, never a security boundary.
 
-Full design rationale — why the registry mirrors `PlatformProviderFactory` rather than `ImageProviderFactory`, why connectors never decrypt credentials, why business logic stays in services, and how a future real provider (starting with Sprint 7.2's Canva) should integrate: `.claude/decisions/ADR-0012-mcp-foundation.md`.
+Full design rationale — why the registry mirrors `PlatformProviderFactory` rather than `ImageProviderFactory`, why connectors never decrypt credentials, why business logic stays in services, and how a future real provider should integrate: `.claude/decisions/ADR-0012-mcp-foundation.md`. (A real Canva provider was the next step assumed when Sprint 7.1 closed — Sprint 7.2 was since redirected to the AI Video Editing Pipeline below; Canva/GitHub/Docker/etc. remain valid, un-started future work.)
+
+---
+
+# AI Video Editing Pipeline Architecture
+
+Sprint 7.2 extends the existing AI Video Studio (above) with a pipeline that lets a user upload a real video file and, in later milestones, describe edits to it in plain English. Milestone 1 (Source Ingestion, Sprint 7.2.1) is the only part built so far — no planner, execution engine, FFmpeg editing, Whisper, or background job infrastructure exists yet.
+
+```
+VideoAssetKind
+   ├─ SCRIPT / SCENE_BREAKDOWN / ... / STORYBOARD / THUMBNAIL   (Sprint 6.2 — AI-generated)
+   ├─ UPLOADED_SOURCE                                            (Sprint 7.2.1 — a real uploaded file)
+   └─ EDITED_VIDEO                                                (reserved — a later milestone's pipeline output)
+```
+
+Every kind, old or new, is still one `VideoAsset` row surfaced under the same `AssetType.VIDEO` — Review, Publishing, and Analytics needed zero code changes for the new kinds beyond one label added to `asset.mapper.ts`'s existing `VIDEO_KIND_LABELS` map, the same recipe ADR-0008 already established.
+
+**Upload path** (`POST /api/v1/video-edit/sources`): `video-upload.middleware.ts` (multer, **disk storage, never memory storage**) streams the multipart body straight to `env.videoUploadTempDir` → `VideoSourceService.ingest()` verifies project ownership, validates the extension, and calls `probeVideoFile()` (`ffprobe.util.ts`) → `StorageProvider.save({ sourcePath })` moves the file into the storage root (`rename()`, `EXDEV` copy+unlink fallback) → a `VideoAsset(kind: UPLOADED_SOURCE, status: COMPLETED)` row is created with the real metadata `ffprobe` extracted (`durationMs`/`videoFormat`/`sourceFileName`, plus `width`/`height` on the existing columns).
+
+This is a synchronous request/response operation, not a background job — `ffprobe` is fast enough that there's no need for the PENDING-then-update lifecycle `ImageService`/`VideoAssetService.generate()` use for slow provider calls. A later milestone's execution engine (multi-step, genuinely long-running FFmpeg/Whisper/CV work) is expected to need real background-job infrastructure, which doesn't exist anywhere in this codebase yet — deliberately not built ahead of that need.
+
+**Why `StorageProvider` gained `sourcePath` instead of a parallel upload-storage path**: `SaveFileInput` previously only accepted an in-memory `buffer` — fine for provider-generated image bytes, but buffering a multi-hundred-MB video upload in Node memory risks tripping the backend's real PM2 `max_memory_restart` ceiling (500MB — see `ecosystem.config.cjs`). `sourcePath` is a minimal, additive alternative on the same interface (`LocalDiskStorageProvider.save()` picks whichever input it was given), not a new storage abstraction.
+
+**Why `ffprobe` is more than a metadata reader**: it's also the authoritative validation that an uploaded file is really a video — a file that merely has a video-sounding extension or client-supplied mimetype but isn't a real video fails `ffprobe`'s parse with a clean, sanitized `InvalidVideoFileError`, before it can ever become a `VideoAsset` row. The multer `fileFilter`'s mimetype allowlist is a cheap first-pass rejection only, not the real check — the same "don't trust client-supplied metadata" posture this repo already takes with uploaded file extensions in `LocalDiskStorageProvider`.
+
+Full milestone-by-milestone detail: `tasks/completed/sprint-7-2-1-source-ingestion.md`.
 
 ---
 

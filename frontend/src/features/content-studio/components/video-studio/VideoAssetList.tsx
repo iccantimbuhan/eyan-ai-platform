@@ -2,11 +2,13 @@ import { Film } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formatDurationMs } from '@/lib/utils'
 
-import { resolveImageUrl } from '../../api/images.api'
+import { resolveImageUrl, resolveStoredFileUrl } from '../../api/images.api'
 import { useVideoAssets } from '../../hooks/use-video-assets'
 import {
   isTextVideoKind,
+  isVideoFileKind,
   videoKindLabel,
   type VideoAsset,
 } from '../../types/video-asset'
@@ -55,6 +57,18 @@ function VideoAssetCard({ item }: { item: VideoAsset }) {
         <p className='line-clamp-4 text-sm whitespace-pre-wrap'>
           {item.output ?? 'No output.'}
         </p>
+      ) : isVideoFileKind(item.kind) && item.status === 'COMPLETED' && item.storagePath ? (
+        <div className='space-y-1'>
+          <video
+            controls
+            src={resolveStoredFileUrl(item.storagePath)}
+            className='max-w-xs rounded-md border'
+          />
+          <p className='text-xs text-muted-foreground'>
+            {item.width}×{item.height} · {formatDurationMs(item.durationMs)} ·{' '}
+            {item.videoFormat}
+          </p>
+        </div>
       ) : item.status === 'COMPLETED' && item.storagePath ? (
         <img
           src={resolveImageUrl(item.storagePath)}

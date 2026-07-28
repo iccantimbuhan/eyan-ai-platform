@@ -23,6 +23,14 @@ export interface VideoAssetResponseDto {
   status: GenerationStatus;
   errorMessage: string | null;
   generationTimeMs: number | null;
+  // UPLOADED_SOURCE-only real video file metadata (Sprint 7.2.1) — see
+  // VideoSourceService.
+  durationMs: number | null;
+  videoFormat: string | null;
+  sourceFileName: string | null;
+  // Sprint 7.2.4 — EDITED_VIDEO-only, set when the executed workflow
+  // included a "subtitles" step. See VideoExecutionEngineService.
+  subtitlePath: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

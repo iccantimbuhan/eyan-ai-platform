@@ -60,6 +60,44 @@ describe("VideoAssetRepository", () => {
     });
   });
 
+  it("creates an UPLOADED_SOURCE video asset with real file metadata (Sprint 7.2.1)", async () => {
+    createMock.mockResolvedValue({ id: "va-2" });
+
+    await repository.create({
+      projectId: "project-1",
+      videoGroupId: "group-2",
+      kind: "UPLOADED_SOURCE",
+      prompt: "my-video.mp4",
+      provider: "upload",
+      width: 1920,
+      height: 1080,
+      storagePath: "project-1/uuid.mp4",
+      status: "COMPLETED",
+      createdBy: "user-1",
+      durationMs: 12500,
+      videoFormat: "mp4",
+      sourceFileName: "my-video.mp4",
+    });
+
+    expect(createMock).toHaveBeenCalledWith({
+      data: {
+        projectId: "project-1",
+        videoGroupId: "group-2",
+        kind: "UPLOADED_SOURCE",
+        prompt: "my-video.mp4",
+        provider: "upload",
+        width: 1920,
+        height: 1080,
+        storagePath: "project-1/uuid.mp4",
+        status: "COMPLETED",
+        createdBy: "user-1",
+        durationMs: 12500,
+        videoFormat: "mp4",
+        sourceFileName: "my-video.mp4",
+      },
+    });
+  });
+
   it("scopes findById to both the id and the requesting user's project ownership", async () => {
     findFirstMock.mockResolvedValue(null);
 

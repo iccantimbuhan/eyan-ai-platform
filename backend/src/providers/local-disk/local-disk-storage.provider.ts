@@ -1,5 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  rename,
+  rm,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import { accessSync, constants as fsConstants, mkdirSync } from "node:fs";
 import path from "node:path";
 
@@ -11,7 +19,19 @@ import type {
   StorageProvider,
 } from "../interfaces/storage-provider.js";
 
-const ALLOWED_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp"]);
+// mp4/mov/webm added in Sprint 7.2.1 for uploaded video sources; srt added
+// in Sprint 7.2.4 for generated subtitle files — same allowlist mechanism,
+// no new validation path.
+const ALLOWED_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+  "mp4",
+  "mov",
+  "webm",
+  "srt",
+]);
 
 // Project IDs are Prisma cuids, but this is used directly to build a
 // filesystem path — validated defensively rather than trusted, since a
@@ -23,6 +43,10 @@ export class LocalDiskStorageProvider implements StorageProvider {
   private readonly publicBaseUrl = env.storagePublicBaseUrl;
 
   async save(input: SaveFileInput): Promise<SavedFile> {
+    if (!input.buffer && !input.sourcePath) {
+      throw new Error("SaveFileInput requires either buffer or sourcePath.");
+    }
+
     const projectId = assertSafeSegment(input.projectId, "projectId");
     const extension = assertAllowedExtension(input.extension);
 
@@ -33,16 +57,17 @@ export class LocalDiskStorageProvider implements StorageProvider {
     const absolutePath = this.resolveWithinRoot(relativePath);
 
     await mkdir(path.dirname(absolutePath), { recursive: true });
-    await writeFile(absolutePath, input.buffer);
 
-    logger.info(
-      `[LocalDiskStorageProvider] Saved ${relativePath} (${input.buffer.byteLength} bytes)`
-    );
+    const bytes = input.sourcePath
+      ? await moveFile(input.sourcePath, absolutePath)
+      : await writeBuffer(absolutePath, input.buffer!);
+
+    logger.info(`[LocalDiskStorageProvider] Saved ${relativePath} (${bytes} bytes)`);
 
     return {
       path: relativePath,
       url: this.getUrl(relativePath),
-      bytes: input.buffer.byteLength,
+      bytes,
     };
   }
 
@@ -57,6 +82,10 @@ export class LocalDiskStorageProvider implements StorageProvider {
   getUrl(filePath: string): string {
     const urlPath = filePath.split(path.sep).join("/");
     return `${this.publicBaseUrl}/${urlPath}`;
+  }
+
+  getAbsolutePath(filePath: string): string {
+    return this.resolveWithinRoot(filePath);
   }
 
   private resolveWithinRoot(filePath: string): string {
@@ -79,6 +108,33 @@ function assertSafeSegment(value: string, field: string): string {
   }
 
   return value;
+}
+
+async function writeBuffer(absolutePath: string, buffer: Buffer): Promise<number> {
+  await writeFile(absolutePath, buffer);
+  return buffer.byteLength;
+}
+
+// Moves an already-on-disk file (a streamed multer upload) into the
+// storage root without ever reading it into a Buffer — the whole reason
+// SaveFileInput.sourcePath exists (see storage-provider.ts). rename() is a
+// same-filesystem no-copy move; the EXDEV fallback only matters if the
+// upload temp dir and storage root ever end up on different mounts.
+async function moveFile(sourcePath: string, absolutePath: string): Promise<number> {
+  const { size } = await stat(sourcePath);
+
+  try {
+    await rename(sourcePath, absolutePath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EXDEV") {
+      throw error;
+    }
+
+    await copyFile(sourcePath, absolutePath);
+    await unlink(sourcePath);
+  }
+
+  return size;
 }
 
 function assertAllowedExtension(extension: string): string {
@@ -109,6 +165,22 @@ export function validateLocalDiskStorageConfig(): void {
 
     throw new Error(
       `Local image storage root "${rootDir}" is not writable: ${message}`
+    );
+  }
+
+  // Sprint 7.2.1 — video-upload.middleware.ts writes streamed uploads here
+  // before VideoSourceService moves them into rootDir. Checked at boot for
+  // the same reason as rootDir above: fail fast, not on the first upload.
+  const videoTempDir = path.resolve(env.videoUploadTempDir);
+
+  try {
+    mkdirSync(videoTempDir, { recursive: true });
+    accessSync(videoTempDir, fsConstants.W_OK);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    throw new Error(
+      `Video upload temp directory "${videoTempDir}" is not writable: ${message}`
     );
   }
 }

@@ -2,7 +2,19 @@ import { body, param, query } from "express-validator";
 
 import { VideoAssetKind } from "../generated/prisma/enums.js";
 
-const VIDEO_ASSET_KINDS = Object.values(VideoAssetKind);
+const ALL_VIDEO_ASSET_KINDS = Object.values(VideoAssetKind);
+
+// UPLOADED_SOURCE (Sprint 7.2.1) and EDITED_VIDEO (Sprint 7.2.3) are
+// deliberately excluded from generate()'s allowed kinds — neither is ever
+// created via this endpoint, which only knows how to dispatch to
+// ChatService (text kinds) or ImageProviderFactory (image kinds).
+// UPLOADED_SOURCE only ever comes from POST /video-edit/sources
+// (VideoSourceService); EDITED_VIDEO only ever comes from
+// POST /video-edit/execute (VideoExecutionEngineService). Listing/filtering
+// still accepts every kind, including both.
+const GENERATABLE_VIDEO_ASSET_KINDS = ALL_VIDEO_ASSET_KINDS.filter(
+  (kind) => kind !== "UPLOADED_SOURCE" && kind !== "EDITED_VIDEO"
+);
 const IMAGE_FORMATS = ["png", "jpg", "webp"];
 
 export const generateVideoAssetValidator = [
@@ -15,7 +27,7 @@ export const generateVideoAssetValidator = [
     .trim()
     .notEmpty()
     .withMessage("Video asset kind is required.")
-    .isIn(VIDEO_ASSET_KINDS)
+    .isIn(GENERATABLE_VIDEO_ASSET_KINDS)
     .withMessage("Invalid video asset kind."),
 
   body("prompt")
@@ -70,7 +82,7 @@ export const listVideoAssetsValidator = [
 
   query("videoGroupId").optional().trim().notEmpty(),
 
-  query("kind").optional().isIn(VIDEO_ASSET_KINDS).withMessage("Invalid video asset kind."),
+  query("kind").optional().isIn(ALL_VIDEO_ASSET_KINDS).withMessage("Invalid video asset kind."),
 
   query("page").optional().isInt({ min: 1 }).toInt(),
 

@@ -39,6 +39,12 @@ enum GenerationStatus {
 // like GeneratedContent); STORYBOARD/THUMBNAIL are image artifacts
 // (ImageProviderFactory, like GeneratedImage). See VideoAsset and
 // src/config/video-prompts.ts.
+//
+// UPLOADED_SOURCE (Sprint 7.2.1) is a third shape sharing this same table:
+// a real uploaded video file (durationMs/videoFormat/sourceFileName
+// populated, storagePath is the actual file, no AI provider involved —
+// status goes PENDING -> COMPLETED/FAILED around ffprobe + storage, same
+// posture as the image-kind lifecycle). See VideoSourceService.
 enum VideoAssetKind {
   SCRIPT
   SCENE_BREAKDOWN
@@ -48,6 +54,12 @@ enum VideoAssetKind {
   SUBTITLES
   STORYBOARD
   THUMBNAIL
+  UPLOADED_SOURCE
+  // Sprint 7.2.3 — the output of VideoExecutionEngineService running an
+  // approved VideoWorkflowPlan's FFmpeg steps against an UPLOADED_SOURCE
+  // file. Same shape as UPLOADED_SOURCE (durationMs/videoFormat/storagePath
+  // all populated from ffprobe), provider is "ffmpeg" instead of "upload".
+  EDITED_VIDEO
 }
 
 // Mirrors ContentType's five values exactly (a GeneratedContent.type value
@@ -207,18 +219,19 @@ model ContentProject {
 
   status ProjectStatus @default(DRAFT)
 
-  generatedContent  GeneratedContent[]
-  generatedImages   GeneratedImage[]
-  savedPrompts      SavedPrompt[]
-  assetReviews      AssetReview[]
-  assetVersions     AssetVersion[]
-  brandKits         BrandKit[]
-  videoAssets       VideoAsset[]
-  comments          AssetComment[]
-  reviewAssignments AssetReviewAssignment[]
-  reviewEvents      AssetReviewEvent[]
-  publishingRecords PublishingRecord[]
-  analyticsEvents   AnalyticsEvent[]
+  generatedContent   GeneratedContent[]
+  generatedImages    GeneratedImage[]
+  savedPrompts       SavedPrompt[]
+  assetReviews       AssetReview[]
+  assetVersions      AssetVersion[]
+  brandKits          BrandKit[]
+  videoAssets        VideoAsset[]
+  comments           AssetComment[]
+  reviewAssignments  AssetReviewAssignment[]
+  reviewEvents       AssetReviewEvent[]
+  publishingRecords  PublishingRecord[]
+  analyticsEvents    AnalyticsEvent[]
+  videoWorkflowPlans VideoWorkflowPlan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -432,11 +445,75 @@ model VideoAsset {
   generationTimeMs Int?
   createdBy        String?
 
+  // UPLOADED_SOURCE-only real video file metadata (Sprint 7.2.1), captured
+  // from ffprobe at ingestion time. videoFormat holds the container (e.g.
+  // "mp4") — distinct from the image-only `format` column above, which
+  // can't represent a video container. All three null for every other
+  // kind. See VideoSourceService.
+  durationMs     Int?
+  videoFormat    String?
+  sourceFileName String?
+
+  // Sprint 7.2.4 — populated only for an EDITED_VIDEO produced by a workflow
+  // plan containing a "subtitles" step (relative StorageProvider path to the
+  // generated .srt, same convention as storagePath/thumbnailPath). Null for
+  // every other row, including an EDITED_VIDEO whose plan had no subtitles
+  // step. See VideoExecutionEngineService/WhisperTranscriptionProvider.
+  subtitlePath String?
+
+  // Sprint 7.2.2 — workflow plans generated against this source video.
+  // Only ever populated for UPLOADED_SOURCE rows; see VideoWorkflowPlannerService.
+  // Two distinct relations to VideoWorkflowPlan need explicit names to
+  // disambiguate: this asset as a plan's *source*, vs. this asset as a
+  // plan's *result* (Sprint 7.2.3 — see VideoWorkflowPlan below).
+  workflowPlans        VideoWorkflowPlan[] @relation("VideoWorkflowPlanSource")
+  resultOfWorkflowPlan VideoWorkflowPlan?  @relation("VideoWorkflowPlanResult")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
   @@index([videoGroupId])
+}
+
+// Sprint 7.2.2 — a natural-language editing request converted into a
+// validated, structured plan (see VideoWorkflowPlannerService). Sprint
+// 7.2.3 added resultVideoAssetId/executedAt (both additive, nullable) once
+// VideoExecutionEngineService could actually run a plan — deliberately not
+// a full job/queue model (VideoEditJob): execution is synchronous this
+// milestone, so "did this plan run, and what did it produce" is the only
+// execution metadata actually needed.
+model VideoWorkflowPlan {
+  id String @id @default(cuid())
+
+  projectId String
+  project   ContentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  videoAssetId String
+  videoAsset   VideoAsset @relation("VideoWorkflowPlanSource", fields: [videoAssetId], references: [id], onDelete: Cascade)
+
+  // The user's original request, verbatim.
+  prompt String
+
+  // The validated { steps: [...] } plan — see WorkflowSchema. Never raw,
+  // unvalidated model output.
+  workflow Json
+
+  // Which AI model produced this plan (ChatResponse.model), for debugging.
+  model String?
+
+  // Sprint 7.2.3 — set together, once, by VideoExecutionEngineService after
+  // a successful run. SetNull (not Cascade): deleting the resulting
+  // VideoAsset must never delete the plan that produced it.
+  resultVideoAssetId String?     @unique
+  resultVideoAsset   VideoAsset? @relation("VideoWorkflowPlanResult", fields: [resultVideoAssetId], references: [id], onDelete: SetNull)
+  executedAt         DateTime?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([videoAssetId])
 }
 
 // One row per underlying asset (GeneratedContent / GeneratedImage /

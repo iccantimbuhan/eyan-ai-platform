@@ -49,6 +49,19 @@ if (Number.isNaN(huggingfaceTimeout)) {
   throw new Error("HUGGINGFACE_TIMEOUT must be a valid number.");
 }
 
+// 500MB default — sized against the real production constraint this
+// applies to: PM2 restarts the backend process past 500MB RSS
+// (ecosystem.config.cjs' max_memory_restart), which is exactly why
+// uploads are streamed to disk (VIDEO_UPLOAD_TEMP_DIR below) rather than
+// buffered in Node memory. This cap bounds disk usage, not process memory.
+const videoUploadMaxBytes = Number(
+  process.env.VIDEO_UPLOAD_MAX_BYTES ?? String(500 * 1024 * 1024)
+);
+
+if (Number.isNaN(videoUploadMaxBytes)) {
+  throw new Error("VIDEO_UPLOAD_MAX_BYTES must be a valid number.");
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
 
@@ -141,4 +154,27 @@ export const env = {
   // with a clear error the first time it's actually needed without one
   // configured, rather than at startup.
   automationEncryptionKey: process.env.AUTOMATION_ENCRYPTION_KEY ?? "",
+
+  // Sprint 7.2.1 — Video Editing Pipeline, Source Ingestion. Multer writes
+  // uploads directly here (disk storage, never memory storage — see
+  // video-upload.middleware.ts), on the same filesystem as
+  // storageLocalRoot by default so LocalDiskStorageProvider's move-based
+  // save() (SaveFileInput.sourcePath) is a same-mount rename, not a copy.
+  videoUploadTempDir:
+    process.env.VIDEO_UPLOAD_TEMP_DIR ??
+    path.join(process.cwd(), "storage", "tmp"),
+
+  videoUploadMaxBytes,
+
+  // Sprint 7.2.4 — Whisper Transcription & Subtitle Generation.
+  // WhisperTranscriptionProvider spawns this interpreter (a dedicated venv
+  // with faster-whisper installed, set up outside version control — see
+  // backend/python/README.md) directly, never through a shell. "small" is
+  // the CPU-friendly default per the approved architecture; override via
+  // env for a lighter ("tiny"/"base") or more accurate ("medium") model.
+  whisperPythonPath:
+    process.env.WHISPER_PYTHON_PATH ??
+    path.join(process.cwd(), "python", ".venv", "bin", "python3"),
+
+  whisperModel: process.env.WHISPER_MODEL ?? "small",
 };
