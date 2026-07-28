@@ -1,11 +1,13 @@
 import { query } from "express-validator";
 import { z } from "zod";
 
-// The fixed operation catalog for Sprint 7.2.2 (Workflow Planner). The
-// planner only ever selects from these — new operations are added here as
-// a new discriminated-union member, never as free-form fields. See
-// VideoWorkflowPlannerService and the approved Sprint 7.2 architecture
-// (operation catalog, §6).
+import { type ExecutableOperation } from "../constants/workflow-operations.js";
+
+// The operation catalog is the shared EXECUTABLE_OPERATIONS list
+// (backend/src/constants/workflow-operations.ts) — the planner only ever
+// selects from these, and this is the schema that enforces it. New
+// operations are added as a new discriminated-union member wired up in
+// STEP_SCHEMAS_BY_OPERATION below, never as free-form fields.
 const ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:5"] as const;
 
 const EmptyParamsSchema = z.object({}).strict();
@@ -37,10 +39,6 @@ const ResizeStepSchema = z
   })
   .strict();
 
-const ShortsStepSchema = z
-  .object({ operation: z.literal("shorts"), params: EmptyParamsSchema })
-  .strict();
-
 const SubtitlesStepSchema = z
   .object({
     operation: z.literal("subtitles"),
@@ -50,14 +48,6 @@ const SubtitlesStepSchema = z
   })
   .strict();
 
-const BlurFacesStepSchema = z
-  .object({ operation: z.literal("blur_faces"), params: EmptyParamsSchema })
-  .strict();
-
-const AutoZoomStepSchema = z
-  .object({ operation: z.literal("auto_zoom"), params: EmptyParamsSchema })
-  .strict();
-
 const BrightnessStepSchema = z
   .object({
     operation: z.literal("brightness"),
@@ -65,26 +55,30 @@ const BrightnessStepSchema = z
   })
   .strict();
 
-// volume is planning-only: which second audio file actually gets mixed in
-// is an execution-engine concern (Sprint 7.2.3+), not this milestone's.
-const BackgroundMusicStepSchema = z
-  .object({
-    operation: z.literal("background_music"),
-    params: z.object({ volume: z.number().min(0).max(100).default(50) }).strict(),
-  })
-  .strict();
+// `satisfies Record<ExecutableOperation, ...>` (not a `:` type annotation)
+// so every key keeps its own precise schema type below instead of widening
+// to z.ZodTypeAny — that's what lets z.discriminatedUnion still infer each
+// step's real shape. The `satisfies` clause is what does the enforcing:
+// adding an operation to EXECUTABLE_OPERATIONS without adding a matching
+// key here (or adding a key here that isn't in EXECUTABLE_OPERATIONS) is a
+// compile error, so the planner's schema can never silently drift from the
+// shared capability list.
+const STEP_SCHEMAS_BY_OPERATION = {
+  trim: TrimStepSchema,
+  remove_silence: RemoveSilenceStepSchema,
+  normalize_audio: NormalizeAudioStepSchema,
+  resize: ResizeStepSchema,
+  brightness: BrightnessStepSchema,
+  subtitles: SubtitlesStepSchema,
+} satisfies Record<ExecutableOperation, z.ZodTypeAny>;
 
 export const WorkflowStepSchema = z.discriminatedUnion("operation", [
-  TrimStepSchema,
-  RemoveSilenceStepSchema,
-  NormalizeAudioStepSchema,
-  ResizeStepSchema,
-  ShortsStepSchema,
-  SubtitlesStepSchema,
-  BlurFacesStepSchema,
-  AutoZoomStepSchema,
-  BrightnessStepSchema,
-  BackgroundMusicStepSchema,
+  STEP_SCHEMAS_BY_OPERATION.trim,
+  STEP_SCHEMAS_BY_OPERATION.remove_silence,
+  STEP_SCHEMAS_BY_OPERATION.normalize_audio,
+  STEP_SCHEMAS_BY_OPERATION.resize,
+  STEP_SCHEMAS_BY_OPERATION.brightness,
+  STEP_SCHEMAS_BY_OPERATION.subtitles,
 ]);
 
 const MAX_STEPS = 20;

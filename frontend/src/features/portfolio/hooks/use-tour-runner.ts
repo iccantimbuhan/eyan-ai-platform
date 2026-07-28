@@ -4,7 +4,6 @@ import type { useExecuteWorkflow } from '@/features/content-studio/hooks/use-exe
 import type { usePlanVideoWorkflow } from '@/features/content-studio/hooks/use-plan-video-workflow'
 import type { useReviewAsset } from '@/features/content-studio/hooks/use-review-asset'
 import type { useUploadVideoSource } from '@/features/content-studio/hooks/use-upload-video-source'
-import type { WorkflowOperation } from '@/features/content-studio/api/video-workflow-planner.api'
 
 import { DEMO_VIDEO_FILENAME, DEMO_VIDEO_URL, DEMO_WORKFLOW_PROMPT } from '../data/tour-steps'
 import { useTourStore } from '../store/tour-store'
@@ -29,33 +28,18 @@ interface UseTourRunnerArgs {
   setActiveTab: (tab: ProjectWorkspaceTab) => void
 }
 
-// The AI planner and the FFmpeg execution engine are intentionally
-// decoupled (see backend/src/services/video-execution-engine.service.ts):
-// the planner can propose any of 10 operations, but only these are wired
-// up to actually execute yet. A real, unconstrained AI plan can genuinely
-// include one of the other four — this mirrors FFmpegVideoProvider's
-// SUPPORTED_OPERATIONS plus "subtitles".
-const EXECUTABLE_OPERATIONS = new Set<WorkflowOperation>([
-  'trim',
-  'remove_silence',
-  'normalize_audio',
-  'resize',
-  'brightness',
-  'subtitles',
-])
-
 const MAX_PLAN_ATTEMPTS = 3
-
-function isExecutablePlan(steps: { operation: WorkflowOperation }[]): boolean {
-  return steps.every((step) => EXECUTABLE_OPERATIONS.has(step.operation))
-}
 
 // Orchestrates the guided portfolio tour on top of the real, unmodified
 // Content Studio mutations for a single project — it never calls a
 // business-logic endpoint that a manual click wouldn't also call, it just
-// decides *when* to call them (including, for planning, calling it again
-// when the AI proposes a plan this build can't execute yet — the same
-// thing a human would do by clicking "Generate Plan" a second time).
+// decides *when* to call them (including, for planning, retrying when the
+// AI's response fails validation — the same thing a human would do by
+// clicking "Generate Plan" a second time). The backend's Zod schema
+// (video-workflow-plan.validator.ts) only ever accepts operations the
+// execution engine can run, so a *successful* plan response is always
+// executable — this hook no longer needs its own executable-operations
+// check on top of that.
 export function useTourRunner({
   projectId,
   uploadVideoSource,
@@ -129,11 +113,10 @@ export function useTourRunner({
       })
     }
 
-    // The planner's own LLM call can fail outright (the backend already
-    // retries malformed JSON internally, twice, before giving up) or can
-    // succeed with an operation the execution engine doesn't run yet
-    // (planner and executor are intentionally decoupled). Both are cases a
-    // human would just click "Generate Plan" again for.
+    // The planner's own LLM call can fail outright — malformed JSON, or an
+    // operation outside the executable set the Zod schema now enforces
+    // (the backend already retries this internally, twice, before giving
+    // up). A case a human would just click "Generate Plan" again for.
     if (planVideoWorkflow.isError) {
       if (attempts >= MAX_PLAN_ATTEMPTS) {
         tour.setError('AI workflow planning failed. Please restart the tour.')
@@ -144,19 +127,8 @@ export function useTourRunner({
     }
 
     if (planVideoWorkflow.isSuccess && planVideoWorkflow.data) {
-      if (isExecutablePlan(planVideoWorkflow.data.workflow.steps)) {
-        tour.setWorkflowPlanId(planVideoWorkflow.data.id)
-        tour.setStep('execute')
-        return
-      }
-
-      if (attempts >= MAX_PLAN_ATTEMPTS) {
-        tour.setError(
-          "The AI planner kept proposing operations this build can't execute yet. Please restart the tour."
-        )
-        return
-      }
-      retry()
+      tour.setWorkflowPlanId(planVideoWorkflow.data.id)
+      tour.setStep('execute')
       return
     }
 

@@ -1,10 +1,11 @@
 import { ApiError } from "./api-error.js";
+import { EXECUTABLE_OPERATION_NAMES } from "../constants/workflow-operations.js";
 
 export class UnsupportedVideoOperationError extends ApiError {
   constructor(operation: string) {
     super(
       422,
-      `The workflow contains an operation that cannot be executed yet: "${operation}". Only trim, remove_silence, normalize_audio, resize, brightness, and subtitles are executable in this version.`
+      `The workflow contains an operation that cannot be executed yet: "${operation}". Only ${EXECUTABLE_OPERATION_NAMES.join(", ")} are executable in this version.`
     );
     this.name = "UnsupportedVideoOperationError";
   }

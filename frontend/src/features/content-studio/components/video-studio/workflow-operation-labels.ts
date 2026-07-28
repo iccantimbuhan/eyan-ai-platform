@@ -5,12 +5,8 @@ export const OPERATION_LABELS: Record<WorkflowOperation, string> = {
   remove_silence: 'Remove Silence',
   normalize_audio: 'Normalize Audio',
   resize: 'Resize',
-  shorts: 'Convert to Shorts',
-  subtitles: 'Subtitles',
-  blur_faces: 'Blur Faces',
-  auto_zoom: 'Auto Zoom',
   brightness: 'Brightness',
-  background_music: 'Background Music',
+  subtitles: 'Subtitles',
 }
 
 export function operationLabel(operation: string): string {

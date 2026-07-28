@@ -169,6 +169,61 @@ describe("VideoWorkflowPlannerService.plan", () => {
     expect(workflowPlanRepository.create).toHaveBeenCalledTimes(1);
   });
 
+  it("regenerates when the AI proposes an operation outside the executable set (blur_faces), then succeeds", async () => {
+    // blur_faces is a real operation the AI planner used to be able to
+    // return (it was schema-valid but had no execution path) — this is the
+    // exact regression this fix closes: the plan step now fails Zod
+    // validation the same as any other malformed response, so the
+    // service's existing one-shot corrective retry handles it without any
+    // new code path.
+    const unsupportedOpWorkflow = JSON.stringify({
+      steps: [{ operation: "blur_faces", params: {} }],
+    });
+    const chat = vi
+      .fn()
+      .mockResolvedValueOnce({ model: "qwen2.5-coder:7b", response: unsupportedOpWorkflow })
+      .mockResolvedValueOnce({ model: "qwen2.5-coder:7b", response: VALID_RESPONSE_TEXT });
+
+    const { service, workflowPlanRepository } = buildService({
+      chatService: createChatService({ chat }),
+    });
+
+    const result = await service.plan({ videoAssetId: "video-1", prompt: "prompt" }, "user-1");
+
+    expect(chat).toHaveBeenCalledTimes(2);
+    expect(workflowPlanRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workflow: {
+          steps: [
+            { operation: "remove_silence", params: {} },
+            { operation: "resize", params: { aspectRatio: "9:16" } },
+          ],
+        },
+      })
+    );
+    expect(result).toEqual({ id: "plan-1" });
+  });
+
+  it("gives up and throws WorkflowPlanningFailedError when the AI keeps proposing unsupported operations", async () => {
+    const unsupportedOpWorkflow = JSON.stringify({
+      steps: [{ operation: "auto_zoom", params: {} }],
+    });
+    const chat = vi
+      .fn()
+      .mockResolvedValue({ model: "qwen2.5-coder:7b", response: unsupportedOpWorkflow });
+
+    const { service, workflowPlanRepository } = buildService({
+      chatService: createChatService({ chat }),
+    });
+
+    await expect(
+      service.plan({ videoAssetId: "video-1", prompt: "prompt" }, "user-1")
+    ).rejects.toThrow(WorkflowPlanningFailedError);
+
+    expect(chat).toHaveBeenCalledTimes(2);
+    expect(workflowPlanRepository.create).not.toHaveBeenCalled();
+  });
+
   it("throws WorkflowPlanningFailedError after two failed attempts and never persists", async () => {
     const chat = vi.fn().mockResolvedValue({ model: "qwen2.5-coder:7b", response: "still not json" });
 

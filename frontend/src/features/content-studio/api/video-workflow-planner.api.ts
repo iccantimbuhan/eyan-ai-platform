@@ -6,17 +6,18 @@ import type { ApiResponse } from '@/types/api'
 // upload timeout and video-execution.api.ts's execution timeout.
 const PLAN_TIMEOUT_MS = 180_000
 
+// Mirrors the backend's single source of truth
+// (backend/src/constants/workflow-operations.ts) — the execution engine can
+// only run these, so the planner can only ever return these. No shared
+// types package exists between the two apps yet, so this stays a hand-kept
+// mirror; keep it in sync whenever the backend list changes.
 export type WorkflowOperation =
   | 'trim'
   | 'remove_silence'
   | 'normalize_audio'
   | 'resize'
-  | 'shorts'
-  | 'subtitles'
-  | 'blur_faces'
-  | 'auto_zoom'
   | 'brightness'
-  | 'background_music'
+  | 'subtitles'
 
 export interface WorkflowStep {
   operation: WorkflowOperation

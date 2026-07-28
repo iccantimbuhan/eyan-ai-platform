@@ -9,6 +9,7 @@ import {
   WorkflowPlanningFailedError,
 } from "../errors/video-workflow.error.js";
 import { WorkflowSchema, type Workflow } from "../validators/video-workflow-plan.validator.js";
+import { EXECUTABLE_OPERATIONS, EXECUTABLE_OPERATION_NAMES } from "../constants/workflow-operations.js";
 import { logger } from "../lib/logger.js";
 
 export interface PlanWorkflowInput {
@@ -115,18 +116,15 @@ export class VideoWorkflowPlannerService {
   }
 }
 
-const OPERATION_CATALOG = [
-  "trim — { startSec, endSec? } trim the video to a range in seconds",
-  "remove_silence — {} remove silent segments",
-  "normalize_audio — {} normalize loudness",
-  "resize — { aspectRatio: \"16:9\"|\"9:16\"|\"1:1\"|\"4:5\" } change aspect ratio",
-  "shorts — {} convert to a vertical short-form clip",
-  "subtitles — { language } generate and burn in subtitles (language defaults to \"auto\")",
-  "blur_faces — {} blur detected faces",
-  "auto_zoom — {} automatically zoom/crop toward the speaker",
-  "brightness — { level: -100..100 } adjust brightness",
-  "background_music — { volume: 0..100 } mix in background music at the given volume",
-].join("\n");
+// Derived from the shared EXECUTABLE_OPERATIONS list (see
+// backend/src/constants/workflow-operations.ts) so the prompt can never list
+// an operation the Zod schema below it (and the execution engine) wouldn't
+// also accept.
+const OPERATION_CATALOG = EXECUTABLE_OPERATIONS.map(
+  ({ operation, description }) => `${operation} — ${description}`
+).join("\n");
+
+const ALLOWED_OPERATIONS_LINE = `You may ONLY generate these operations: ${EXECUTABLE_OPERATION_NAMES.join(", ")}. Generating any other operation is forbidden.`;
 
 function buildPlannerSystemPrompt(videoAsset: {
   durationMs: number | null;
@@ -143,6 +141,8 @@ Source video metadata:
 
 You may ONLY use these operations, each with exactly these parameters:
 ${OPERATION_CATALOG}
+
+${ALLOWED_OPERATIONS_LINE}
 
 Output ONLY a JSON object of this exact shape, and nothing else:
 {"steps":[{"operation":"<one of the operations above>","params":{...}}]}

@@ -14,7 +14,6 @@ import { WorkflowSchema, type WorkflowStep } from "../validators/video-workflow-
 import { NotFoundError } from "../errors/auth.error.js";
 import {
   InvalidWorkflowPlanError,
-  UnsupportedVideoOperationError,
   VideoExecutionFailedError,
 } from "../errors/video-execution.error.js";
 import { env } from "../config/env.js";
@@ -24,18 +23,10 @@ export interface ExecuteWorkflowInput {
   workflowPlanId: string;
 }
 
-// Sprint 7.2.4 — "subtitles" is executable now too, but not via
+// Sprint 7.2.4 — "subtitles" is executable, but not via
 // FFmpegVideoProvider.run() (it isn't a single ffmpeg pass — see
-// executeSubtitlesStep below). Kept as a standalone set here, deliberately
-// not folded into FFmpegVideoProvider.SUPPORTED_OPERATIONS, so that
-// provider's isSupported()/run() contract (and its existing tests) stay
-// exactly what they were in Sprint 7.2.3: "the operations FFmpeg alone can
-// run in one pass."
+// executeSubtitlesStep below); it's a step kind this service drives itself.
 const SUBTITLES_OPERATION = "subtitles";
-
-function isExecutableOperation(operation: string, ffmpegProvider: FFmpegVideoProvider): boolean {
-  return operation === SUBTITLES_OPERATION || ffmpegProvider.isSupported(operation);
-}
 
 // Sprint 7.2.3 — runs an already-approved VideoWorkflowPlan (Sprint 7.2.2)
 // step by step against FFmpegVideoProvider. No AI decisions are made here:
@@ -74,20 +65,14 @@ export class VideoExecutionEngineService {
       throw new InvalidWorkflowPlanError();
     }
 
+    // No separate "is this operation executable" pre-check: the Zod schema
+    // re-validated above (video-workflow-plan.validator.ts) is now built
+    // from the same shared EXECUTABLE_OPERATIONS list the planner and
+    // FFmpegVideoProvider use, so a workflow that parses successfully can
+    // only ever contain operations this engine can run. A legacy stored
+    // plan predating that guarantee fails the parse above as
+    // InvalidWorkflowPlanError instead.
     const steps = parsedWorkflow.data.steps;
-
-    // A plan may legitimately contain operations the planner (Sprint 7.2.2)
-    // already knows about but no execution path exists for yet (blur_faces,
-    // auto_zoom, background_music, shorts) — rejected wholesale, never
-    // partially executed. subtitles became executable this milestone (see
-    // isExecutableOperation above).
-    const unsupportedStep = steps.find(
-      (step) => !isExecutableOperation(step.operation, this.ffmpegProvider)
-    );
-
-    if (unsupportedStep) {
-      throw new UnsupportedVideoOperationError(unsupportedStep.operation);
-    }
 
     const sourceAsset = await this.videoAssetRepository.findById(plan.videoAssetId, userId);
 

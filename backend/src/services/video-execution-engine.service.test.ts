@@ -23,7 +23,6 @@ import { VideoExecutionEngineService } from "./video-execution-engine.service.js
 import { NotFoundError } from "../errors/auth.error.js";
 import {
   InvalidWorkflowPlanError,
-  UnsupportedVideoOperationError,
   VideoExecutionFailedError,
 } from "../errors/video-execution.error.js";
 
@@ -256,7 +255,12 @@ describe("VideoExecutionEngineService.execute", () => {
     expect(videoAssetRepository.findById).not.toHaveBeenCalled();
   });
 
-  it("throws UnsupportedVideoOperationError for a not-yet-executable operation and never runs ffmpeg", async () => {
+  it("throws InvalidWorkflowPlanError for a plan containing an operation outside the executable set and never runs ffmpeg", async () => {
+    // "blur_faces" isn't in WorkflowStepSchema's discriminated union
+    // (backend/src/validators/video-workflow-plan.validator.ts) — a plan
+    // can only end up storing it if it predates the shared
+    // EXECUTABLE_OPERATIONS restriction, so re-validation rejects the
+    // whole workflow rather than a per-step "unsupported operation" check.
     const { service, ffmpegProvider, videoAssetRepository } = buildService({
       workflowPlanRepository: createWorkflowPlanRepository({
         findById: vi.fn().mockResolvedValue({
@@ -267,7 +271,7 @@ describe("VideoExecutionEngineService.execute", () => {
     });
 
     await expect(service.execute({ workflowPlanId: "plan-1" }, "user-1")).rejects.toThrow(
-      UnsupportedVideoOperationError
+      InvalidWorkflowPlanError
     );
     expect(ffmpegProvider.run).not.toHaveBeenCalled();
     expect(videoAssetRepository.findById).not.toHaveBeenCalled();

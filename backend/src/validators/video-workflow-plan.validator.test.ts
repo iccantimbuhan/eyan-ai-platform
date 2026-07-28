@@ -29,6 +29,37 @@ describe("WorkflowSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  // These four were valid discriminated-union members before the schema
+  // was restricted to the shared EXECUTABLE_OPERATIONS list
+  // (backend/src/constants/workflow-operations.ts) — the AI planner could
+  // (and did) propose them even though no execution path exists for any of
+  // them. Each must now fail validation outright, not just execution.
+  it.each(["blur_faces", "auto_zoom", "shorts", "background_music"])(
+    "rejects %s — planned-but-not-executable operations are no longer schema-valid",
+    (operation) => {
+      const result = WorkflowSchema.safeParse({
+        steps: [{ operation, params: {} }],
+      });
+
+      expect(result.success).toBe(false);
+    }
+  );
+
+  it("accepts every operation in the executable set with minimal valid params", () => {
+    const result = WorkflowSchema.safeParse({
+      steps: [
+        { operation: "trim", params: { startSec: 0 } },
+        { operation: "remove_silence", params: {} },
+        { operation: "normalize_audio", params: {} },
+        { operation: "resize", params: { aspectRatio: "9:16" } },
+        { operation: "brightness", params: { level: 10 } },
+        { operation: "subtitles", params: {} },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("rejects a step missing required params", () => {
     const result = WorkflowSchema.safeParse({
       steps: [{ operation: "resize", params: {} }],

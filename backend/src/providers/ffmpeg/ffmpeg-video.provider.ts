@@ -3,14 +3,15 @@ import path from "node:path";
 
 import { UnsupportedVideoOperationError } from "../../errors/video-execution.error.js";
 import type { WorkflowStep } from "../../validators/video-workflow-plan.validator.js";
+import { EXECUTABLE_OPERATION_NAMES, type ExecutableOperation } from "../../constants/workflow-operations.js";
 
-export const SUPPORTED_OPERATIONS = [
-  "trim",
-  "remove_silence",
-  "normalize_audio",
-  "resize",
-  "brightness",
-] as const;
+// The subset of the shared EXECUTABLE_OPERATIONS list this provider runs
+// directly as a single ffmpeg pass — "subtitles" is also executable
+// end-to-end, but as a multi-provider sequence VideoExecutionEngineService
+// drives itself (see that file), not via this provider's run().
+export const SUPPORTED_OPERATIONS = EXECUTABLE_OPERATION_NAMES.filter(
+  (operation): operation is Exclude<ExecutableOperation, "subtitles"> => operation !== "subtitles"
+);
 
 export type SupportedFfmpegOperation = (typeof SUPPORTED_OPERATIONS)[number];
 
