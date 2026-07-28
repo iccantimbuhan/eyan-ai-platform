@@ -1,6 +1,11 @@
 import { api } from '@/services/api'
 import type { ApiResponse } from '@/types/api'
 
+// Ollama inference on this CPU-only hardware can genuinely take well over
+// a minute — sized generously, same reasoning as video-sources.api.ts's
+// upload timeout and video-execution.api.ts's execution timeout.
+const PLAN_TIMEOUT_MS = 180_000
+
 export type WorkflowOperation =
   | 'trim'
   | 'remove_silence'
@@ -44,7 +49,8 @@ export const videoWorkflowPlannerApi = {
   async planWorkflow(input: PlanWorkflowInput): Promise<VideoWorkflowPlan> {
     const { data } = await api.post<ApiResponse<VideoWorkflowPlan>>(
       '/video-edit/planner',
-      input
+      input,
+      { timeout: PLAN_TIMEOUT_MS }
     )
 
     return data.data

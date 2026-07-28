@@ -1,4 +1,4 @@
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { ArrowLeft, FolderOpen } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -29,8 +29,12 @@ import { useGenerateVideoAsset } from '../../hooks/use-generate-video-asset'
 import { useUploadVideoSource } from '../../hooks/use-upload-video-source'
 import { usePlanVideoWorkflow } from '../../hooks/use-plan-video-workflow'
 import { useExecuteWorkflow } from '../../hooks/use-execute-workflow'
+import { useReviewAsset } from '../../hooks/use-review-asset'
 import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
 import { useProject } from '../../hooks/use-project'
+import { TourOverlay } from '@/features/portfolio/components/TourOverlay'
+import { VideoComparisonPlayer } from '@/features/portfolio/components/VideoComparisonPlayer'
+import { useTourRunner } from '@/features/portfolio/hooks/use-tour-runner'
 
 function ProjectWorkspaceShell({ children }: { children: React.ReactNode }) {
   return (
@@ -49,8 +53,18 @@ function ProjectWorkspaceShell({ children }: { children: React.ReactNode }) {
 
 export function ProjectWorkspace() {
   const { projectId } = useParams({
-    from: '/_authenticated/content-studio/$projectId',
+    from: '/app/_authenticated/content-studio/$projectId',
   })
+  const { tab } = useSearch({
+    from: '/app/_authenticated/content-studio/$projectId',
+  })
+  const navigate = useNavigate({
+    from: '/app/content-studio/$projectId',
+  })
+
+  const activeTab = tab ?? 'content'
+  const setActiveTab = (value: string) =>
+    navigate({ search: (prev) => ({ ...prev, tab: value as typeof tab }) })
 
   const { data: project, isLoading, error } = useProject(projectId)
   const generateContent = useGenerateContent(projectId)
@@ -59,8 +73,19 @@ export function ProjectWorkspace() {
   const uploadVideoSource = useUploadVideoSource(projectId)
   const planVideoWorkflow = usePlanVideoWorkflow(projectId)
   const executeWorkflow = useExecuteWorkflow(projectId)
+  const reviewAsset = useReviewAsset(projectId)
   const { provider: imageProvider, setProvider: setImageProvider } =
     useImageProviderPreference()
+
+  const tour = useTourRunner({
+    projectId,
+    uploadVideoSource,
+    planVideoWorkflow,
+    executeWorkflow,
+    reviewAsset,
+    activeTab,
+    setActiveTab,
+  })
 
   if (isLoading) {
     return (
@@ -86,7 +111,7 @@ export function ProjectWorkspace() {
     <ProjectWorkspaceShell>
       <div className='space-y-6'>
         <Link
-          to='/content-studio'
+          to='/app/content-studio'
           className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground'
         >
           <ArrowLeft className='h-4 w-4' />
@@ -119,7 +144,7 @@ export function ProjectWorkspace() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue='content'>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value='content'>Content</TabsTrigger>
             <TabsTrigger value='images'>Images</TabsTrigger>
@@ -165,16 +190,20 @@ export function ProjectWorkspace() {
             <VideoSourceUpload
               projectId={projectId}
               uploadVideoSource={uploadVideoSource}
+              autoUploadFile={tour.autoUploadFile}
             />
 
             <VideoWorkflowPlanner
               projectId={projectId}
               planWorkflow={planVideoWorkflow}
+              initialVideoAssetId={tour.initialVideoAssetId}
+              initialPrompt={tour.initialPrompt}
             />
 
             <VideoWorkflowExecutor
               projectId={projectId}
               executeWorkflow={executeWorkflow}
+              initialWorkflowPlanId={tour.initialWorkflowPlanId}
             />
 
             <VideoGenerateForm
@@ -190,6 +219,14 @@ export function ProjectWorkspace() {
           </TabsContent>
 
           <TabsContent value='review' className='space-y-6'>
+            {tour.isActive && (
+              <VideoComparisonPlayer
+                projectId={projectId}
+                originalAssetId={tour.sourceVideoAssetId}
+                processedAssetId={tour.resultVideoAssetId}
+              />
+            )}
+
             <ReviewQueue projectId={projectId} />
           </TabsContent>
 
@@ -202,6 +239,20 @@ export function ProjectWorkspace() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {tour.isActive && (
+        <TourOverlay
+          step={tour.step}
+          error={tour.error}
+          uploadPending={uploadVideoSource.isPending}
+          planPending={planVideoWorkflow.isPending}
+          executePending={executeWorkflow.isPending}
+          planSteps={planVideoWorkflow.data?.workflow.steps}
+          reviewIsPending={tour.reviewIsPending}
+          onContinueToPublish={tour.continueToPublish}
+          onFinishTour={tour.finishTour}
+        />
+      )}
     </ProjectWorkspaceShell>
   )
 }

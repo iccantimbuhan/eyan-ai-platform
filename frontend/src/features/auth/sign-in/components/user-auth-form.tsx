@@ -65,7 +65,7 @@ export function UserAuthForm({
       toast.success(`Welcome back, ${user.name}!`)
 
       navigate({
-        to: redirectTo || '/',
+        to: redirectTo || '/app',
         replace: true,
       })
     } catch (error: any) {

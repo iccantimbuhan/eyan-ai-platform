@@ -18,7 +18,7 @@ export function ProjectCard({ project }: Props) {
       className="cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg"
       onClick={() =>
         navigate({
-          to: '/content-studio/$projectId',
+          to: '/app/content-studio/$projectId',
           params: {
             projectId: project.id,
           },

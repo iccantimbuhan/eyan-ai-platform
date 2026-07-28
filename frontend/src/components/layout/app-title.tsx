@@ -22,7 +22,7 @@ export function AppTitle() {
         >
           <div>
             <Link
-              to='/'
+              to='/app'
               onClick={() => setOpenMobile(false)}
               className='flex flex-1 items-center gap-3'
             >

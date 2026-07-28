@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
@@ -21,35 +21,37 @@ import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as AuthenticatedAiChatIndexRouteImport } from './routes/_authenticated/ai-chat/index'
-import { Route as AuthenticatedContentStudioIndexRouteImport } from './routes/_authenticated/content-studio/index'
-import { Route as AuthenticatedContentStudioProjectIdRouteImport } from './routes/_authenticated/content-studio/$projectId'
-import { Route as AuthenticatedContentStudioDashboardRouteImport } from './routes/_authenticated/content-studio/dashboard'
-import { Route as AuthenticatedContentStudioPromptLibraryRouteImport } from './routes/_authenticated/content-studio/prompt-library'
-import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
-import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
-import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
-import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
-import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
-import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
-import { Route as AuthenticatedSettingsProvidersRouteImport } from './routes/_authenticated/settings/providers'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as AppAuthenticatedIndexRouteImport } from './routes/app/_authenticated/index'
+import { Route as AppAuthenticatedSettingsRouteRouteImport } from './routes/app/_authenticated/settings/route'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as AuthenticatedAutomationAuditLogsIndexRouteImport } from './routes/_authenticated/automation/audit-logs/index'
-import { Route as AuthenticatedAutomationConnectionsIndexRouteImport } from './routes/_authenticated/automation/connections/index'
-import { Route as AuthenticatedAutomationHealthIndexRouteImport } from './routes/_authenticated/automation/health/index'
-import { Route as AuthenticatedAutomationMcpServersIndexRouteImport } from './routes/_authenticated/automation/mcp-servers/index'
-import { Route as AuthenticatedAutomationProvidersIndexRouteImport } from './routes/_authenticated/automation/providers/index'
+import { Route as AppAuthenticatedAiChatIndexRouteImport } from './routes/app/_authenticated/ai-chat/index'
+import { Route as AppAuthenticatedContentStudioIndexRouteImport } from './routes/app/_authenticated/content-studio/index'
+import { Route as AppAuthenticatedContentStudioProjectIdRouteImport } from './routes/app/_authenticated/content-studio/$projectId'
+import { Route as AppAuthenticatedContentStudioDashboardRouteImport } from './routes/app/_authenticated/content-studio/dashboard'
+import { Route as AppAuthenticatedContentStudioPromptLibraryRouteImport } from './routes/app/_authenticated/content-studio/prompt-library'
+import { Route as AppAuthenticatedErrorsErrorRouteImport } from './routes/app/_authenticated/errors/$error'
+import { Route as AppAuthenticatedModelsIndexRouteImport } from './routes/app/_authenticated/models/index'
+import { Route as AppAuthenticatedRolesIndexRouteImport } from './routes/app/_authenticated/roles/index'
+import { Route as AppAuthenticatedSettingsIndexRouteImport } from './routes/app/_authenticated/settings/index'
+import { Route as AppAuthenticatedSettingsAccountRouteImport } from './routes/app/_authenticated/settings/account'
+import { Route as AppAuthenticatedSettingsAppearanceRouteImport } from './routes/app/_authenticated/settings/appearance'
+import { Route as AppAuthenticatedSettingsDisplayRouteImport } from './routes/app/_authenticated/settings/display'
+import { Route as AppAuthenticatedSettingsNotificationsRouteImport } from './routes/app/_authenticated/settings/notifications'
+import { Route as AppAuthenticatedSettingsProvidersRouteImport } from './routes/app/_authenticated/settings/providers'
+import { Route as AppAuthenticatedUsersIndexRouteImport } from './routes/app/_authenticated/users/index'
+import { Route as AppAuthenticatedAutomationAuditLogsIndexRouteImport } from './routes/app/_authenticated/automation/audit-logs/index'
+import { Route as AppAuthenticatedAutomationConnectionsIndexRouteImport } from './routes/app/_authenticated/automation/connections/index'
+import { Route as AppAuthenticatedAutomationHealthIndexRouteImport } from './routes/app/_authenticated/automation/health/index'
+import { Route as AppAuthenticatedAutomationMcpServersIndexRouteImport } from './routes/app/_authenticated/automation/mcp-servers/index'
+import { Route as AppAuthenticatedAutomationProvidersIndexRouteImport } from './routes/app/_authenticated/automation/providers/index'
 
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
@@ -107,17 +109,11 @@ const errors503Route = errors503RouteImport.update({
   path: '/503',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AppAuthenticatedRouteRoute = AppAuthenticatedRouteRouteImport.update({
+  id: '/app/_authenticated',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSettingsRouteRoute =
-  AuthenticatedSettingsRouteRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const ClerkauthRouteRoute = ClerkauthRouteRouteImport.update({
   id: '/(auth)',
   getParentRoute: () => ClerkRouteRoute,
@@ -126,94 +122,17 @@ const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => ClerkRouteRoute,
 } as any)
-const AuthenticatedAiChatIndexRoute =
-  AuthenticatedAiChatIndexRouteImport.update({
-    id: '/ai-chat/',
-    path: '/ai-chat/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedContentStudioIndexRoute =
-  AuthenticatedContentStudioIndexRouteImport.update({
-    id: '/content-studio/',
-    path: '/content-studio/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedContentStudioProjectIdRoute =
-  AuthenticatedContentStudioProjectIdRouteImport.update({
-    id: '/content-studio/$projectId',
-    path: '/content-studio/$projectId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedContentStudioDashboardRoute =
-  AuthenticatedContentStudioDashboardRouteImport.update({
-    id: '/content-studio/dashboard',
-    path: '/content-studio/dashboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedContentStudioPromptLibraryRoute =
-  AuthenticatedContentStudioPromptLibraryRouteImport.update({
-    id: '/content-studio/prompt-library',
-    path: '/content-studio/prompt-library',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedErrorsErrorRoute =
-  AuthenticatedErrorsErrorRouteImport.update({
-    id: '/errors/$error',
-    path: '/errors/$error',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedModelsIndexRoute =
-  AuthenticatedModelsIndexRouteImport.update({
-    id: '/models/',
-    path: '/models/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRolesIndexRoute = AuthenticatedRolesIndexRouteImport.update({
-  id: '/roles/',
-  path: '/roles/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AppAuthenticatedIndexRoute = AppAuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+const AppAuthenticatedSettingsRouteRoute =
+  AppAuthenticatedSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSettingsAccountRoute =
-  AuthenticatedSettingsAccountRouteImport.update({
-    id: '/account',
-    path: '/account',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsAppearanceRoute =
-  AuthenticatedSettingsAppearanceRouteImport.update({
-    id: '/appearance',
-    path: '/appearance',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsDisplayRoute =
-  AuthenticatedSettingsDisplayRouteImport.update({
-    id: '/display',
-    path: '/display',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsNotificationsRoute =
-  AuthenticatedSettingsNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsProvidersRoute =
-  AuthenticatedSettingsProvidersRouteImport.update({
-    id: '/providers',
-    path: '/providers',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
@@ -224,41 +143,131 @@ const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
-const AuthenticatedAutomationAuditLogsIndexRoute =
-  AuthenticatedAutomationAuditLogsIndexRouteImport.update({
+const AppAuthenticatedAiChatIndexRoute =
+  AppAuthenticatedAiChatIndexRouteImport.update({
+    id: '/ai-chat/',
+    path: '/ai-chat/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedContentStudioIndexRoute =
+  AppAuthenticatedContentStudioIndexRouteImport.update({
+    id: '/content-studio/',
+    path: '/content-studio/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedContentStudioProjectIdRoute =
+  AppAuthenticatedContentStudioProjectIdRouteImport.update({
+    id: '/content-studio/$projectId',
+    path: '/content-studio/$projectId',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedContentStudioDashboardRoute =
+  AppAuthenticatedContentStudioDashboardRouteImport.update({
+    id: '/content-studio/dashboard',
+    path: '/content-studio/dashboard',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedContentStudioPromptLibraryRoute =
+  AppAuthenticatedContentStudioPromptLibraryRouteImport.update({
+    id: '/content-studio/prompt-library',
+    path: '/content-studio/prompt-library',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedErrorsErrorRoute =
+  AppAuthenticatedErrorsErrorRouteImport.update({
+    id: '/errors/$error',
+    path: '/errors/$error',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedModelsIndexRoute =
+  AppAuthenticatedModelsIndexRouteImport.update({
+    id: '/models/',
+    path: '/models/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRolesIndexRoute =
+  AppAuthenticatedRolesIndexRouteImport.update({
+    id: '/roles/',
+    path: '/roles/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedSettingsIndexRoute =
+  AppAuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppAuthenticatedSettingsRouteRoute,
+  } as any)
+const AppAuthenticatedSettingsAccountRoute =
+  AppAuthenticatedSettingsAccountRouteImport.update({
+    id: '/account',
+    path: '/account',
+    getParentRoute: () => AppAuthenticatedSettingsRouteRoute,
+  } as any)
+const AppAuthenticatedSettingsAppearanceRoute =
+  AppAuthenticatedSettingsAppearanceRouteImport.update({
+    id: '/appearance',
+    path: '/appearance',
+    getParentRoute: () => AppAuthenticatedSettingsRouteRoute,
+  } as any)
+const AppAuthenticatedSettingsDisplayRoute =
+  AppAuthenticatedSettingsDisplayRouteImport.update({
+    id: '/display',
+    path: '/display',
+    getParentRoute: () => AppAuthenticatedSettingsRouteRoute,
+  } as any)
+const AppAuthenticatedSettingsNotificationsRoute =
+  AppAuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AppAuthenticatedSettingsRouteRoute,
+  } as any)
+const AppAuthenticatedSettingsProvidersRoute =
+  AppAuthenticatedSettingsProvidersRouteImport.update({
+    id: '/providers',
+    path: '/providers',
+    getParentRoute: () => AppAuthenticatedSettingsRouteRoute,
+  } as any)
+const AppAuthenticatedUsersIndexRoute =
+  AppAuthenticatedUsersIndexRouteImport.update({
+    id: '/users/',
+    path: '/users/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAutomationAuditLogsIndexRoute =
+  AppAuthenticatedAutomationAuditLogsIndexRouteImport.update({
     id: '/automation/audit-logs/',
     path: '/automation/audit-logs/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAutomationConnectionsIndexRoute =
-  AuthenticatedAutomationConnectionsIndexRouteImport.update({
+const AppAuthenticatedAutomationConnectionsIndexRoute =
+  AppAuthenticatedAutomationConnectionsIndexRouteImport.update({
     id: '/automation/connections/',
     path: '/automation/connections/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAutomationHealthIndexRoute =
-  AuthenticatedAutomationHealthIndexRouteImport.update({
+const AppAuthenticatedAutomationHealthIndexRoute =
+  AppAuthenticatedAutomationHealthIndexRouteImport.update({
     id: '/automation/health/',
     path: '/automation/health/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAutomationMcpServersIndexRoute =
-  AuthenticatedAutomationMcpServersIndexRouteImport.update({
+const AppAuthenticatedAutomationMcpServersIndexRoute =
+  AppAuthenticatedAutomationMcpServersIndexRouteImport.update({
     id: '/automation/mcp-servers/',
     path: '/automation/mcp-servers/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAutomationProvidersIndexRoute =
-  AuthenticatedAutomationProvidersIndexRouteImport.update({
+const AppAuthenticatedAutomationProvidersIndexRoute =
+  AppAuthenticatedAutomationProvidersIndexRouteImport.update({
     id: '/automation/providers/',
     path: '/automation/providers/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof IndexRoute
   '/clerk': typeof ClerkauthRouteRouteWithChildren
-  '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -269,30 +278,33 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
-  '/content-studio/$projectId': typeof AuthenticatedContentStudioProjectIdRoute
-  '/content-studio/dashboard': typeof AuthenticatedContentStudioDashboardRoute
-  '/content-studio/prompt-library': typeof AuthenticatedContentStudioPromptLibraryRoute
-  '/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
-  '/settings/display': typeof AuthenticatedSettingsDisplayRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/settings/providers': typeof AuthenticatedSettingsProvidersRoute
+  '/app/settings': typeof AppAuthenticatedSettingsRouteRouteWithChildren
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/ai-chat/': typeof AuthenticatedAiChatIndexRoute
-  '/content-studio/': typeof AuthenticatedContentStudioIndexRoute
-  '/models/': typeof AuthenticatedModelsIndexRoute
-  '/roles/': typeof AuthenticatedRolesIndexRoute
-  '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/users/': typeof AuthenticatedUsersIndexRoute
-  '/automation/audit-logs/': typeof AuthenticatedAutomationAuditLogsIndexRoute
-  '/automation/connections/': typeof AuthenticatedAutomationConnectionsIndexRoute
-  '/automation/health/': typeof AuthenticatedAutomationHealthIndexRoute
-  '/automation/mcp-servers/': typeof AuthenticatedAutomationMcpServersIndexRoute
-  '/automation/providers/': typeof AuthenticatedAutomationProvidersIndexRoute
+  '/app/': typeof AppAuthenticatedIndexRoute
+  '/app/content-studio/$projectId': typeof AppAuthenticatedContentStudioProjectIdRoute
+  '/app/content-studio/dashboard': typeof AppAuthenticatedContentStudioDashboardRoute
+  '/app/content-studio/prompt-library': typeof AppAuthenticatedContentStudioPromptLibraryRoute
+  '/app/errors/$error': typeof AppAuthenticatedErrorsErrorRoute
+  '/app/settings/account': typeof AppAuthenticatedSettingsAccountRoute
+  '/app/settings/appearance': typeof AppAuthenticatedSettingsAppearanceRoute
+  '/app/settings/display': typeof AppAuthenticatedSettingsDisplayRoute
+  '/app/settings/notifications': typeof AppAuthenticatedSettingsNotificationsRoute
+  '/app/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
+  '/app/ai-chat/': typeof AppAuthenticatedAiChatIndexRoute
+  '/app/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/models/': typeof AppAuthenticatedModelsIndexRoute
+  '/app/roles/': typeof AppAuthenticatedRolesIndexRoute
+  '/app/settings/': typeof AppAuthenticatedSettingsIndexRoute
+  '/app/users/': typeof AppAuthenticatedUsersIndexRoute
+  '/app/automation/audit-logs/': typeof AppAuthenticatedAutomationAuditLogsIndexRoute
+  '/app/automation/connections/': typeof AppAuthenticatedAutomationConnectionsIndexRoute
+  '/app/automation/health/': typeof AppAuthenticatedAutomationHealthIndexRoute
+  '/app/automation/mcp-servers/': typeof AppAuthenticatedAutomationMcpServersIndexRoute
+  '/app/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/clerk': typeof ClerkauthRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -304,35 +316,35 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
-  '/': typeof AuthenticatedIndexRoute
-  '/content-studio/$projectId': typeof AuthenticatedContentStudioProjectIdRoute
-  '/content-studio/dashboard': typeof AuthenticatedContentStudioDashboardRoute
-  '/content-studio/prompt-library': typeof AuthenticatedContentStudioPromptLibraryRoute
-  '/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
-  '/settings/display': typeof AuthenticatedSettingsDisplayRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/settings/providers': typeof AuthenticatedSettingsProvidersRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/ai-chat': typeof AuthenticatedAiChatIndexRoute
-  '/content-studio': typeof AuthenticatedContentStudioIndexRoute
-  '/models': typeof AuthenticatedModelsIndexRoute
-  '/roles': typeof AuthenticatedRolesIndexRoute
-  '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
-  '/automation/audit-logs': typeof AuthenticatedAutomationAuditLogsIndexRoute
-  '/automation/connections': typeof AuthenticatedAutomationConnectionsIndexRoute
-  '/automation/health': typeof AuthenticatedAutomationHealthIndexRoute
-  '/automation/mcp-servers': typeof AuthenticatedAutomationMcpServersIndexRoute
-  '/automation/providers': typeof AuthenticatedAutomationProvidersIndexRoute
+  '/app': typeof AppAuthenticatedIndexRoute
+  '/app/content-studio/$projectId': typeof AppAuthenticatedContentStudioProjectIdRoute
+  '/app/content-studio/dashboard': typeof AppAuthenticatedContentStudioDashboardRoute
+  '/app/content-studio/prompt-library': typeof AppAuthenticatedContentStudioPromptLibraryRoute
+  '/app/errors/$error': typeof AppAuthenticatedErrorsErrorRoute
+  '/app/settings/account': typeof AppAuthenticatedSettingsAccountRoute
+  '/app/settings/appearance': typeof AppAuthenticatedSettingsAppearanceRoute
+  '/app/settings/display': typeof AppAuthenticatedSettingsDisplayRoute
+  '/app/settings/notifications': typeof AppAuthenticatedSettingsNotificationsRoute
+  '/app/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
+  '/app/ai-chat': typeof AppAuthenticatedAiChatIndexRoute
+  '/app/content-studio': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/models': typeof AppAuthenticatedModelsIndexRoute
+  '/app/roles': typeof AppAuthenticatedRolesIndexRoute
+  '/app/settings': typeof AppAuthenticatedSettingsIndexRoute
+  '/app/users': typeof AppAuthenticatedUsersIndexRoute
+  '/app/automation/audit-logs': typeof AppAuthenticatedAutomationAuditLogsIndexRoute
+  '/app/automation/connections': typeof AppAuthenticatedAutomationConnectionsIndexRoute
+  '/app/automation/health': typeof AppAuthenticatedAutomationHealthIndexRoute
+  '/app/automation/mcp-servers': typeof AppAuthenticatedAutomationMcpServersIndexRoute
+  '/app/automation/providers': typeof AppAuthenticatedAutomationProvidersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
   '/clerk': typeof ClerkRouteRouteWithChildren
-  '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
@@ -345,36 +357,37 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
-  '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/content-studio/$projectId': typeof AuthenticatedContentStudioProjectIdRoute
-  '/_authenticated/content-studio/dashboard': typeof AuthenticatedContentStudioDashboardRoute
-  '/_authenticated/content-studio/prompt-library': typeof AuthenticatedContentStudioPromptLibraryRoute
-  '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
-  '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
-  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/_authenticated/settings/providers': typeof AuthenticatedSettingsProvidersRoute
+  '/app/_authenticated/settings': typeof AppAuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/_authenticated/ai-chat/': typeof AuthenticatedAiChatIndexRoute
-  '/_authenticated/content-studio/': typeof AuthenticatedContentStudioIndexRoute
-  '/_authenticated/models/': typeof AuthenticatedModelsIndexRoute
-  '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
-  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
-  '/_authenticated/automation/audit-logs/': typeof AuthenticatedAutomationAuditLogsIndexRoute
-  '/_authenticated/automation/connections/': typeof AuthenticatedAutomationConnectionsIndexRoute
-  '/_authenticated/automation/health/': typeof AuthenticatedAutomationHealthIndexRoute
-  '/_authenticated/automation/mcp-servers/': typeof AuthenticatedAutomationMcpServersIndexRoute
-  '/_authenticated/automation/providers/': typeof AuthenticatedAutomationProvidersIndexRoute
+  '/app/_authenticated/': typeof AppAuthenticatedIndexRoute
+  '/app/_authenticated/content-studio/$projectId': typeof AppAuthenticatedContentStudioProjectIdRoute
+  '/app/_authenticated/content-studio/dashboard': typeof AppAuthenticatedContentStudioDashboardRoute
+  '/app/_authenticated/content-studio/prompt-library': typeof AppAuthenticatedContentStudioPromptLibraryRoute
+  '/app/_authenticated/errors/$error': typeof AppAuthenticatedErrorsErrorRoute
+  '/app/_authenticated/settings/account': typeof AppAuthenticatedSettingsAccountRoute
+  '/app/_authenticated/settings/appearance': typeof AppAuthenticatedSettingsAppearanceRoute
+  '/app/_authenticated/settings/display': typeof AppAuthenticatedSettingsDisplayRoute
+  '/app/_authenticated/settings/notifications': typeof AppAuthenticatedSettingsNotificationsRoute
+  '/app/_authenticated/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
+  '/app/_authenticated/ai-chat/': typeof AppAuthenticatedAiChatIndexRoute
+  '/app/_authenticated/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/_authenticated/models/': typeof AppAuthenticatedModelsIndexRoute
+  '/app/_authenticated/roles/': typeof AppAuthenticatedRolesIndexRoute
+  '/app/_authenticated/settings/': typeof AppAuthenticatedSettingsIndexRoute
+  '/app/_authenticated/users/': typeof AppAuthenticatedUsersIndexRoute
+  '/app/_authenticated/automation/audit-logs/': typeof AppAuthenticatedAutomationAuditLogsIndexRoute
+  '/app/_authenticated/automation/connections/': typeof AppAuthenticatedAutomationConnectionsIndexRoute
+  '/app/_authenticated/automation/health/': typeof AppAuthenticatedAutomationHealthIndexRoute
+  '/app/_authenticated/automation/mcp-servers/': typeof AppAuthenticatedAutomationMcpServersIndexRoute
+  '/app/_authenticated/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/clerk'
-    | '/settings'
+    | '/app'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -385,30 +398,33 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
-    | '/content-studio/$projectId'
-    | '/content-studio/dashboard'
-    | '/content-studio/prompt-library'
-    | '/errors/$error'
-    | '/settings/account'
-    | '/settings/appearance'
-    | '/settings/display'
-    | '/settings/notifications'
-    | '/settings/providers'
+    | '/app/settings'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
-    | '/ai-chat/'
-    | '/content-studio/'
-    | '/models/'
-    | '/roles/'
-    | '/settings/'
-    | '/users/'
-    | '/automation/audit-logs/'
-    | '/automation/connections/'
-    | '/automation/health/'
-    | '/automation/mcp-servers/'
-    | '/automation/providers/'
+    | '/app/'
+    | '/app/content-studio/$projectId'
+    | '/app/content-studio/dashboard'
+    | '/app/content-studio/prompt-library'
+    | '/app/errors/$error'
+    | '/app/settings/account'
+    | '/app/settings/appearance'
+    | '/app/settings/display'
+    | '/app/settings/notifications'
+    | '/app/settings/providers'
+    | '/app/ai-chat/'
+    | '/app/content-studio/'
+    | '/app/models/'
+    | '/app/roles/'
+    | '/app/settings/'
+    | '/app/users/'
+    | '/app/automation/audit-logs/'
+    | '/app/automation/connections/'
+    | '/app/automation/health/'
+    | '/app/automation/mcp-servers/'
+    | '/app/automation/providers/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/clerk'
     | '/forgot-password'
     | '/otp'
@@ -420,34 +436,34 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
-    | '/'
-    | '/content-studio/$projectId'
-    | '/content-studio/dashboard'
-    | '/content-studio/prompt-library'
-    | '/errors/$error'
-    | '/settings/account'
-    | '/settings/appearance'
-    | '/settings/display'
-    | '/settings/notifications'
-    | '/settings/providers'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
-    | '/ai-chat'
-    | '/content-studio'
-    | '/models'
-    | '/roles'
-    | '/settings'
-    | '/users'
-    | '/automation/audit-logs'
-    | '/automation/connections'
-    | '/automation/health'
-    | '/automation/mcp-servers'
-    | '/automation/providers'
+    | '/app'
+    | '/app/content-studio/$projectId'
+    | '/app/content-studio/dashboard'
+    | '/app/content-studio/prompt-library'
+    | '/app/errors/$error'
+    | '/app/settings/account'
+    | '/app/settings/appearance'
+    | '/app/settings/display'
+    | '/app/settings/notifications'
+    | '/app/settings/providers'
+    | '/app/ai-chat'
+    | '/app/content-studio'
+    | '/app/models'
+    | '/app/roles'
+    | '/app/settings'
+    | '/app/users'
+    | '/app/automation/audit-logs'
+    | '/app/automation/connections'
+    | '/app/automation/health'
+    | '/app/automation/mcp-servers'
+    | '/app/automation/providers'
   id:
     | '__root__'
-    | '/_authenticated'
+    | '/'
     | '/clerk'
-    | '/_authenticated/settings'
+    | '/app/_authenticated'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
     | '/(auth)/forgot-password'
@@ -460,34 +476,36 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
-    | '/_authenticated/'
-    | '/_authenticated/content-studio/$projectId'
-    | '/_authenticated/content-studio/dashboard'
-    | '/_authenticated/content-studio/prompt-library'
-    | '/_authenticated/errors/$error'
-    | '/_authenticated/settings/account'
-    | '/_authenticated/settings/appearance'
-    | '/_authenticated/settings/display'
-    | '/_authenticated/settings/notifications'
-    | '/_authenticated/settings/providers'
+    | '/app/_authenticated/settings'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
-    | '/_authenticated/ai-chat/'
-    | '/_authenticated/content-studio/'
-    | '/_authenticated/models/'
-    | '/_authenticated/roles/'
-    | '/_authenticated/settings/'
-    | '/_authenticated/users/'
-    | '/_authenticated/automation/audit-logs/'
-    | '/_authenticated/automation/connections/'
-    | '/_authenticated/automation/health/'
-    | '/_authenticated/automation/mcp-servers/'
-    | '/_authenticated/automation/providers/'
+    | '/app/_authenticated/'
+    | '/app/_authenticated/content-studio/$projectId'
+    | '/app/_authenticated/content-studio/dashboard'
+    | '/app/_authenticated/content-studio/prompt-library'
+    | '/app/_authenticated/errors/$error'
+    | '/app/_authenticated/settings/account'
+    | '/app/_authenticated/settings/appearance'
+    | '/app/_authenticated/settings/display'
+    | '/app/_authenticated/settings/notifications'
+    | '/app/_authenticated/settings/providers'
+    | '/app/_authenticated/ai-chat/'
+    | '/app/_authenticated/content-studio/'
+    | '/app/_authenticated/models/'
+    | '/app/_authenticated/roles/'
+    | '/app/_authenticated/settings/'
+    | '/app/_authenticated/users/'
+    | '/app/_authenticated/automation/audit-logs/'
+    | '/app/_authenticated/automation/connections/'
+    | '/app/_authenticated/automation/health/'
+    | '/app/_authenticated/automation/mcp-servers/'
+    | '/app/_authenticated/automation/providers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  IndexRoute: typeof IndexRoute
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  AppAuthenticatedRouteRoute: typeof AppAuthenticatedRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -502,11 +520,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
+    '/': {
+      id: '/'
+      path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clerk': {
@@ -586,19 +604,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof errors503RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/app/_authenticated': {
+      id: '/app/_authenticated'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppAuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/clerk/(auth)': {
       id: '/clerk/(auth)'
@@ -614,110 +625,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkAuthenticatedRouteRouteImport
       parentRoute: typeof ClerkRouteRoute
     }
-    '/_authenticated/ai-chat/': {
-      id: '/_authenticated/ai-chat/'
-      path: '/ai-chat'
-      fullPath: '/ai-chat/'
-      preLoaderRoute: typeof AuthenticatedAiChatIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/content-studio/': {
-      id: '/_authenticated/content-studio/'
-      path: '/content-studio'
-      fullPath: '/content-studio/'
-      preLoaderRoute: typeof AuthenticatedContentStudioIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/content-studio/$projectId': {
-      id: '/_authenticated/content-studio/$projectId'
-      path: '/content-studio/$projectId'
-      fullPath: '/content-studio/$projectId'
-      preLoaderRoute: typeof AuthenticatedContentStudioProjectIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/content-studio/dashboard': {
-      id: '/_authenticated/content-studio/dashboard'
-      path: '/content-studio/dashboard'
-      fullPath: '/content-studio/dashboard'
-      preLoaderRoute: typeof AuthenticatedContentStudioDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/content-studio/prompt-library': {
-      id: '/_authenticated/content-studio/prompt-library'
-      path: '/content-studio/prompt-library'
-      fullPath: '/content-studio/prompt-library'
-      preLoaderRoute: typeof AuthenticatedContentStudioPromptLibraryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/errors/$error': {
-      id: '/_authenticated/errors/$error'
-      path: '/errors/$error'
-      fullPath: '/errors/$error'
-      preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/models/': {
-      id: '/_authenticated/models/'
-      path: '/models'
-      fullPath: '/models/'
-      preLoaderRoute: typeof AuthenticatedModelsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/roles/': {
-      id: '/_authenticated/roles/'
-      path: '/roles'
-      fullPath: '/roles/'
-      preLoaderRoute: typeof AuthenticatedRolesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
+    '/app/_authenticated/': {
+      id: '/app/_authenticated/'
       path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppAuthenticatedIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/settings/account': {
-      id: '/_authenticated/settings/account'
-      path: '/account'
-      fullPath: '/settings/account'
-      preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/appearance': {
-      id: '/_authenticated/settings/appearance'
-      path: '/appearance'
-      fullPath: '/settings/appearance'
-      preLoaderRoute: typeof AuthenticatedSettingsAppearanceRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/display': {
-      id: '/_authenticated/settings/display'
-      path: '/display'
-      fullPath: '/settings/display'
-      preLoaderRoute: typeof AuthenticatedSettingsDisplayRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/notifications': {
-      id: '/_authenticated/settings/notifications'
-      path: '/notifications'
-      fullPath: '/settings/notifications'
-      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/providers': {
-      id: '/_authenticated/settings/providers'
-      path: '/providers'
-      fullPath: '/settings/providers'
-      preLoaderRoute: typeof AuthenticatedSettingsProvidersRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/users/': {
-      id: '/_authenticated/users/'
-      path: '/users'
-      fullPath: '/users/'
-      preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/app/_authenticated/settings': {
+      id: '/app/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppAuthenticatedSettingsRouteRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/clerk/(auth)/sign-in': {
       id: '/clerk/(auth)/sign-in'
@@ -733,117 +653,148 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignUpRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
-    '/_authenticated/automation/audit-logs/': {
-      id: '/_authenticated/automation/audit-logs/'
+    '/app/_authenticated/ai-chat/': {
+      id: '/app/_authenticated/ai-chat/'
+      path: '/ai-chat'
+      fullPath: '/app/ai-chat/'
+      preLoaderRoute: typeof AppAuthenticatedAiChatIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/content-studio/': {
+      id: '/app/_authenticated/content-studio/'
+      path: '/content-studio'
+      fullPath: '/app/content-studio/'
+      preLoaderRoute: typeof AppAuthenticatedContentStudioIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/content-studio/$projectId': {
+      id: '/app/_authenticated/content-studio/$projectId'
+      path: '/content-studio/$projectId'
+      fullPath: '/app/content-studio/$projectId'
+      preLoaderRoute: typeof AppAuthenticatedContentStudioProjectIdRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/content-studio/dashboard': {
+      id: '/app/_authenticated/content-studio/dashboard'
+      path: '/content-studio/dashboard'
+      fullPath: '/app/content-studio/dashboard'
+      preLoaderRoute: typeof AppAuthenticatedContentStudioDashboardRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/content-studio/prompt-library': {
+      id: '/app/_authenticated/content-studio/prompt-library'
+      path: '/content-studio/prompt-library'
+      fullPath: '/app/content-studio/prompt-library'
+      preLoaderRoute: typeof AppAuthenticatedContentStudioPromptLibraryRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/errors/$error': {
+      id: '/app/_authenticated/errors/$error'
+      path: '/errors/$error'
+      fullPath: '/app/errors/$error'
+      preLoaderRoute: typeof AppAuthenticatedErrorsErrorRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/models/': {
+      id: '/app/_authenticated/models/'
+      path: '/models'
+      fullPath: '/app/models/'
+      preLoaderRoute: typeof AppAuthenticatedModelsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/roles/': {
+      id: '/app/_authenticated/roles/'
+      path: '/roles'
+      fullPath: '/app/roles/'
+      preLoaderRoute: typeof AppAuthenticatedRolesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/settings/': {
+      id: '/app/_authenticated/settings/'
+      path: '/'
+      fullPath: '/app/settings/'
+      preLoaderRoute: typeof AppAuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedSettingsRouteRoute
+    }
+    '/app/_authenticated/settings/account': {
+      id: '/app/_authenticated/settings/account'
+      path: '/account'
+      fullPath: '/app/settings/account'
+      preLoaderRoute: typeof AppAuthenticatedSettingsAccountRouteImport
+      parentRoute: typeof AppAuthenticatedSettingsRouteRoute
+    }
+    '/app/_authenticated/settings/appearance': {
+      id: '/app/_authenticated/settings/appearance'
+      path: '/appearance'
+      fullPath: '/app/settings/appearance'
+      preLoaderRoute: typeof AppAuthenticatedSettingsAppearanceRouteImport
+      parentRoute: typeof AppAuthenticatedSettingsRouteRoute
+    }
+    '/app/_authenticated/settings/display': {
+      id: '/app/_authenticated/settings/display'
+      path: '/display'
+      fullPath: '/app/settings/display'
+      preLoaderRoute: typeof AppAuthenticatedSettingsDisplayRouteImport
+      parentRoute: typeof AppAuthenticatedSettingsRouteRoute
+    }
+    '/app/_authenticated/settings/notifications': {
+      id: '/app/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/app/settings/notifications'
+      preLoaderRoute: typeof AppAuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AppAuthenticatedSettingsRouteRoute
+    }
+    '/app/_authenticated/settings/providers': {
+      id: '/app/_authenticated/settings/providers'
+      path: '/providers'
+      fullPath: '/app/settings/providers'
+      preLoaderRoute: typeof AppAuthenticatedSettingsProvidersRouteImport
+      parentRoute: typeof AppAuthenticatedSettingsRouteRoute
+    }
+    '/app/_authenticated/users/': {
+      id: '/app/_authenticated/users/'
+      path: '/users'
+      fullPath: '/app/users/'
+      preLoaderRoute: typeof AppAuthenticatedUsersIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/automation/audit-logs/': {
+      id: '/app/_authenticated/automation/audit-logs/'
       path: '/automation/audit-logs'
-      fullPath: '/automation/audit-logs/'
-      preLoaderRoute: typeof AuthenticatedAutomationAuditLogsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/app/automation/audit-logs/'
+      preLoaderRoute: typeof AppAuthenticatedAutomationAuditLogsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/automation/connections/': {
-      id: '/_authenticated/automation/connections/'
+    '/app/_authenticated/automation/connections/': {
+      id: '/app/_authenticated/automation/connections/'
       path: '/automation/connections'
-      fullPath: '/automation/connections/'
-      preLoaderRoute: typeof AuthenticatedAutomationConnectionsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/app/automation/connections/'
+      preLoaderRoute: typeof AppAuthenticatedAutomationConnectionsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/automation/health/': {
-      id: '/_authenticated/automation/health/'
+    '/app/_authenticated/automation/health/': {
+      id: '/app/_authenticated/automation/health/'
       path: '/automation/health'
-      fullPath: '/automation/health/'
-      preLoaderRoute: typeof AuthenticatedAutomationHealthIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/app/automation/health/'
+      preLoaderRoute: typeof AppAuthenticatedAutomationHealthIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/automation/mcp-servers/': {
-      id: '/_authenticated/automation/mcp-servers/'
+    '/app/_authenticated/automation/mcp-servers/': {
+      id: '/app/_authenticated/automation/mcp-servers/'
       path: '/automation/mcp-servers'
-      fullPath: '/automation/mcp-servers/'
-      preLoaderRoute: typeof AuthenticatedAutomationMcpServersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/app/automation/mcp-servers/'
+      preLoaderRoute: typeof AppAuthenticatedAutomationMcpServersIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/automation/providers/': {
-      id: '/_authenticated/automation/providers/'
+    '/app/_authenticated/automation/providers/': {
+      id: '/app/_authenticated/automation/providers/'
       path: '/automation/providers'
-      fullPath: '/automation/providers/'
-      preLoaderRoute: typeof AuthenticatedAutomationProvidersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/app/automation/providers/'
+      preLoaderRoute: typeof AppAuthenticatedAutomationProvidersIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
   }
 }
-
-interface AuthenticatedSettingsRouteRouteChildren {
-  AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
-  AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
-  AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
-  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
-  AuthenticatedSettingsProvidersRoute: typeof AuthenticatedSettingsProvidersRoute
-  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
-}
-
-const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
-  {
-    AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
-    AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
-    AuthenticatedSettingsDisplayRoute: AuthenticatedSettingsDisplayRoute,
-    AuthenticatedSettingsNotificationsRoute:
-      AuthenticatedSettingsNotificationsRoute,
-    AuthenticatedSettingsProvidersRoute: AuthenticatedSettingsProvidersRoute,
-    AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-  }
-
-const AuthenticatedSettingsRouteRouteWithChildren =
-  AuthenticatedSettingsRouteRoute._addFileChildren(
-    AuthenticatedSettingsRouteRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedContentStudioProjectIdRoute: typeof AuthenticatedContentStudioProjectIdRoute
-  AuthenticatedContentStudioDashboardRoute: typeof AuthenticatedContentStudioDashboardRoute
-  AuthenticatedContentStudioPromptLibraryRoute: typeof AuthenticatedContentStudioPromptLibraryRoute
-  AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
-  AuthenticatedAiChatIndexRoute: typeof AuthenticatedAiChatIndexRoute
-  AuthenticatedContentStudioIndexRoute: typeof AuthenticatedContentStudioIndexRoute
-  AuthenticatedModelsIndexRoute: typeof AuthenticatedModelsIndexRoute
-  AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
-  AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
-  AuthenticatedAutomationAuditLogsIndexRoute: typeof AuthenticatedAutomationAuditLogsIndexRoute
-  AuthenticatedAutomationConnectionsIndexRoute: typeof AuthenticatedAutomationConnectionsIndexRoute
-  AuthenticatedAutomationHealthIndexRoute: typeof AuthenticatedAutomationHealthIndexRoute
-  AuthenticatedAutomationMcpServersIndexRoute: typeof AuthenticatedAutomationMcpServersIndexRoute
-  AuthenticatedAutomationProvidersIndexRoute: typeof AuthenticatedAutomationProvidersIndexRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedContentStudioProjectIdRoute:
-    AuthenticatedContentStudioProjectIdRoute,
-  AuthenticatedContentStudioDashboardRoute:
-    AuthenticatedContentStudioDashboardRoute,
-  AuthenticatedContentStudioPromptLibraryRoute:
-    AuthenticatedContentStudioPromptLibraryRoute,
-  AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
-  AuthenticatedAiChatIndexRoute: AuthenticatedAiChatIndexRoute,
-  AuthenticatedContentStudioIndexRoute: AuthenticatedContentStudioIndexRoute,
-  AuthenticatedModelsIndexRoute: AuthenticatedModelsIndexRoute,
-  AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
-  AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
-  AuthenticatedAutomationAuditLogsIndexRoute:
-    AuthenticatedAutomationAuditLogsIndexRoute,
-  AuthenticatedAutomationConnectionsIndexRoute:
-    AuthenticatedAutomationConnectionsIndexRoute,
-  AuthenticatedAutomationHealthIndexRoute:
-    AuthenticatedAutomationHealthIndexRoute,
-  AuthenticatedAutomationMcpServersIndexRoute:
-    AuthenticatedAutomationMcpServersIndexRoute,
-  AuthenticatedAutomationProvidersIndexRoute:
-    AuthenticatedAutomationProvidersIndexRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface ClerkauthRouteRouteChildren {
   ClerkauthSignInRoute: typeof ClerkauthSignInRoute
@@ -873,9 +824,90 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
   ClerkRouteRouteChildren,
 )
 
+interface AppAuthenticatedSettingsRouteRouteChildren {
+  AppAuthenticatedSettingsAccountRoute: typeof AppAuthenticatedSettingsAccountRoute
+  AppAuthenticatedSettingsAppearanceRoute: typeof AppAuthenticatedSettingsAppearanceRoute
+  AppAuthenticatedSettingsDisplayRoute: typeof AppAuthenticatedSettingsDisplayRoute
+  AppAuthenticatedSettingsNotificationsRoute: typeof AppAuthenticatedSettingsNotificationsRoute
+  AppAuthenticatedSettingsProvidersRoute: typeof AppAuthenticatedSettingsProvidersRoute
+  AppAuthenticatedSettingsIndexRoute: typeof AppAuthenticatedSettingsIndexRoute
+}
+
+const AppAuthenticatedSettingsRouteRouteChildren: AppAuthenticatedSettingsRouteRouteChildren =
+  {
+    AppAuthenticatedSettingsAccountRoute: AppAuthenticatedSettingsAccountRoute,
+    AppAuthenticatedSettingsAppearanceRoute:
+      AppAuthenticatedSettingsAppearanceRoute,
+    AppAuthenticatedSettingsDisplayRoute: AppAuthenticatedSettingsDisplayRoute,
+    AppAuthenticatedSettingsNotificationsRoute:
+      AppAuthenticatedSettingsNotificationsRoute,
+    AppAuthenticatedSettingsProvidersRoute:
+      AppAuthenticatedSettingsProvidersRoute,
+    AppAuthenticatedSettingsIndexRoute: AppAuthenticatedSettingsIndexRoute,
+  }
+
+const AppAuthenticatedSettingsRouteRouteWithChildren =
+  AppAuthenticatedSettingsRouteRoute._addFileChildren(
+    AppAuthenticatedSettingsRouteRouteChildren,
+  )
+
+interface AppAuthenticatedRouteRouteChildren {
+  AppAuthenticatedSettingsRouteRoute: typeof AppAuthenticatedSettingsRouteRouteWithChildren
+  AppAuthenticatedIndexRoute: typeof AppAuthenticatedIndexRoute
+  AppAuthenticatedContentStudioProjectIdRoute: typeof AppAuthenticatedContentStudioProjectIdRoute
+  AppAuthenticatedContentStudioDashboardRoute: typeof AppAuthenticatedContentStudioDashboardRoute
+  AppAuthenticatedContentStudioPromptLibraryRoute: typeof AppAuthenticatedContentStudioPromptLibraryRoute
+  AppAuthenticatedErrorsErrorRoute: typeof AppAuthenticatedErrorsErrorRoute
+  AppAuthenticatedAiChatIndexRoute: typeof AppAuthenticatedAiChatIndexRoute
+  AppAuthenticatedContentStudioIndexRoute: typeof AppAuthenticatedContentStudioIndexRoute
+  AppAuthenticatedModelsIndexRoute: typeof AppAuthenticatedModelsIndexRoute
+  AppAuthenticatedRolesIndexRoute: typeof AppAuthenticatedRolesIndexRoute
+  AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
+  AppAuthenticatedAutomationAuditLogsIndexRoute: typeof AppAuthenticatedAutomationAuditLogsIndexRoute
+  AppAuthenticatedAutomationConnectionsIndexRoute: typeof AppAuthenticatedAutomationConnectionsIndexRoute
+  AppAuthenticatedAutomationHealthIndexRoute: typeof AppAuthenticatedAutomationHealthIndexRoute
+  AppAuthenticatedAutomationMcpServersIndexRoute: typeof AppAuthenticatedAutomationMcpServersIndexRoute
+  AppAuthenticatedAutomationProvidersIndexRoute: typeof AppAuthenticatedAutomationProvidersIndexRoute
+}
+
+const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
+  AppAuthenticatedSettingsRouteRoute:
+    AppAuthenticatedSettingsRouteRouteWithChildren,
+  AppAuthenticatedIndexRoute: AppAuthenticatedIndexRoute,
+  AppAuthenticatedContentStudioProjectIdRoute:
+    AppAuthenticatedContentStudioProjectIdRoute,
+  AppAuthenticatedContentStudioDashboardRoute:
+    AppAuthenticatedContentStudioDashboardRoute,
+  AppAuthenticatedContentStudioPromptLibraryRoute:
+    AppAuthenticatedContentStudioPromptLibraryRoute,
+  AppAuthenticatedErrorsErrorRoute: AppAuthenticatedErrorsErrorRoute,
+  AppAuthenticatedAiChatIndexRoute: AppAuthenticatedAiChatIndexRoute,
+  AppAuthenticatedContentStudioIndexRoute:
+    AppAuthenticatedContentStudioIndexRoute,
+  AppAuthenticatedModelsIndexRoute: AppAuthenticatedModelsIndexRoute,
+  AppAuthenticatedRolesIndexRoute: AppAuthenticatedRolesIndexRoute,
+  AppAuthenticatedUsersIndexRoute: AppAuthenticatedUsersIndexRoute,
+  AppAuthenticatedAutomationAuditLogsIndexRoute:
+    AppAuthenticatedAutomationAuditLogsIndexRoute,
+  AppAuthenticatedAutomationConnectionsIndexRoute:
+    AppAuthenticatedAutomationConnectionsIndexRoute,
+  AppAuthenticatedAutomationHealthIndexRoute:
+    AppAuthenticatedAutomationHealthIndexRoute,
+  AppAuthenticatedAutomationMcpServersIndexRoute:
+    AppAuthenticatedAutomationMcpServersIndexRoute,
+  AppAuthenticatedAutomationProvidersIndexRoute:
+    AppAuthenticatedAutomationProvidersIndexRoute,
+}
+
+const AppAuthenticatedRouteRouteWithChildren =
+  AppAuthenticatedRouteRoute._addFileChildren(
+    AppAuthenticatedRouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  IndexRoute: IndexRoute,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  AppAuthenticatedRouteRoute: AppAuthenticatedRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,

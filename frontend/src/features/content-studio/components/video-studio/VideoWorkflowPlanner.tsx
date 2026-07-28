@@ -15,28 +15,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { useVideoAssets } from '../../hooks/use-video-assets'
 import type { usePlanVideoWorkflow } from '../../hooks/use-plan-video-workflow'
 import { isVideoFileKind } from '../../types/video-asset'
-import type { WorkflowOperation } from '../../api/video-workflow-planner.api'
+import { operationLabel } from './workflow-operation-labels'
 
 interface VideoWorkflowPlannerProps {
   projectId: string
   planWorkflow: ReturnType<typeof usePlanVideoWorkflow>
-}
-
-const OPERATION_LABELS: Record<WorkflowOperation, string> = {
-  trim: 'Trim',
-  remove_silence: 'Remove Silence',
-  normalize_audio: 'Normalize Audio',
-  resize: 'Resize',
-  shorts: 'Convert to Shorts',
-  subtitles: 'Subtitles',
-  blur_faces: 'Blur Faces',
-  auto_zoom: 'Auto Zoom',
-  brightness: 'Brightness',
-  background_music: 'Background Music',
-}
-
-function operationLabel(operation: string): string {
-  return OPERATION_LABELS[operation as WorkflowOperation] ?? operation
+  // Lets an external orchestrator (the portfolio guided tour) pre-fill the
+  // form so its own trigger of the same planWorkflow mutation shows up
+  // here exactly as a manual fill-and-click would.
+  initialVideoAssetId?: string
+  initialPrompt?: string
 }
 
 // Same reasoning as VideoGenerateForm/VideoSourceUpload's own
@@ -54,7 +42,12 @@ function extractErrorMessage(error: unknown): string {
   return 'Failed to generate a workflow plan. Please try again.'
 }
 
-export function VideoWorkflowPlanner({ projectId, planWorkflow }: VideoWorkflowPlannerProps) {
+export function VideoWorkflowPlanner({
+  projectId,
+  planWorkflow,
+  initialVideoAssetId,
+  initialPrompt,
+}: VideoWorkflowPlannerProps) {
   const videoAssets = useVideoAssets(projectId)
   const sources = (videoAssets.data?.items ?? []).filter((asset) =>
     isVideoFileKind(asset.kind)
@@ -62,6 +55,27 @@ export function VideoWorkflowPlanner({ projectId, planWorkflow }: VideoWorkflowP
 
   const [videoAssetId, setVideoAssetId] = useState<string>('')
   const [prompt, setPrompt] = useState('')
+
+  // Adjust state from props during render (React's documented pattern for
+  // this) rather than in an effect: initialVideoAssetId/initialPrompt only
+  // become known after the tour's upload step finishes, so this seeds the
+  // form the moment that happens without an extra render round-trip. The
+  // sentinel state starts at null — a value neither prop can ever equal —
+  // so this also correctly applies a value that's already present on the
+  // very first render (initialPrompt is set from mount), not just later
+  // changes. Must be useState, not useRef: refs can't be read or written
+  // during render (react-hooks/refs).
+  const [appliedVideoAssetId, setAppliedVideoAssetId] = useState<string | null>(null)
+  if (initialVideoAssetId && initialVideoAssetId !== appliedVideoAssetId) {
+    setAppliedVideoAssetId(initialVideoAssetId)
+    setVideoAssetId(initialVideoAssetId)
+  }
+
+  const [appliedPrompt, setAppliedPrompt] = useState<string | null>(null)
+  if (initialPrompt && initialPrompt !== appliedPrompt) {
+    setAppliedPrompt(initialPrompt)
+    setPrompt(initialPrompt)
+  }
 
   const canGenerate = videoAssetId.length > 0 && prompt.trim().length > 0
 

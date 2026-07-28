@@ -42,7 +42,7 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Dashboard',
-          url: '/',
+          url: '/app',
           icon: LayoutDashboard,
           permission: 'dashboard',
         },
@@ -54,13 +54,13 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'AI Chat',
-          url: '/ai-chat',
+          url: '/app/ai-chat',
           icon: MessageSquare,
           permission: 'chat',
         },
         {
           title: 'Models',
-          url: '/models',
+          url: '/app/models',
           icon: Boxes,
           permission: 'models',
         },
@@ -72,17 +72,17 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Content Studio',
-          url: '/content-studio',
+          url: '/app/content-studio',
           icon: FolderOpen,
         },
         {
           title: 'Production Dashboard',
-          url: '/content-studio/dashboard',
+          url: '/app/content-studio/dashboard',
           icon: BarChart3,
         },
         {
           title: 'Prompt Library',
-          url: '/content-studio/prompt-library',
+          url: '/app/content-studio/prompt-library',
           icon: BookOpen,
         },
       ],
@@ -93,31 +93,31 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Providers',
-          url: '/automation/providers',
+          url: '/app/automation/providers',
           icon: Plug,
           permission: 'automation',
         },
         {
           title: 'Connections',
-          url: '/automation/connections',
+          url: '/app/automation/connections',
           icon: KeyRound,
           permission: 'automation',
         },
         {
           title: 'MCP Servers',
-          url: '/automation/mcp-servers',
+          url: '/app/automation/mcp-servers',
           icon: Server,
           permission: 'automation',
         },
         {
           title: 'Health',
-          url: '/automation/health',
+          url: '/app/automation/health',
           icon: HeartPulse,
           permission: 'automation',
         },
         {
           title: 'Audit Logs',
-          url: '/automation/audit-logs',
+          url: '/app/automation/audit-logs',
           icon: ScrollText,
           permission: 'auditlogs',
         },
@@ -129,13 +129,13 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Users',
-          url: '/users',
+          url: '/app/users',
           icon: Users,
           permission: 'users',
         },
         {
           title: 'Roles',
-          url: '/roles',
+          url: '/app/roles',
           icon: ShieldCheck,
           permission: 'roles',
         },
@@ -147,29 +147,29 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Profile',
-          url: '/settings',
+          url: '/app/settings',
           icon: UserCog,
           permission: 'settings',
         },
         {
           title: 'Appearance',
-          url: '/settings/appearance',
+          url: '/app/settings/appearance',
           icon: Palette,
         },
         {
           title: 'Display',
-          url: '/settings/display',
+          url: '/app/settings/display',
           icon: Monitor,
         },
         {
           title: 'Notifications',
-          url: '/settings/notifications',
+          url: '/app/settings/notifications',
           icon: Bell,
           permission: 'settings',
         },
         {
           title: 'AI Providers',
-          url: '/settings/providers',
+          url: '/app/settings/providers',
           icon: Cpu,
           permission: 'providers',
         },

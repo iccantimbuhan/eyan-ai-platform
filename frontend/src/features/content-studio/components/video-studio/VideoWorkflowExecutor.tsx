@@ -20,6 +20,10 @@ import type { useExecuteWorkflow } from '../../hooks/use-execute-workflow'
 interface VideoWorkflowExecutorProps {
   projectId: string
   executeWorkflow: ReturnType<typeof useExecuteWorkflow>
+  // Lets an external orchestrator (the portfolio guided tour) pre-select
+  // the just-generated plan so its own trigger of the same executeWorkflow
+  // mutation shows up here exactly as a manual selection would.
+  initialWorkflowPlanId?: string
 }
 
 // Same reasoning as this feature's other extractErrorMessage helpers: the
@@ -36,11 +40,28 @@ function extractErrorMessage(error: unknown): string {
   return 'Failed to execute the workflow. Please try again.'
 }
 
-export function VideoWorkflowExecutor({ projectId, executeWorkflow }: VideoWorkflowExecutorProps) {
+export function VideoWorkflowExecutor({
+  projectId,
+  executeWorkflow,
+  initialWorkflowPlanId,
+}: VideoWorkflowExecutorProps) {
   const plans = useVideoWorkflowPlans(projectId)
   const videoAssets = useVideoAssets(projectId)
 
   const [workflowPlanId, setWorkflowPlanId] = useState('')
+
+  // Adjust state from the prop during render (React's documented pattern
+  // for this) rather than in an effect: initialWorkflowPlanId only becomes
+  // known after the tour's planning step finishes. The sentinel state
+  // starts at null — a value the prop can never equal — so this also
+  // correctly applies a value that's already present on the very first
+  // render, not just later changes. Must be useState, not useRef: refs
+  // can't be read or written during render (react-hooks/refs).
+  const [appliedWorkflowPlanId, setAppliedWorkflowPlanId] = useState<string | null>(null)
+  if (initialWorkflowPlanId && initialWorkflowPlanId !== appliedWorkflowPlanId) {
+    setAppliedWorkflowPlanId(initialWorkflowPlanId)
+    setWorkflowPlanId(initialWorkflowPlanId)
+  }
 
   const sourceFileName = (videoAssetId: string) =>
     videoAssets.data?.items.find((asset) => asset.id === videoAssetId)?.sourceFileName ??

@@ -8,7 +8,7 @@ export const Route = createFileRoute('/(auth)/sign-up')({
 
     if (auth.accessToken) {
       throw redirect({
-        to: '/',
+        to: '/app',
       })
     }
   },

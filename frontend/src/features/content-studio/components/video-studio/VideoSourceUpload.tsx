@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { isAxiosError } from 'axios'
 import { UploadCloud } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,10 @@ import type { useUploadVideoSource } from '../../hooks/use-upload-video-source'
 interface VideoSourceUploadProps {
   projectId: string
   uploadVideoSource: ReturnType<typeof useUploadVideoSource>
+  // Lets an external orchestrator (the portfolio guided tour) supply a
+  // pre-fetched File and have it go through the exact same upload mutation
+  // a real "Choose file" selection triggers — no separate upload path.
+  autoUploadFile?: File | null
 }
 
 // Same reasoning as VideoGenerateForm's own extractErrorMessage: the
@@ -28,14 +32,16 @@ function extractErrorMessage(error: unknown): string {
   return 'Failed to upload video. Please try again.'
 }
 
-export function VideoSourceUpload({ projectId, uploadVideoSource }: VideoSourceUploadProps) {
+export function VideoSourceUpload({
+  projectId,
+  uploadVideoSource,
+  autoUploadFile,
+}: VideoSourceUploadProps) {
   const [progress, setProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const autoUploadStarted = useRef(false)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  const startUpload = (file: File) => {
     setProgress(0)
     uploadVideoSource.mutate(
       {
@@ -50,6 +56,25 @@ export function VideoSourceUpload({ projectId, uploadVideoSource }: VideoSourceU
       }
     )
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    startUpload(file)
+  }
+
+  useEffect(() => {
+    if (!autoUploadFile || autoUploadStarted.current) return
+
+    autoUploadStarted.current = true
+    startUpload(autoUploadFile)
+    // startUpload closes over the latest mutation/projectId on every render;
+    // re-running it when those identities change would re-trigger a
+    // completed auto-upload, so this effect intentionally only reacts to
+    // autoUploadFile itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoUploadFile])
 
   const uploaded = uploadVideoSource.data
 

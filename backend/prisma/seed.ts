@@ -1,8 +1,17 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
+import { hashPassword } from '../src/utils/password'
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
+
+// Fixed credentials for the public "Experience EYAN Studio" portfolio tour
+// (see frontend/src/features/portfolio) — the landing page's CTA logs in
+// as this user through the normal /auth/login endpoint, so a recruiter
+// never needs an account of their own.
+const DEMO_USER_EMAIL = 'demo@eyanstudio.dev'
+const DEMO_USER_PASSWORD = 'EyanStudioDemo!2026'
+const DEMO_USER_NAME = 'Portfolio Demo'
 
 const roles = [
   { name: 'Owner', description: 'Full system owner' },
@@ -43,5 +52,13 @@ async function main() {
     await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: owner.id, permissionId: permission.id } }, update: {}, create: { roleId: owner.id, permissionId: permission.id } })
   }
   for (const template of promptTemplates) await prisma.promptTemplate.upsert({ where: { name: template.name }, update: template, create: template })
+
+  const existingDemoUser = await prisma.user.findUnique({ where: { email: DEMO_USER_EMAIL } })
+  if (!existingDemoUser) {
+    const passwordHash = await hashPassword(DEMO_USER_PASSWORD)
+    await prisma.user.create({
+      data: { name: DEMO_USER_NAME, email: DEMO_USER_EMAIL, passwordHash, emailVerified: true },
+    })
+  }
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

@@ -103,7 +103,7 @@ describe('UserAuthForm', () => {
       expect(setAccessTokenMock).toHaveBeenCalledWith('mock-access-token')
 
       await vi.waitFor(() =>
-        expect(navigate).toHaveBeenCalledWith({ to: '/', replace: true })
+        expect(navigate).toHaveBeenCalledWith({ to: '/app', replace: true })
       )
     })
   })
@@ -112,7 +112,7 @@ describe('UserAuthForm', () => {
     vi.clearAllMocks()
 
     const { getByRole, getByLabelText } = await render(
-      <UserAuthForm redirectTo='/settings' />
+      <UserAuthForm redirectTo='/app/settings' />
     )
 
     await userEvent.fill(getByRole('textbox', { name: /Email/i }), 'a@b.com')
@@ -125,7 +125,7 @@ describe('UserAuthForm', () => {
 
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
-        to: '/settings',
+        to: '/app/settings',
         replace: true,
       })
     )

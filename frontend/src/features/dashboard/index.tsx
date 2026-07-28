@@ -149,7 +149,7 @@ export function Dashboard() {
                   variant='default'
                   className='w-full justify-start'
                 >
-                  <Link to='/ai-chat'>
+                  <Link to='/app/ai-chat'>
                     <MessageSquare className='me-2 h-4 w-4' />
                     New Chat
                   </Link>
@@ -159,7 +159,7 @@ export function Dashboard() {
                   variant='outline'
                   className='w-full justify-start'
                 >
-                  <Link to='/settings'>
+                  <Link to='/app/settings'>
                     <Server className='me-2 h-4 w-4' />
                     Configure Models
                   </Link>
@@ -250,7 +250,7 @@ export function Dashboard() {
                     Start a new chat to see your history here.
                   </p>
                   <Button asChild className='mt-4' variant='outline'>
-                    <Link to='/ai-chat'>
+                    <Link to='/app/ai-chat'>
                       <MessageSquare className='me-2 h-4 w-4' />
                       Open AI Chat
                     </Link>
