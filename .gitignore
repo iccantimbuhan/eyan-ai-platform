@@ -49,3 +49,7 @@ temp/
 # OS Files
 Thumbs.db
 .aider*
+
+# Portfolio demo workspace
+portfolio-video/
+portfolio-videos/

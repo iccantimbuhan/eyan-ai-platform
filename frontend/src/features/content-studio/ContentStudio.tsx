@@ -10,6 +10,9 @@ import { NewProjectDialog } from './components/NewProjectDialog'
 import { QuickActions } from './components/QuickActions'
 import { RecentProjects } from './components/RecentProjects'
 
+// Quick Actions cards are not yet implemented; flip this once they are wired up.
+const isQuickActionsEnabled = false
+
 export function ContentStudio() {
   return (
     <>
@@ -21,14 +24,14 @@ export function ContentStudio() {
       </Header>
 
       <Main>
-        <div className='mb-8 flex items-start justify-between'>
+        <div className='mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
           <DashboardHeader />
 
           <NewProjectDialog />
         </div>
 
         <div className='space-y-6'>
-          <QuickActions />
+          {isQuickActionsEnabled && <QuickActions />}
 
           <RecentProjects />
 
