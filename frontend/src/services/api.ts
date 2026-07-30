@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import { useAuthStore } from '@/stores/auth-store'
 import { refreshAccessToken } from '@/features/auth/utils/refresh-token'
+import { getRouterInstance } from '@/lib/router-instance'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
 const NGROK_SKIP_HEADER = 'ngrok-skip-browser-warning'
@@ -115,10 +116,21 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
+    // The refresh endpoint's own 401 must never re-enter this same retry
+    // path: refreshAccessToken() posts to /auth/refresh through this exact
+    // `api` instance, so without this exclusion a 401 there would recurse
+    // into refreshAccessToken() again — awaiting the very refreshPromise
+    // that is currently in the process of rejecting, which never settles
+    // and hangs "Restoring session..." forever instead of ever reaching the
+    // redirect below (found via browser verification of an expired-refresh-
+    // token scenario).
+    const isRefreshCall = originalRequest?.url?.includes('/auth/refresh')
+
     if (
       error.response?.status === 401 &&
       originalRequest &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isRefreshCall
     ) {
       originalRequest._retry = true
 
@@ -134,7 +146,23 @@ api.interceptors.response.use(
       } catch (refreshError) {
         useAuthStore.getState().auth.reset()
 
-        window.location.href = '/sign-in'
+        // Guards against more than one 401 arriving around the same time
+        // (e.g. two requests in flight when the token expires) each
+        // independently navigating to /sign-in and nesting the `redirect`
+        // search param inside itself.
+        if (!window.location.pathname.startsWith('/sign-in')) {
+          const router = getRouterInstance()
+          if (router) {
+            router.navigate({
+              to: '/sign-in',
+              search: { redirect: window.location.href },
+            })
+          } else {
+            // Router not created yet (should not happen in practice — kept
+            // as a defensive fallback rather than silently doing nothing).
+            window.location.href = '/sign-in'
+          }
+        }
 
         return Promise.reject(refreshError)
       }

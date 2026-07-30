@@ -7,10 +7,10 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { AuthProvider } from '@/providers/auth/auth-provider'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { handleServerError } from '@/lib/handle-server-error'
+import { setRouterInstance } from '@/lib/router-instance'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -80,6 +80,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
+setRouterInstance(router)
+
 const rootElement = document.getElementById('root')!
 
 if (!rootElement.innerHTML) {
@@ -91,9 +93,7 @@ if (!rootElement.innerHTML) {
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-              <AuthProvider>
-                <RouterProvider router={router} />
-              </AuthProvider>
+              <RouterProvider router={router} />
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>
