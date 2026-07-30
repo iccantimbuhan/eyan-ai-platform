@@ -24,6 +24,9 @@ import analyticsRoutes from "./routes/v1/analytics.routes.js";
 import automationConnectionsRoutes from "./routes/v1/automation-connections.routes.js";
 import automationMcpServersRoutes from "./routes/v1/automation-mcp-servers.routes.js";
 import automationAuditLogsRoutes from "./routes/v1/automation-audit-logs.routes.js";
+import financeDashboardRoutes from "./routes/v1/finance-dashboard.routes.js";
+import financeExpensesRoutes from "./routes/v1/finance-expenses.routes.js";
+import financeBudgetRoutes from "./routes/v1/finance-budget.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
 import {
@@ -138,6 +141,9 @@ app.use("/api/v1/analytics", analyticsRoutes);
 app.use("/api/v1/automation/connections", automationConnectionsRoutes);
 app.use("/api/v1/automation/mcp-servers", automationMcpServersRoutes);
 app.use("/api/v1/automation/audit-logs", automationAuditLogsRoutes);
+app.use("/api/v1/finance/dashboard", financeDashboardRoutes);
+app.use("/api/v1/finance/expenses", financeExpensesRoutes);
+app.use("/api/v1/finance/budget", financeBudgetRoutes);
 
 app.use(errorHandler);
 

@@ -157,6 +157,8 @@ model User {
   mcpServersCreated     McpServerConfig[]
   automationAuditEvents AutomationAuditEvent[]
 
+  financeAuditEvents FinanceAuditEvent[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -880,6 +882,151 @@ model AutomationAuditEvent {
   actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
 
   action     AutomationAuditAction
+  targetType String
+  targetId   String
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// --- Finance Management (Sprint A) ---------------------------------------
+// Family expense/budget tracker. Shared workspace by design: every Finance
+// row is visible/editable by any user holding the "finance" permission —
+// there is no per-user ownership or filtering anywhere below. createdBy/
+// updatedBy exist purely for audit (see FinanceAuditEvent), never for
+// access control. See docs/product ADR-0013 (planned) for the first
+// $transaction/Decimal usage this module introduces.
+
+// Fixed, closed taxonomy — same posture as AssetType/ContentType/etc.
+// (every comparable taxonomy in this schema is an enum, never a lookup
+// table). Adding an 11th category later is one enum value + one migration.
+enum ExpenseCategory {
+  HOUSING
+  FOOD
+  UTILITIES
+  TRANSPORTATION
+  SHOPPING
+  MEDICAL
+  CREDIT_CARD
+  SAVINGS
+  TAX
+  OTHERS
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  OTHER
+}
+
+// Only MONTHLY is used in Sprint A; the enum shape is what makes
+// WEEKLY/YEARLY additive later, not a redesign.
+enum RecurrenceFrequency {
+  MONTHLY
+}
+
+enum FinanceAuditAction {
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  RECURRING_EXPENSE_TEMPLATE_CREATED
+  RECURRING_EXPENSE_TEMPLATE_DEACTIVATED
+  BUDGET_SET
+}
+
+model Expense {
+  id String @id @default(cuid())
+
+  // Future-proofing only — nullable, never filtered/joined on today. A real
+  // Household model can be added later without touching existing rows.
+  householdId String?
+
+  date          DateTime // actual spend date (user-editable), distinct from createdAt
+  amount        Decimal         @db.Decimal(10, 2)
+  category      ExpenseCategory
+  paymentMethod PaymentMethod?
+  description   String?
+  receiptPath   String? // relative StorageProvider path; upload UI ships in a later sprint
+
+  // Lazy-generation traceability. Both null for a manually entered expense.
+  recurringTemplateId String?
+  recurringTemplate   RecurringExpenseTemplate? @relation(fields: [recurringTemplateId], references: [id], onDelete: SetNull)
+  period              String? // "YYYY-MM" this instance was generated for
+
+  // Audit only, never access control — same posture as this schema's
+  // existing VideoAsset.createdBy / GeneratedContent.createdBy: a plain
+  // string, not a relation, so no extra User back-relation is needed.
+  createdBy String?
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([recurringTemplateId, period])
+  @@index([date])
+  @@index([category])
+  @@index([recurringTemplateId])
+}
+
+model RecurringExpenseTemplate {
+  id String @id @default(cuid())
+
+  householdId String?
+
+  name       String
+  category   ExpenseCategory
+  amount     Decimal             @db.Decimal(10, 2)
+  frequency  RecurrenceFrequency @default(MONTHLY)
+  dayOfMonth Int // 1-28, validator-enforced; clamped to the real last day of short months at generation time
+
+  startDate DateTime
+  isActive  Boolean  @default(true)
+
+  // Lazy-generation checkpoint — "YYYY-MM" of the last period this
+  // template successfully generated an Expense for. Null = never generated.
+  lastGeneratedPeriod String?
+
+  generatedExpenses Expense[]
+
+  createdBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model Budget {
+  id String @id @default(cuid())
+
+  householdId String?
+
+  period       String  @unique // "YYYY-MM" — one row per calendar month, not a singleton
+  monthlyLimit Decimal @db.Decimal(10, 2)
+
+  createdBy String?
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Mirrors AutomationAuditEvent exactly. Because Finance is a shared
+// workspace with no per-user scoping, createdBy alone can't answer "who
+// deleted this row" once it's gone — this append-only log fills that gap.
+model FinanceAuditEvent {
+  id String @id @default(cuid())
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  action     FinanceAuditAction
   targetType String
   targetId   String
   metadata   Json?

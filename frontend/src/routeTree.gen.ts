@@ -34,6 +34,7 @@ import { Route as AppAuthenticatedContentStudioProjectIdRouteImport } from './ro
 import { Route as AppAuthenticatedContentStudioDashboardRouteImport } from './routes/app/_authenticated/content-studio/dashboard'
 import { Route as AppAuthenticatedContentStudioPromptLibraryRouteImport } from './routes/app/_authenticated/content-studio/prompt-library'
 import { Route as AppAuthenticatedErrorsErrorRouteImport } from './routes/app/_authenticated/errors/$error'
+import { Route as AppAuthenticatedFinanceIndexRouteImport } from './routes/app/_authenticated/finance/index'
 import { Route as AppAuthenticatedModelsIndexRouteImport } from './routes/app/_authenticated/models/index'
 import { Route as AppAuthenticatedRolesIndexRouteImport } from './routes/app/_authenticated/roles/index'
 import { Route as AppAuthenticatedSettingsIndexRouteImport } from './routes/app/_authenticated/settings/index'
@@ -48,6 +49,7 @@ import { Route as AppAuthenticatedAutomationConnectionsIndexRouteImport } from '
 import { Route as AppAuthenticatedAutomationHealthIndexRouteImport } from './routes/app/_authenticated/automation/health/index'
 import { Route as AppAuthenticatedAutomationMcpServersIndexRouteImport } from './routes/app/_authenticated/automation/mcp-servers/index'
 import { Route as AppAuthenticatedAutomationProvidersIndexRouteImport } from './routes/app/_authenticated/automation/providers/index'
+import { Route as AppAuthenticatedFinanceExpensesIndexRouteImport } from './routes/app/_authenticated/finance/expenses/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -179,6 +181,12 @@ const AppAuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedFinanceIndexRoute =
+  AppAuthenticatedFinanceIndexRouteImport.update({
+    id: '/finance/',
+    path: '/finance/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedModelsIndexRoute =
   AppAuthenticatedModelsIndexRouteImport.update({
     id: '/models/',
@@ -263,6 +271,12 @@ const AppAuthenticatedAutomationProvidersIndexRoute =
     path: '/automation/providers/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedFinanceExpensesIndexRoute =
+  AppAuthenticatedFinanceExpensesIndexRouteImport.update({
+    id: '/finance/expenses/',
+    path: '/finance/expenses/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -293,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
   '/app/ai-chat/': typeof AppAuthenticatedAiChatIndexRoute
   '/app/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models/': typeof AppAuthenticatedModelsIndexRoute
   '/app/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings/': typeof AppAuthenticatedSettingsIndexRoute
@@ -302,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/app/automation/health/': typeof AppAuthenticatedAutomationHealthIndexRoute
   '/app/automation/mcp-servers/': typeof AppAuthenticatedAutomationMcpServersIndexRoute
   '/app/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
+  '/app/finance/expenses/': typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -330,6 +346,7 @@ export interface FileRoutesByTo {
   '/app/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
   '/app/ai-chat': typeof AppAuthenticatedAiChatIndexRoute
   '/app/content-studio': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/finance': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models': typeof AppAuthenticatedModelsIndexRoute
   '/app/roles': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings': typeof AppAuthenticatedSettingsIndexRoute
@@ -339,6 +356,7 @@ export interface FileRoutesByTo {
   '/app/automation/health': typeof AppAuthenticatedAutomationHealthIndexRoute
   '/app/automation/mcp-servers': typeof AppAuthenticatedAutomationMcpServersIndexRoute
   '/app/automation/providers': typeof AppAuthenticatedAutomationProvidersIndexRoute
+  '/app/finance/expenses': typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -372,6 +390,7 @@ export interface FileRoutesById {
   '/app/_authenticated/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
   '/app/_authenticated/ai-chat/': typeof AppAuthenticatedAiChatIndexRoute
   '/app/_authenticated/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/_authenticated/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/_authenticated/models/': typeof AppAuthenticatedModelsIndexRoute
   '/app/_authenticated/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/_authenticated/settings/': typeof AppAuthenticatedSettingsIndexRoute
@@ -381,6 +400,7 @@ export interface FileRoutesById {
   '/app/_authenticated/automation/health/': typeof AppAuthenticatedAutomationHealthIndexRoute
   '/app/_authenticated/automation/mcp-servers/': typeof AppAuthenticatedAutomationMcpServersIndexRoute
   '/app/_authenticated/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
+  '/app/_authenticated/finance/expenses/': typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -413,6 +433,7 @@ export interface FileRouteTypes {
     | '/app/settings/providers'
     | '/app/ai-chat/'
     | '/app/content-studio/'
+    | '/app/finance/'
     | '/app/models/'
     | '/app/roles/'
     | '/app/settings/'
@@ -422,6 +443,7 @@ export interface FileRouteTypes {
     | '/app/automation/health/'
     | '/app/automation/mcp-servers/'
     | '/app/automation/providers/'
+    | '/app/finance/expenses/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -450,6 +472,7 @@ export interface FileRouteTypes {
     | '/app/settings/providers'
     | '/app/ai-chat'
     | '/app/content-studio'
+    | '/app/finance'
     | '/app/models'
     | '/app/roles'
     | '/app/settings'
@@ -459,6 +482,7 @@ export interface FileRouteTypes {
     | '/app/automation/health'
     | '/app/automation/mcp-servers'
     | '/app/automation/providers'
+    | '/app/finance/expenses'
   id:
     | '__root__'
     | '/'
@@ -491,6 +515,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/settings/providers'
     | '/app/_authenticated/ai-chat/'
     | '/app/_authenticated/content-studio/'
+    | '/app/_authenticated/finance/'
     | '/app/_authenticated/models/'
     | '/app/_authenticated/roles/'
     | '/app/_authenticated/settings/'
@@ -500,6 +525,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/automation/health/'
     | '/app/_authenticated/automation/mcp-servers/'
     | '/app/_authenticated/automation/providers/'
+    | '/app/_authenticated/finance/expenses/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -695,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/finance/': {
+      id: '/app/_authenticated/finance/'
+      path: '/finance'
+      fullPath: '/app/finance/'
+      preLoaderRoute: typeof AppAuthenticatedFinanceIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/models/': {
       id: '/app/_authenticated/models/'
       path: '/models'
@@ -793,6 +826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAutomationProvidersIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/finance/expenses/': {
+      id: '/app/_authenticated/finance/expenses/'
+      path: '/finance/expenses'
+      fullPath: '/app/finance/expenses/'
+      preLoaderRoute: typeof AppAuthenticatedFinanceExpensesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
   }
 }
 
@@ -860,6 +900,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedErrorsErrorRoute: typeof AppAuthenticatedErrorsErrorRoute
   AppAuthenticatedAiChatIndexRoute: typeof AppAuthenticatedAiChatIndexRoute
   AppAuthenticatedContentStudioIndexRoute: typeof AppAuthenticatedContentStudioIndexRoute
+  AppAuthenticatedFinanceIndexRoute: typeof AppAuthenticatedFinanceIndexRoute
   AppAuthenticatedModelsIndexRoute: typeof AppAuthenticatedModelsIndexRoute
   AppAuthenticatedRolesIndexRoute: typeof AppAuthenticatedRolesIndexRoute
   AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
@@ -868,6 +909,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedAutomationHealthIndexRoute: typeof AppAuthenticatedAutomationHealthIndexRoute
   AppAuthenticatedAutomationMcpServersIndexRoute: typeof AppAuthenticatedAutomationMcpServersIndexRoute
   AppAuthenticatedAutomationProvidersIndexRoute: typeof AppAuthenticatedAutomationProvidersIndexRoute
+  AppAuthenticatedFinanceExpensesIndexRoute: typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 
 const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
@@ -884,6 +926,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedAiChatIndexRoute: AppAuthenticatedAiChatIndexRoute,
   AppAuthenticatedContentStudioIndexRoute:
     AppAuthenticatedContentStudioIndexRoute,
+  AppAuthenticatedFinanceIndexRoute: AppAuthenticatedFinanceIndexRoute,
   AppAuthenticatedModelsIndexRoute: AppAuthenticatedModelsIndexRoute,
   AppAuthenticatedRolesIndexRoute: AppAuthenticatedRolesIndexRoute,
   AppAuthenticatedUsersIndexRoute: AppAuthenticatedUsersIndexRoute,
@@ -897,6 +940,8 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedAutomationMcpServersIndexRoute,
   AppAuthenticatedAutomationProvidersIndexRoute:
     AppAuthenticatedAutomationProvidersIndexRoute,
+  AppAuthenticatedFinanceExpensesIndexRoute:
+    AppAuthenticatedFinanceExpensesIndexRoute,
 }
 
 const AppAuthenticatedRouteRouteWithChildren =

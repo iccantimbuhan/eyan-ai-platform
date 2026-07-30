@@ -18,6 +18,7 @@ import {
   Server,
   HeartPulse,
   ScrollText,
+  Wallet,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -84,6 +85,21 @@ export const sidebarData: SidebarData = {
           title: 'Prompt Library',
           url: '/app/content-studio/prompt-library',
           icon: BookOpen,
+        },
+      ],
+    },
+
+    {
+      title: 'Finance',
+      items: [
+        {
+          title: 'Finance Management',
+          icon: Wallet,
+          permission: 'finance',
+          items: [
+            { title: 'Dashboard', url: '/app/finance' },
+            { title: 'Expenses', url: '/app/finance/expenses' },
+          ],
         },
       ],
     },

@@ -29,6 +29,7 @@ const permissions = [
   ['analytics', 'View analytics'], ['auditlogs', 'View audit logs'],
   ['automation', 'Access the MCP automation foundation'],
   ['automationcredentials', 'Manage automation connection credentials'],
+  ['finance', 'Access Finance Management'],
 ] as const
 
 const promptTemplates = [
