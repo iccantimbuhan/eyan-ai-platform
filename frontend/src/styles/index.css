@@ -85,3 +85,49 @@
     height: 0;
   }
 }
+
+/* Presentation Engine — Highlight System pulse effects. Extends the
+   existing hand-written-keyframe convention above rather than adding a
+   JS animation library (see the Presentation Engine TDD's Animation
+   Strategy decision). Skipped entirely under prefers-reduced-motion by
+   the CSS animation driver, which applies `.presentation-focus-static`
+   instead. */
+@keyframes presentation-spotlight-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px var(--primary),
+      0 0 0 9999px color-mix(in oklch, black 35%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px color-mix(in oklch, var(--primary) 40%, transparent),
+      0 0 0 9999px color-mix(in oklch, black 35%, transparent);
+  }
+}
+
+@keyframes presentation-glow-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px var(--primary));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px var(--primary));
+  }
+}
+
+.presentation-pulse-spotlight {
+  animation: presentation-spotlight-pulse 2s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+.presentation-pulse-glow {
+  animation: presentation-glow-pulse 2s ease-in-out infinite;
+}
+
+.presentation-pulse-focus-ring,
+.presentation-focus-static {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}

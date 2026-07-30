@@ -68,7 +68,7 @@ export function Dashboard() {
 
         <div className='space-y-6'>
           {/* System Status */}
-          <section>
+          <section data-presentation-target='dashboard.system-status'>
             <h2 className='mb-3 text-sm font-medium text-muted-foreground'>
               System Status
             </h2>
@@ -137,7 +137,7 @@ export function Dashboard() {
                 />
               )}
             </Card>
-            <Card>
+            <Card data-presentation-target='dashboard.quick-actions'>
               <CardHeader className='pb-2'>
                 <CardTitle className='text-sm font-medium'>
                   Quick Actions
@@ -169,7 +169,7 @@ export function Dashboard() {
           </div>
 
           {/* Dashboard Cards — live data from APIs */}
-          <section>
+          <section data-presentation-target='dashboard.platform-stats'>
             <h2 className='mb-3 text-sm font-medium text-muted-foreground'>
               Platform
             </h2>
@@ -235,7 +235,7 @@ export function Dashboard() {
             <h2 className='mb-3 text-sm font-medium text-muted-foreground'>
               Recent Conversations
             </h2>
-            <Card>
+            <Card data-presentation-target='dashboard.recent-conversations'>
               <CardHeader>
                 <CardTitle>Conversations</CardTitle>
                 <CardDescription>

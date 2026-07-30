@@ -149,13 +149,16 @@ export function AiChat() {
         <section className='flex h-full min-h-0 gap-0 overflow-hidden'>
           {/* Desktop sidebar */}
           {!isMobile && (
-            <aside className='flex min-h-0 w-full flex-col border-r sm:w-64 lg:w-72 2xl:w-80'>
+            <aside
+              data-presentation-target='ai-chat.conversation-list'
+              className='flex min-h-0 w-full flex-col border-r sm:w-64 lg:w-72 2xl:w-80'
+            >
               {sidebarContent}
             </aside>
           )}
 
           {/* Chat panel */}
-          <div className='flex min-h-0 w-0 flex-1 flex-col'>
+          <div data-presentation-target='ai-chat.chat-panel' className='flex min-h-0 w-0 flex-1 flex-col'>
             <ChatWindow />
           </div>
         </section>

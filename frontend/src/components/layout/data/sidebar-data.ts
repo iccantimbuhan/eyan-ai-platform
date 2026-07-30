@@ -19,6 +19,7 @@ import {
   HeartPulse,
   ScrollText,
   Wallet,
+  Presentation,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -46,6 +47,12 @@ export const sidebarData: SidebarData = {
           url: '/app',
           icon: LayoutDashboard,
           permission: 'dashboard',
+        },
+        {
+          title: 'Presentation Engine',
+          url: '/app/presentation-engine',
+          icon: Presentation,
+          permission: 'presentation-engine',
         },
       ],
     },

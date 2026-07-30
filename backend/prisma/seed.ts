@@ -30,6 +30,7 @@ const permissions = [
   ['automation', 'Access the MCP automation foundation'],
   ['automationcredentials', 'Manage automation connection credentials'],
   ['finance', 'Access Finance Management'],
+  ['presentation-engine', 'Access the Presentation Engine'],
 ] as const
 
 const promptTemplates = [

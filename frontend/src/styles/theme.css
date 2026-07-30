@@ -32,6 +32,11 @@
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+
+  /* Presentation Engine overlay layer — intentionally above the z-50
+     ceiling used by Dialog/Sheet/Tooltip/Popover so a spotlight/callout
+     can render above any of those if they happen to be open. */
+  --z-presentation: 100;
 }
 
 .dark {

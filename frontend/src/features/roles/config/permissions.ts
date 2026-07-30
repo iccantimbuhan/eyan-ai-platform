@@ -13,6 +13,7 @@ export const permissionCategories: PermissionCategory[] = [
       { label: 'AI Chat', permissions: ['chat'] },
       { label: 'Models', permissions: ['models'] },
       { label: 'Conversations', permissions: ['conversations'] },
+      { label: 'Presentation Engine', permissions: ['presentation-engine'] },
     ],
   },
   {

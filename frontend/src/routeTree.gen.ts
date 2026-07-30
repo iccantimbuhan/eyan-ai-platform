@@ -36,6 +36,7 @@ import { Route as AppAuthenticatedContentStudioPromptLibraryRouteImport } from '
 import { Route as AppAuthenticatedErrorsErrorRouteImport } from './routes/app/_authenticated/errors/$error'
 import { Route as AppAuthenticatedFinanceIndexRouteImport } from './routes/app/_authenticated/finance/index'
 import { Route as AppAuthenticatedModelsIndexRouteImport } from './routes/app/_authenticated/models/index'
+import { Route as AppAuthenticatedPresentationEngineIndexRouteImport } from './routes/app/_authenticated/presentation-engine/index'
 import { Route as AppAuthenticatedRolesIndexRouteImport } from './routes/app/_authenticated/roles/index'
 import { Route as AppAuthenticatedSettingsIndexRouteImport } from './routes/app/_authenticated/settings/index'
 import { Route as AppAuthenticatedSettingsAccountRouteImport } from './routes/app/_authenticated/settings/account'
@@ -193,6 +194,12 @@ const AppAuthenticatedModelsIndexRoute =
     path: '/models/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedPresentationEngineIndexRoute =
+  AppAuthenticatedPresentationEngineIndexRouteImport.update({
+    id: '/presentation-engine/',
+    path: '/presentation-engine/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedRolesIndexRoute =
   AppAuthenticatedRolesIndexRouteImport.update({
     id: '/roles/',
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/app/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
   '/app/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models/': typeof AppAuthenticatedModelsIndexRoute
+  '/app/presentation-engine/': typeof AppAuthenticatedPresentationEngineIndexRoute
   '/app/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users/': typeof AppAuthenticatedUsersIndexRoute
@@ -348,6 +356,7 @@ export interface FileRoutesByTo {
   '/app/content-studio': typeof AppAuthenticatedContentStudioIndexRoute
   '/app/finance': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models': typeof AppAuthenticatedModelsIndexRoute
+  '/app/presentation-engine': typeof AppAuthenticatedPresentationEngineIndexRoute
   '/app/roles': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users': typeof AppAuthenticatedUsersIndexRoute
@@ -392,6 +401,7 @@ export interface FileRoutesById {
   '/app/_authenticated/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
   '/app/_authenticated/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/_authenticated/models/': typeof AppAuthenticatedModelsIndexRoute
+  '/app/_authenticated/presentation-engine/': typeof AppAuthenticatedPresentationEngineIndexRoute
   '/app/_authenticated/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/_authenticated/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/_authenticated/users/': typeof AppAuthenticatedUsersIndexRoute
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/app/content-studio/'
     | '/app/finance/'
     | '/app/models/'
+    | '/app/presentation-engine/'
     | '/app/roles/'
     | '/app/settings/'
     | '/app/users/'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/app/content-studio'
     | '/app/finance'
     | '/app/models'
+    | '/app/presentation-engine'
     | '/app/roles'
     | '/app/settings'
     | '/app/users'
@@ -517,6 +529,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/content-studio/'
     | '/app/_authenticated/finance/'
     | '/app/_authenticated/models/'
+    | '/app/_authenticated/presentation-engine/'
     | '/app/_authenticated/roles/'
     | '/app/_authenticated/settings/'
     | '/app/_authenticated/users/'
@@ -735,6 +748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedModelsIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/presentation-engine/': {
+      id: '/app/_authenticated/presentation-engine/'
+      path: '/presentation-engine'
+      fullPath: '/app/presentation-engine/'
+      preLoaderRoute: typeof AppAuthenticatedPresentationEngineIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/roles/': {
       id: '/app/_authenticated/roles/'
       path: '/roles'
@@ -902,6 +922,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedContentStudioIndexRoute: typeof AppAuthenticatedContentStudioIndexRoute
   AppAuthenticatedFinanceIndexRoute: typeof AppAuthenticatedFinanceIndexRoute
   AppAuthenticatedModelsIndexRoute: typeof AppAuthenticatedModelsIndexRoute
+  AppAuthenticatedPresentationEngineIndexRoute: typeof AppAuthenticatedPresentationEngineIndexRoute
   AppAuthenticatedRolesIndexRoute: typeof AppAuthenticatedRolesIndexRoute
   AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
   AppAuthenticatedAutomationAuditLogsIndexRoute: typeof AppAuthenticatedAutomationAuditLogsIndexRoute
@@ -928,6 +949,8 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedContentStudioIndexRoute,
   AppAuthenticatedFinanceIndexRoute: AppAuthenticatedFinanceIndexRoute,
   AppAuthenticatedModelsIndexRoute: AppAuthenticatedModelsIndexRoute,
+  AppAuthenticatedPresentationEngineIndexRoute:
+    AppAuthenticatedPresentationEngineIndexRoute,
   AppAuthenticatedRolesIndexRoute: AppAuthenticatedRolesIndexRoute,
   AppAuthenticatedUsersIndexRoute: AppAuthenticatedUsersIndexRoute,
   AppAuthenticatedAutomationAuditLogsIndexRoute:
