@@ -127,6 +127,7 @@ export function AssetCard({
           <button
             type='button'
             className='block w-full text-left'
+            data-presentation-target='content-studio.workspace.assets.card'
             onClick={() => onView(asset)}
           >
             {asset.thumbnailUrl ? (

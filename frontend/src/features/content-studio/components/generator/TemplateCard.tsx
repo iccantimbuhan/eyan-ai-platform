@@ -22,6 +22,7 @@ export function TemplateCard({
       role='button'
       tabIndex={0}
       aria-pressed={isSelected}
+      data-presentation-target='content-studio.workspace.content.template-card'
       className={cn(
         'cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md',
         isSelected && 'ring-2 ring-primary'

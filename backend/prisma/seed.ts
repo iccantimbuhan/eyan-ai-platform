@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 import { hashPassword } from '../src/utils/password'
+import { seedDemoContentStudioProject } from './seed-demo-content'
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
 
@@ -59,9 +60,19 @@ async function main() {
   // documented credential must never carry admin/owner access) — Viewer
   // gets just enough view permissions for the Presentation Engine's
   // Recruiter Tour (Dashboard + AI Chat + Content Studio) to render cleanly
-  // instead of 403-ing on e.g. the models list.
+  // instead of 403-ing on e.g. the models list. 'presentation-engine' was
+  // added in Phase 2B so the same account can also reach the Presentation
+  // Library directly and start the AI Content Studio Tour Pack itself — it
+  // only gates a read-only launcher page, so it stays within the same
+  // least-privilege posture as the rest of this list.
   const viewer = await prisma.role.findUniqueOrThrow({ where: { name: 'Viewer' } })
-  const viewerPermissionNames = ['dashboard', 'chat', 'models', 'conversations'] as const
+  const viewerPermissionNames = [
+    'dashboard',
+    'chat',
+    'models',
+    'conversations',
+    'presentation-engine',
+  ] as const
   for (const name of viewerPermissionNames) {
     const permission = await prisma.permission.findUniqueOrThrow({ where: { name } })
     await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: viewer.id, permissionId: permission.id } }, update: {}, create: { roleId: viewer.id, permissionId: permission.id } })
@@ -79,5 +90,10 @@ async function main() {
       },
     }))
   await prisma.userRole.upsert({ where: { userId_roleId: { userId: demoUser.id, roleId: viewer.id } }, update: {}, create: { userId: demoUser.id, roleId: viewer.id } })
+
+  // Seeds a fully-populated ContentProject so the Presentation Engine's AI
+  // Content Studio Tour Pack has real generated content/images/brand kit/
+  // video assets/review/publishing state to show — see seed-demo-content.ts.
+  await seedDemoContentStudioProject(prisma, demoUser.id)
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

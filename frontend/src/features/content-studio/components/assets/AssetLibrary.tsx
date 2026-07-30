@@ -146,7 +146,7 @@ export function AssetLibrary({ projectId }: AssetLibraryProps) {
   }
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.assets.library'>
       <CardContent className='space-y-4 p-4'>
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <AssetToolbar

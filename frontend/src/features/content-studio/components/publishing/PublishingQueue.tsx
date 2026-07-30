@@ -45,7 +45,7 @@ export function PublishingQueue({ projectId }: PublishingQueueProps) {
   const items = assets.data?.items ?? []
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.publishing.queue'>
       <CardContent className='space-y-4 p-4'>
         <Tabs
           value={publishingStatus}

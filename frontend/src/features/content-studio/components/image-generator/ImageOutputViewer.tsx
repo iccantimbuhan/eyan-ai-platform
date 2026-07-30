@@ -116,7 +116,7 @@ export function ImageOutputViewer({
   }
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.images.gallery'>
       <CardHeader>
         <CardTitle>Output</CardTitle>
       </CardHeader>

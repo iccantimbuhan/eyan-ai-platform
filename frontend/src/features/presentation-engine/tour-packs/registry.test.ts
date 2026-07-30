@@ -51,10 +51,22 @@ describe('resolveTourPackScenes', () => {
     expect(scenes.map((s) => s.id)).toEqual([
       'content-studio.overview',
       'content-studio.new-project',
-      'content-studio.pipeline',
+      'content-studio.workspace.intro',
+      'content-studio.workspace.content.templates',
+      'content-studio.workspace.content.generate',
+      'content-studio.workspace.content.history',
+      'content-studio.workspace.images.generate',
+      'content-studio.workspace.images.gallery',
+      'content-studio.workspace.brand.kit',
+      'content-studio.workspace.video.generate',
+      'content-studio.workspace.video.assets',
+      'content-studio.workspace.assets.library',
+      'content-studio.workspace.review.queue',
+      'content-studio.workspace.publishing.queue',
+      'content-studio.workspace.analytics.overview',
+      'content-studio.prompt-library',
       'content-studio.dashboard-stats',
       'content-studio.dashboard-activity',
-      'content-studio.prompt-library',
     ])
   })
 

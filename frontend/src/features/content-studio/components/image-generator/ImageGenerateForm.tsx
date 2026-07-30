@@ -77,7 +77,7 @@ export function ImageGenerateForm({
   }
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.images.generate-form'>
       <CardHeader>
         <CardTitle>Generate Image</CardTitle>
       </CardHeader>

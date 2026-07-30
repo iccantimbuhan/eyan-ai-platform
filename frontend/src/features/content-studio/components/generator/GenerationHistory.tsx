@@ -93,7 +93,7 @@ export function GenerationHistory({ projectId }: GenerationHistoryProps) {
   )
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.content.history'>
       <CardHeader>
         <CardTitle>Generation History</CardTitle>
       </CardHeader>

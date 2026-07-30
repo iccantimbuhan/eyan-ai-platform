@@ -118,7 +118,7 @@ export function ProjectWorkspace() {
           Back to Projects
         </Link>
 
-        <Card>
+        <Card data-presentation-target='content-studio.workspace.header'>
           <CardContent className='py-8'>
             <div className='flex items-start gap-4'>
               <FolderOpen className='mt-1 h-8 w-8 text-primary' />

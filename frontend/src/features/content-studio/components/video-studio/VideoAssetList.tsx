@@ -131,7 +131,7 @@ export function VideoAssetList({ projectId }: VideoAssetListProps) {
   return (
     <div className='space-y-4'>
       {groups.map((group) => (
-        <Card key={group.videoGroupId}>
+        <Card key={group.videoGroupId} data-presentation-target='content-studio.workspace.video.assets'>
           <CardHeader>
             <CardTitle className='text-base'>
               Video {group.videoGroupId.slice(0, 8)}

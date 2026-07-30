@@ -51,7 +51,7 @@ function publishingStatusVariant(
 // per-project Analytics tab.
 export function AnalyticsSummary({ summary }: AnalyticsSummaryProps) {
   return (
-    <div className='grid gap-4 lg:grid-cols-2'>
+    <div className='grid gap-4 lg:grid-cols-2' data-presentation-target='content-studio.workspace.analytics.overview'>
       <AssetCountsChart assetCounts={summary.assetCounts} />
       <ProviderUsageChart providerUsage={summary.providerUsage} />
       <StatusCountsList

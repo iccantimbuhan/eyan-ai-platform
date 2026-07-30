@@ -79,7 +79,7 @@ export function VideoGenerateForm({
   }
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.video.generate-form'>
       <CardHeader>
         <CardTitle>Generate Video Asset</CardTitle>
       </CardHeader>

@@ -107,7 +107,7 @@ export function ReviewQueue({ projectId }: ReviewQueueProps) {
   }
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.workspace.review.queue'>
       <CardContent className='space-y-4 p-4'>
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <Tabs value={status} onValueChange={(value) => setStatus(value as ReviewStatus)}>

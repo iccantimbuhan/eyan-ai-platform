@@ -90,7 +90,7 @@ export function GenerateForm({ projectId, generateContent }: GenerateFormProps) 
 
   return (
     <div className='space-y-6'>
-      <Card>
+      <Card data-presentation-target='content-studio.workspace.content.templates'>
         <CardHeader>
           <CardTitle>Choose a Starting Point</CardTitle>
         </CardHeader>
@@ -108,7 +108,7 @@ export function GenerateForm({ projectId, generateContent }: GenerateFormProps) 
       <div className='grid gap-6 lg:grid-cols-2'>
         <TemplatePreview template={selectedTemplate} />
 
-        <Card>
+        <Card data-presentation-target='content-studio.workspace.content.generate-form'>
           <CardHeader>
             <CardTitle>Generate Content</CardTitle>
           </CardHeader>
