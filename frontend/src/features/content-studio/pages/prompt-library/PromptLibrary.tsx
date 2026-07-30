@@ -50,7 +50,10 @@ export function PromptLibrary() {
             </p>
           </div>
 
-          <Button onClick={() => setDialogState({ open: true, prompt: null })}>
+          <Button
+            data-presentation-target='content-studio.new-prompt'
+            onClick={() => setDialogState({ open: true, prompt: null })}
+          >
             <Plus className='mr-2 h-4 w-4' />
             New Prompt
           </Button>

@@ -55,12 +55,29 @@ async function main() {
   }
   for (const template of promptTemplates) await prisma.promptTemplate.upsert({ where: { name: template.name }, update: template, create: template })
 
-  const existingDemoUser = await prisma.user.findUnique({ where: { email: DEMO_USER_EMAIL } })
-  if (!existingDemoUser) {
-    const passwordHash = await hashPassword(DEMO_USER_PASSWORD)
-    await prisma.user.create({
-      data: { name: DEMO_USER_NAME, email: DEMO_USER_EMAIL, passwordHash, emailVerified: true },
-    })
+  // The public demo/presentation account is read-only by design (a publicly
+  // documented credential must never carry admin/owner access) — Viewer
+  // gets just enough view permissions for the Presentation Engine's
+  // Recruiter Tour (Dashboard + AI Chat + Content Studio) to render cleanly
+  // instead of 403-ing on e.g. the models list.
+  const viewer = await prisma.role.findUniqueOrThrow({ where: { name: 'Viewer' } })
+  const viewerPermissionNames = ['dashboard', 'chat', 'models', 'conversations'] as const
+  for (const name of viewerPermissionNames) {
+    const permission = await prisma.permission.findUniqueOrThrow({ where: { name } })
+    await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: viewer.id, permissionId: permission.id } }, update: {}, create: { roleId: viewer.id, permissionId: permission.id } })
   }
+
+  const existingDemoUser = await prisma.user.findUnique({ where: { email: DEMO_USER_EMAIL } })
+  const demoUser =
+    existingDemoUser ??
+    (await prisma.user.create({
+      data: {
+        name: DEMO_USER_NAME,
+        email: DEMO_USER_EMAIL,
+        passwordHash: await hashPassword(DEMO_USER_PASSWORD),
+        emailVerified: true,
+      },
+    }))
+  await prisma.userRole.upsert({ where: { userId_roleId: { userId: demoUser.id, roleId: viewer.id } }, update: {}, create: { userId: demoUser.id, roleId: viewer.id } })
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

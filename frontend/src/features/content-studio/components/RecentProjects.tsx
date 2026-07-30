@@ -9,7 +9,7 @@ export function RecentProjects() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card data-presentation-target='content-studio.recent-projects'>
         <CardHeader>
           <CardTitle>Recent Projects</CardTitle>
 
@@ -23,7 +23,7 @@ export function RecentProjects() {
 
   if (isError) {
     return (
-      <Card>
+      <Card data-presentation-target='content-studio.recent-projects'>
         <CardHeader>
           <CardTitle>Recent Projects</CardTitle>
 
@@ -38,7 +38,7 @@ export function RecentProjects() {
   const projects = data?.items ?? []
 
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.recent-projects'>
       <CardHeader>
         <CardTitle>Recent Projects</CardTitle>
 

@@ -45,4 +45,34 @@ describe('resolveTourPackScenes', () => {
 
     expect(resolveTourPackScenes(pack).map((s) => s.id)).toEqual(['dashboard.welcome'])
   })
+
+  it('resolves the ai-content-studio tour to real, ordered scene definitions', () => {
+    const scenes = resolveTourPackScenes(TOUR_PACKS['ai-content-studio'])
+    expect(scenes.map((s) => s.id)).toEqual([
+      'content-studio.overview',
+      'content-studio.new-project',
+      'content-studio.pipeline',
+      'content-studio.dashboard-stats',
+      'content-studio.dashboard-activity',
+      'content-studio.prompt-library',
+    ])
+  })
+
+  it('registers every Tour Pack with zero dangling scene references', () => {
+    // Guards against a typo'd sceneId silently dropping a scene from a
+    // curated pack like Recruiter/Customer Tour, which spans three
+    // separate scene files.
+    for (const pack of Object.values(TOUR_PACKS)) {
+      const resolved = resolveTourPackScenes(pack)
+      expect(resolved, `Tour pack "${pack.id}" has a dangling scene reference`).toHaveLength(
+        pack.scenes.length
+      )
+    }
+  })
+
+  it('registers the expected set of Tour Packs for the Presentation Library', () => {
+    expect(Object.keys(TOUR_PACKS).sort()).toEqual(
+      ['platform-overview', 'ai-content-studio', 'recruiter-tour', 'customer-tour'].sort()
+    )
+  })
 })

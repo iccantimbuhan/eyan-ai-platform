@@ -60,7 +60,10 @@ export function ProductionDashboard() {
         </div>
 
         <div className='space-y-6'>
-          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+          <div
+            data-presentation-target='content-studio.dashboard-stats'
+            className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'
+          >
             <StatCard
               title='Projects'
               value={projects.isLoading ? <Skeleton className='h-8 w-12' /> : (projects.data?.pagination.total ?? 0)}

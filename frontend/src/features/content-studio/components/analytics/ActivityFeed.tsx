@@ -19,7 +19,7 @@ interface ActivityFeedProps {
 // the normal ink tokens; only the icon carries the distinction).
 export function ActivityFeed({ title, activity, isLoading, isError, onPageChange }: ActivityFeedProps) {
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.dashboard-activity'>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>

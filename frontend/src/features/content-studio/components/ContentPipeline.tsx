@@ -3,7 +3,7 @@ import { pipeline } from '../data/mock'
 
 export function ContentPipeline() {
   return (
-    <Card>
+    <Card data-presentation-target='content-studio.content-pipeline'>
       <CardHeader>
         <CardTitle>Content Pipeline</CardTitle>
       </CardHeader>

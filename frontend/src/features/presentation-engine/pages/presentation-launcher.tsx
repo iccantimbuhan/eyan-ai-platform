@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,9 +17,19 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
-import { usePresentationStore } from '@/stores/presentation-store'
-import { resolveRoute } from '../engine/resolve-route'
-import { resolveTourPackScenes, TOUR_PACKS } from '../tour-packs/registry'
+import { startTourPack } from '../lib/start-tour'
+import { TOUR_PACKS } from '../tour-packs/registry'
+
+/**
+ * Not yet built as real Tour Packs — shown so the library reads as a
+ * complete map of the platform, not just what happens to exist today.
+ * Deliberately static data, not a stub TourPack: an empty-scenes pack
+ * would silently no-op on click rather than communicating "not yet".
+ */
+const COMING_SOON_PRESENTATIONS = [
+  { id: 'ai-chat-deep-dive', title: 'AI Chat', description: 'A dedicated walkthrough of the AI Chat experience.' },
+  { id: 'finance', title: 'Finance', description: 'A guided tour of budgeting and expense tracking.' },
+]
 
 /**
  * The engine's only dedicated route — a picker/launcher, never presented
@@ -34,22 +45,6 @@ export function PresentationLauncher() {
 
   const packs = Object.values(TOUR_PACKS).filter((pack) => can(pack.metadata?.permission))
 
-  const startTour = (packId: string) => {
-    const pack = TOUR_PACKS[packId]
-    if (!pack) return
-
-    const scenes = resolveTourPackScenes(pack)
-    if (scenes.length === 0) return
-
-    usePresentationStore.getState().start(pack.id, scenes)
-
-    const firstScene = scenes[0]
-    navigate({
-      to: resolveRoute(firstScene.route),
-      params: firstScene.routeParams,
-    } as Parameters<typeof navigate>[0])
-  }
-
   return (
     <>
       <Header>
@@ -61,7 +56,7 @@ export function PresentationLauncher() {
 
       <Main>
         <div className='mb-6 space-y-1'>
-          <h1 className='text-2xl font-bold tracking-tight'>Presentation Engine</h1>
+          <h1 className='text-2xl font-bold tracking-tight'>Presentation Library</h1>
           <p className='text-muted-foreground'>
             Automatically presents EYAN Studio — narration, highlights, and guided navigation
             over the real application.
@@ -83,7 +78,25 @@ export function PresentationLauncher() {
                   <CardDescription>{pack.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className='w-full' onClick={() => startTour(pack.id)}>
+                  <Button className='w-full' onClick={() => startTourPack(pack.id, navigate)}>
+                    <Play className='me-2 h-4 w-4' />
+                    Start Tour
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+
+            {COMING_SOON_PRESENTATIONS.map((placeholder) => (
+              <Card key={placeholder.id} className='opacity-60'>
+                <CardHeader>
+                  <div className='flex items-center justify-between gap-2'>
+                    <CardTitle>{placeholder.title}</CardTitle>
+                    <Badge variant='secondary'>Coming Soon</Badge>
+                  </div>
+                  <CardDescription>{placeholder.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className='w-full' disabled>
                     <Play className='me-2 h-4 w-4' />
                     Start Tour
                   </Button>

@@ -41,7 +41,7 @@ export function NewProjectDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button data-presentation-target='content-studio.new-project'>
           <Plus className='mr-2 h-4 w-4' />
           New Project
         </Button>

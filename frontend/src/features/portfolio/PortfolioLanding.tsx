@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { Loader2, Play } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Loader2, LogIn, Play } from 'lucide-react'
+import { IconGithub } from '@/assets/brand-icons'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useLogin } from '@/features/auth/hooks/use-login'
-import { projectsApi } from '@/features/content-studio/api/projects.api'
+import { startTourPack } from '@/features/presentation-engine/lib/start-tour'
 
-import { TourRecap } from './components/TourRecap'
-import { useTourStore } from './store/tour-store'
+const GITHUB_URL = 'https://github.com/iccantimbuhan/eyan-ai-platform'
 
 const TECH_STACK = [
   'React',
@@ -31,7 +31,8 @@ const TIMELINE = [
   { sprint: 'Sprint 6', title: 'Enterprise Creative Production Suite' },
   { sprint: 'Sprint 7.1', title: 'MCP Automation Foundation' },
   { sprint: 'Sprint 7.2', title: 'AI Video Production Pipeline' },
-  { sprint: 'Sprint 8', title: 'Interactive Portfolio Experience', current: true },
+  { sprint: 'Sprint 8', title: 'Interactive Portfolio Experience' },
+  { sprint: 'Presentation Engine', title: 'Guided, Narrated Product Tours', current: true },
 ]
 
 const CASE_STUDY = [
@@ -41,51 +42,41 @@ const CASE_STUDY = [
   },
   {
     title: 'Solution',
-    body: 'A guided tour that drives the real application end-to-end: real upload, a real AI-generated FFmpeg plan, real FFmpeg + Faster Whisper execution, a real review approval, and a real publishing-ready state — narrated by a thin orchestration layer, not a separate demo build.',
+    body: 'A Presentation Engine that narrates over the real, live application — real navigation, real UI, real data — driven entirely by data-defined scenes rather than a separate demo build. The application is the presentation; nothing is duplicated or mocked.',
   },
   {
     title: 'Architecture',
-    body: 'The tour adds zero duplicated business logic. It reuses the existing upload mutation, planner mutation, execution mutation, and review mutation as-is, and only decides when to call them and which tab should be visible.',
+    body: "The engine's action vocabulary is fixed (navigate, highlight, narrate, wait) and never calls a business mutation. Presenting a new module — Dashboard, AI Chat, Content Studio — only ever requires new scene data; the engine itself never changes.",
   },
   {
     title: 'Challenges',
-    body: 'The app had no public route, no unauthenticated API, and no bundled demo asset. Solving that meant moving the authenticated app under /app to free the root path, seeding one fixed demo account that logs in through the real /auth/login endpoint, and bundling a short sample clip so live FFmpeg + Whisper execution finishes in well under a minute.',
+    body: 'This codebase had no convention for targeting one specific UI instance for a spotlight, and no way to pace a scene once narration has no audio yet — both needed a new, additive `data-presentation-target` attribute and a real-time-based pacing fix, found during live browser verification.',
   },
   {
     title: 'Future Roadmap',
-    body: 'A real narrated sample clip for more meaningful subtitle output, and backend progress events so the execution step can report genuine per-stage status instead of an honest "still running" indicator.',
+    body: 'Real text-to-speech narration providers, full platform scene coverage, and branching, interactive presentations for guided onboarding.',
   },
 ]
 
 export function PortfolioLanding() {
   const navigate = useNavigate()
   const login = useLogin()
-  const tour = useTourStore()
 
   const [isStarting, setIsStarting] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
 
-  const startDemo = async () => {
+  const watchPresentation = async () => {
     setIsStarting(true)
     setStartError(null)
 
     try {
       await login('demo@eyanstudio.dev', 'EyanStudioDemo!2026')
 
-      const project = await projectsApi.createProject({
-        name: `Portfolio Demo — ${new Date().toLocaleString()}`,
-      })
-
-      tour.start(project.id)
-
-      await navigate({
-        to: '/app/content-studio/$projectId',
-        params: { projectId: project.id },
-        search: { tab: 'video' },
-      })
+      if (!startTourPack('recruiter-tour', navigate)) {
+        throw new Error('Recruiter tour is not available.')
+      }
     } catch {
-      setStartError('Could not start the demo. Please try again in a moment.')
-    } finally {
+      setStartError('Could not start the presentation. Please try again in a moment.')
       setIsStarting(false)
     }
   }
@@ -94,36 +85,47 @@ export function PortfolioLanding() {
     <div className='min-h-svh bg-background'>
       <header className='flex items-center justify-between px-6 py-4'>
         <span className='text-lg font-bold tracking-tight'>EYAN Studio</span>
-        <ThemeSwitch />
+        <div className='flex items-center gap-2'>
+          <ThemeSwitch />
+          <Button asChild variant='ghost'>
+            <Link to='/sign-in'>
+              <LogIn className='h-4 w-4' />
+              Login
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <main className='mx-auto max-w-5xl space-y-24 px-6 pb-24'>
-        {tour.step === 'recap' ? (
-          <TourRecap />
-        ) : (
-          <section className='space-y-6 py-16 text-center'>
-            <h1 className='text-4xl font-bold tracking-tight sm:text-6xl'>
-              Experience EYAN Studio
-            </h1>
-            <p className='mx-auto max-w-2xl text-lg text-muted-foreground'>
-              An AI-powered Content Production Platform designed to automate content creation,
-              review, editing and publishing workflows.
-            </p>
+        <section className='space-y-6 py-16 text-center'>
+          <h1 className='text-4xl font-bold tracking-tight sm:text-6xl'>Experience EYAN Studio</h1>
+          <p className='mx-auto max-w-2xl text-lg text-muted-foreground'>
+            An AI-powered Content Production Platform designed to automate content creation,
+            review, editing and publishing workflows.
+          </p>
 
-            <div className='flex flex-col items-center gap-3'>
-              <Button size='lg' className='gap-2 px-8' onClick={startDemo} disabled={isStarting}>
+          <div className='flex flex-col items-center gap-3'>
+            <div className='flex flex-wrap justify-center gap-3'>
+              <Button size='lg' className='gap-2 px-8' onClick={watchPresentation} disabled={isStarting}>
                 {isStarting ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : (
                   <Play className='h-4 w-4' />
                 )}
-                Start Interactive Demo
+                Watch Presentation
               </Button>
 
-              {startError && <p className='text-sm text-destructive'>{startError}</p>}
+              <Button asChild size='lg' variant='outline' className='gap-2 px-8'>
+                <a href={GITHUB_URL} target='_blank' rel='noreferrer'>
+                  <IconGithub className='h-4 w-4' />
+                  GitHub
+                </a>
+              </Button>
             </div>
-          </section>
-        )}
+
+            {startError && <p className='text-sm text-destructive'>{startError}</p>}
+          </div>
+        </section>
 
         <section className='space-y-8'>
           <h2 className='text-center text-2xl font-bold tracking-tight'>Case Study</h2>
