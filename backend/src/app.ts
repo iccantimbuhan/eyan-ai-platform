@@ -27,6 +27,16 @@ import automationAuditLogsRoutes from "./routes/v1/automation-audit-logs.routes.
 import financeDashboardRoutes from "./routes/v1/finance-dashboard.routes.js";
 import financeExpensesRoutes from "./routes/v1/finance-expenses.routes.js";
 import financeBudgetRoutes from "./routes/v1/finance-budget.routes.js";
+import crmLeadsRoutes from "./routes/v1/crm-leads.routes.js";
+import crmServiceRoutes from "./routes/v1/crm-service.routes.js";
+import aiCoreCapabilitiesRoutes from "./routes/v1/ai-core-capabilities.routes.js";
+import aiCoreBrainsRoutes from "./routes/v1/ai-core-brains.routes.js";
+import aiCoreProvidersRoutes from "./routes/v1/ai-core-providers.routes.js";
+import aiCoreModelsRoutes from "./routes/v1/ai-core-models.routes.js";
+import aiCorePlaygroundRoutes from "./routes/v1/ai-core-playground.routes.js";
+import aiCoreUsageRoutes from "./routes/v1/ai-core-usage.routes.js";
+import aiCoreHealthRoutes from "./routes/v1/ai-core-health.routes.js";
+import aiCoreAuditLogsRoutes from "./routes/v1/ai-core-audit-logs.routes.js";
 
 import { errorHandler } from "./middleware/error-handler.js";
 import {
@@ -38,6 +48,10 @@ import {
   registerMcpConnectors,
   validateMcpConnectorConfig,
 } from "./providers/register-mcp-connectors.js";
+import {
+  registerAiCoreProviders,
+  validateAiCoreProviderConfig,
+} from "./providers/register-ai-core-providers.js";
 import { validateLocalDiskStorageConfig } from "./providers/local-disk/local-disk-storage.provider.js";
 import { validateGeminiProviderConfig } from "./providers/gemini/gemini-image.provider.js";
 import {
@@ -56,6 +70,8 @@ validateLocalDiskStorageConfig();
 registerPlatformProviders();
 registerMcpConnectors();
 validateMcpConnectorConfig();
+registerAiCoreProviders();
+validateAiCoreProviderConfig();
 
 // Provider-specific config checks run only when that provider is the
 // configured default — an explicit per-request override still works
@@ -144,6 +160,16 @@ app.use("/api/v1/automation/audit-logs", automationAuditLogsRoutes);
 app.use("/api/v1/finance/dashboard", financeDashboardRoutes);
 app.use("/api/v1/finance/expenses", financeExpensesRoutes);
 app.use("/api/v1/finance/budget", financeBudgetRoutes);
+app.use("/api/v1/crm/leads", crmLeadsRoutes);
+app.use("/api/v1/crm/service", crmServiceRoutes);
+app.use("/api/v1/ai-core/capabilities", aiCoreCapabilitiesRoutes);
+app.use("/api/v1/ai-core/brains", aiCoreBrainsRoutes);
+app.use("/api/v1/ai-core/providers", aiCoreProvidersRoutes);
+app.use("/api/v1/ai-core/models", aiCoreModelsRoutes);
+app.use("/api/v1/ai-core/playground", aiCorePlaygroundRoutes);
+app.use("/api/v1/ai-core", aiCoreUsageRoutes);
+app.use("/api/v1/ai-core/health", aiCoreHealthRoutes);
+app.use("/api/v1/ai-core/audit-logs", aiCoreAuditLogsRoutes);
 
 app.use(errorHandler);
 

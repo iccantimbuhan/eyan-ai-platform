@@ -17,6 +17,10 @@ export const permissionCategories: PermissionCategory[] = [
     ],
   },
   {
+    label: 'Sales',
+    features: [{ label: 'CRM', permissions: ['crm'] }],
+  },
+  {
     label: 'Administration',
     features: [
       { label: 'Users', permissions: ['users'] },
@@ -32,6 +36,26 @@ export const permissionCategories: PermissionCategory[] = [
       { label: 'Agents', permissions: ['agents'] },
       { label: 'Workflows', permissions: ['workflows'] },
     ],
+  },
+  // AI Core Foundation (Phase 1) — registered here from day one, unlike the
+  // three gaps below that were only discovered and fixed alongside it.
+  {
+    label: 'AI Core',
+    features: [
+      { label: 'AI Core', permissions: ['aicore'] },
+      { label: 'AI Core Admin', permissions: ['aicoreadmin'] },
+    ],
+  },
+  {
+    label: 'Automation',
+    features: [
+      { label: 'Automation', permissions: ['automation'] },
+      { label: 'Automation Credentials', permissions: ['automationcredentials'] },
+    ],
+  },
+  {
+    label: 'Finance',
+    features: [{ label: 'Finance', permissions: ['finance'] }],
   },
   {
     label: 'System',

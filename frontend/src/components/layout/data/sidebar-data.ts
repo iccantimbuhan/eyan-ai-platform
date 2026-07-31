@@ -20,6 +20,11 @@ import {
   ScrollText,
   Wallet,
   Presentation,
+  Contact,
+  BrainCircuit,
+  Layers,
+  FlaskConical,
+  DollarSign,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -107,6 +112,90 @@ export const sidebarData: SidebarData = {
             { title: 'Dashboard', url: '/app/finance' },
             { title: 'Expenses', url: '/app/finance/expenses' },
           ],
+        },
+      ],
+    },
+
+    {
+      // First pillar of the longer-term Sales Workspace vision (TDD §9
+      // Phase 0.5 review) — Leads today, Contacts/Companies/Deals/Tasks/
+      // Activities/Reports as later pillars under this same group.
+      title: 'Sales',
+      items: [
+        {
+          title: 'CRM',
+          icon: Contact,
+          permission: 'crm',
+          items: [
+            { title: 'Dashboard', url: '/app/crm' },
+            { title: 'Leads', url: '/app/crm/leads' },
+          ],
+        },
+      ],
+    },
+
+    {
+      title: 'AI Core',
+      items: [
+        {
+          title: 'Dashboard',
+          url: '/app/ai-core',
+          icon: BrainCircuit,
+          permission: 'aicore',
+        },
+        {
+          title: 'Capabilities',
+          url: '/app/ai-core/capabilities',
+          icon: Boxes,
+          permission: 'aicore',
+        },
+        {
+          title: 'Brains',
+          url: '/app/ai-core/brains',
+          icon: Layers,
+          permission: 'aicore',
+        },
+        {
+          title: 'Providers',
+          url: '/app/ai-core/providers',
+          icon: Plug,
+          permission: 'aicore',
+        },
+        {
+          title: 'Models',
+          url: '/app/ai-core/models',
+          icon: Cpu,
+          permission: 'aicore',
+        },
+        {
+          title: 'Playground',
+          url: '/app/ai-core/playground',
+          icon: FlaskConical,
+          permission: 'aicoreadmin',
+        },
+        {
+          title: 'Usage',
+          url: '/app/ai-core/usage',
+          icon: BarChart3,
+          permission: 'aicore',
+        },
+        {
+          title: 'Costs',
+          url: '/app/ai-core/costs',
+          icon: DollarSign,
+          permission: 'aicore',
+        },
+        {
+          title: 'Health',
+          url: '/app/ai-core/health',
+          icon: HeartPulse,
+          permission: 'aicore',
+        },
+        {
+          title: 'Audit Logs',
+          url: '/app/ai-core/audit',
+          icon: ScrollText,
+          permission: 'auditlogs',
         },
       ],
     },

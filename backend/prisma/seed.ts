@@ -32,6 +32,9 @@ const permissions = [
   ['automationcredentials', 'Manage automation connection credentials'],
   ['finance', 'Access Finance Management'],
   ['presentation-engine', 'Access the Presentation Engine'],
+  ['crm', 'Access the CRM (leads, pipeline)'],
+  ['aicore', 'Access the AI Core platform (Capabilities, Brains, Providers, Playground, Usage)'],
+  ['aicoreadmin', 'Administer AI Core (create/edit Brains and Capabilities, manage provider credentials, routing policies, prompts, and the Playground)'],
 ] as const
 
 const promptTemplates = [

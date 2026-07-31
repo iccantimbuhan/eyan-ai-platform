@@ -49,6 +49,17 @@ if (Number.isNaN(huggingfaceTimeout)) {
   throw new Error("HUGGINGFACE_TIMEOUT must be a valid number.");
 }
 
+// Sprint 2 — CRM Automation Integration Contract (ADR-0019). Bounds only
+// the outbound handoff call to n8n's webhook, not any AI work — see
+// ADR-0019 Decision 4.
+const automationWebhookTimeout = Number(
+  process.env.AUTOMATION_WEBHOOK_TIMEOUT ?? "5000"
+);
+
+if (Number.isNaN(automationWebhookTimeout)) {
+  throw new Error("AUTOMATION_WEBHOOK_TIMEOUT must be a valid number.");
+}
+
 // 500MB default — sized against the real production constraint this
 // applies to: PM2 restarts the backend process past 500MB RSS
 // (ecosystem.config.cjs' max_memory_restart), which is exactly why
@@ -177,4 +188,24 @@ export const env = {
     path.join(process.cwd(), "python", ".venv", "bin", "python3"),
 
   whisperModel: process.env.WHISPER_MODEL ?? "small",
+
+  // Sprint 2 — CRM Automation Integration Contract (ADR-0019). Platform-level
+  // automation secrets, not CRM-specific (ADR-0018 Decision 6) — a future
+  // automation domain reuses both without a rename. Deliberately optional
+  // (empty default, fail-closed on first actual use) rather than requireEnv()
+  // — see ADR-0019's rejected-alternative note: requiring these at boot would
+  // break every existing dev/CI/test environment that predates this sprint,
+  // the same reasoning already applied to AUTOMATION_ENCRYPTION_KEY.
+  automationServiceApiKey: process.env.AUTOMATION_SERVICE_API_KEY ?? "",
+
+  automationWebhookSigningSecret:
+    process.env.AUTOMATION_WEBHOOK_SIGNING_SECRET ?? "",
+
+  // Full URL of n8n's Lead Intake webhook (eyan-automation-hub, Workflow 1 —
+  // not yet built as of Sprint 2). Empty by default so a dev/test
+  // environment without an Automation Hub instance running never attempts
+  // the dispatch — see automation-webhook.service.ts.
+  automationHubWebhookUrl: process.env.AUTOMATION_HUB_WEBHOOK_URL ?? "",
+
+  automationWebhookTimeout,
 };

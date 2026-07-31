@@ -159,6 +159,11 @@ model User {
 
   financeAuditEvents FinanceAuditEvent[]
 
+  aiAuditEvents AiAuditEvent[]
+
+  assignedLeads  Lead[]         @relation("LeadAssignee")
+  leadActivities LeadActivity[] @relation("LeadActivityActor")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -863,6 +868,11 @@ model McpServerConfig {
   createdById String
   createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
+  // AI Core Foundation (Phase 1) — a Brain's per-server tool allowlist. See
+  // AiBrainMcpTool; this reuses McpServerConfig entirely unchanged, no new
+  // tool registry.
+  aiBrainAllowances AiBrainMcpTool[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1027,6 +1037,602 @@ model FinanceAuditEvent {
   actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
 
   action     FinanceAuditAction
+  targetType String
+  targetId   String
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// --- CRM Foundation (Sprint 1) --------------------------------------------
+// First capability: AI-Assisted Lead Qualification. Shared workspace by
+// design, same posture as Finance above — every Lead is visible/editable by
+// any user holding the "crm" permission, no per-row ownership. Automation
+// (n8n) integration (AI analysis write-back, execution logging, webhooks)
+// is out of scope for Sprint 1 — LeadAiAnalysis and WorkflowExecutionLog
+// exist now only so the schema doesn't need a second migration once Sprint
+// 2/3 wire up n8n; nothing writes to them yet. See
+// /home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md
+// (TDD §8/§9/§14/§16) and .claude/decisions/ADR-0018-crm-foundation.md.
+
+enum LeadSource {
+  WEBSITE_FORM
+  MANUAL
+  API
+}
+
+enum LeadStatus {
+  NEW
+  VALIDATED
+  DISQUALIFIED
+  AI_ANALYZED
+  QUALIFIED
+  CONTACTED
+  NEGOTIATION
+  CONVERTED
+  LOST
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum LeadActivityType {
+  NOTE
+  STATUS_CHANGE
+  AI_ANALYSIS
+  AUTOMATION
+  ASSIGNMENT
+}
+
+// Shared LOW/MEDIUM/HIGH scale reused across LeadAiAnalysis's buyingIntent,
+// urgency, and riskLevel fields (TDD §14 review) — three distinct concepts,
+// one taxonomy, so this doesn't multiply into three near-identical enums.
+enum QualificationLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EstimatedTimeline {
+  IMMEDIATE
+  SHORT_TERM
+  MEDIUM_TERM
+  LONG_TERM
+  UNKNOWN
+}
+
+enum WorkflowExecutionStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
+model Lead {
+  id String @id @default(cuid())
+
+  // Future-proofing only, unused today — same posture as Expense.householdId.
+  organizationId String?
+
+  source LeadSource @default(WEBSITE_FORM)
+
+  contactName String
+  email       String
+  phone       String?
+  company     String?
+  industry    String?
+  companySize String?
+
+  status   LeadStatus    @default(NEW)
+  score    Int?
+  priority LeadPriority?
+
+  assignedToId String?
+  assignedTo   User?   @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  lostReason String?
+
+  // The original Lead Form payload, verbatim, for audit — distinct from the
+  // structured fields above, which are the normalized/editable view of it.
+  rawSubmission Json
+
+  activities    LeadActivity[]
+  aiAnalyses    LeadAiAnalysis[]
+  executionLogs WorkflowExecutionLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([assignedToId])
+  @@index([createdAt])
+}
+
+// Serves as both "Activity History" and "Automation History" (TDD §9) —
+// filtered by type in the UI, not two separate tables.
+model LeadActivity {
+  id String @id @default(cuid())
+
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  type LeadActivityType
+
+  // Null when system/automation-originated (Sprint 2+); always set for
+  // rep-driven activity in Sprint 1.
+  actorId String?
+  actor   User?   @relation("LeadActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  body     String?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// One row per AI analysis run (Sprint 3+ populates this; schema-only in
+// Sprint 1). A lead can be re-analyzed — history is preserved, not
+// overwritten. Fields mirror the TDD §14 JSON schema exactly, including the
+// five fields added in the Phase 0.5 review.
+model LeadAiAnalysis {
+  id String @id @default(cuid())
+
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  provider      String
+  model         String
+  promptVersion String
+
+  leadScore  Int
+  confidence Float
+  priority   LeadPriority
+
+  industry               String?
+  companySizeEstimate    String?
+  budgetEstimateMin      Decimal? @db.Decimal(10, 2)
+  budgetEstimateMax      Decimal? @db.Decimal(10, 2)
+  budgetEstimateCurrency String?
+
+  buyingIntent            QualificationLevel?
+  urgency                 QualificationLevel?
+  decisionMakerIdentified Boolean?
+  estimatedTimeline       EstimatedTimeline?
+  riskLevel               QualificationLevel?
+
+  painPoints        String[]
+  recommendedAction String
+  summary           String
+  reasoning         String
+
+  rawResponse       Json
+  needsManualReview Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([createdAt])
+}
+
+// Platform-wide execution telemetry (TDD §16/§18 review — not CRM-owned),
+// domain-tagged so a future automation project reuses this table instead of
+// each domain minting its own. Schema-only in Sprint 1 — n8n doesn't exist
+// as a caller yet, nothing writes to this table until Sprint 2.
+model WorkflowExecutionLog {
+  id String @id @default(cuid())
+
+  domain       String @default("crm")
+  workflowName String
+
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  n8nExecutionId String?
+
+  status       WorkflowExecutionStatus
+  durationMs   Int?
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([domain])
+  @@index([leadId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// AI Core Foundation (Phase 1)
+//
+// The shared AI platform every business module (CRM, Content, Video, Chat,
+// and future modules) is meant to route AI calls through instead of each
+// calling a provider directly — see /home/eyancantimbuhan/.claude/plans/
+// project-ai-sales-clever-dijkstra.md (Technical Design Document, revised
+// after the Phase 0.5 Architecture Review and frozen) and
+// .claude/decisions/ADR-0021-ai-core-foundation.md.
+//
+// Architecture (frozen): Business Module -> AiCapability -> AiBrain ->
+// AiRoutingPolicy -> AiProvider/AiModel -> AiPrompt -> (Memory) -> (MCP
+// Tools) -> Response. A business module or n8n workflow references an
+// AiCapability by key only, never a Brain, Provider, Model, or Prompt
+// directly — AiCapability resolves to exactly one AiBrain, which owns its
+// own routing policy, prompt, and (later) memory/MCP configuration.
+// AiBrain-direct invocation exists solely for administrative tooling (the
+// AI Playground) — see ADR-0021.
+//
+// This mirrors MCP Foundation's proven shape (registry + service layer +
+// CredentialManagerService reuse) and deliberately supersedes ADR-0001
+// ("Single AI Provider, No Gateway") for text/chat generation specifically —
+// ADR-0001 itself anticipated this ("Adding a second provider or a gateway
+// later remains possible without reversing this decision... it hasn't been
+// needed yet and shouldn't be built speculatively ahead of that need"). AI
+// Core is that need, now real, and ADR-0021 records the supersession
+// explicitly rather than silently overriding it.
+//
+// Phase 1 is purely additive: no existing table changes, and zero existing
+// AI call sites (ChatService, ContentService, VideoWorkflowPlannerService,
+// VideoAssetService, eyan-automation-hub Workflow 3) are modified. See TDD
+// §16/§18 (Migration Plan) — Phase 2 migrates callers one at a time, Phase 3
+// (separate approval) re-points Workflow 3 at AiCapability's invoke
+// endpoint.
+// ---------------------------------------------------------------------------
+
+enum AiProviderKind {
+  LOCAL
+  HOSTED
+}
+
+enum AiMemoryStrategy {
+  NONE
+  CONVERSATION
+  KNOWLEDGE_BASE
+  VECTOR
+  RAG
+  LONG_TERM
+}
+
+enum AiRoutingStrategy {
+  COST
+  LATENCY
+  QUALITY
+  BALANCED
+}
+
+enum AiCallOutcome {
+  VALID
+  SCHEMA_INVALID
+  TRANSIENT_FAILURE
+  DEFINITIVE_FAILURE
+}
+
+enum AiAuditAction {
+  BRAIN_CREATED
+  BRAIN_UPDATED
+  BRAIN_DELETED
+  CAPABILITY_CREATED
+  CAPABILITY_UPDATED
+  CAPABILITY_DELETED
+  PROVIDER_CREATED
+  PROVIDER_UPDATED
+  MODEL_CREATED
+  MODEL_UPDATED
+  MODEL_DELETED
+  PROVIDER_CREDENTIAL_ADDED
+  PROVIDER_CREDENTIAL_ACCESSED
+  PROVIDER_CREDENTIAL_ROTATED
+  ROUTING_POLICY_CHANGED
+  PROMPT_VERSION_CREATED
+  PROMPT_VERSION_ACTIVATED
+  PROMPT_VERSION_ROLLED_BACK
+  MCP_TOOL_ALLOWANCE_CHANGED
+}
+
+// A pluggable text-generation provider — the AiProviderRegistry registry
+// key (backend/src/providers/ai-core-provider.factory.ts) mirrors
+// AiProvider.key exactly, the same provider-name convention
+// ImageProviderFactory/McpConnectorFactory already established.
+model AiProvider {
+  id          String @id @default(cuid())
+  key         String @unique // registry key: "ollama", "openai", "anthropic", "gemini", ...
+  displayName String
+
+  kind    AiProviderKind
+  baseUrl String? // e.g. Ollama's host; null for hosted APIs using SDK/REST defaults
+
+  isEnabled Boolean @default(true)
+
+  // Reserved infrastructure only (Phase 0.5 review Finding 4) — nullable,
+  // unenforced in Phase 1. A future hosted provider with a real published
+  // quota populates this; rate-limit enforcement itself is Phase 4+.
+  rateLimitPerMinute Int?
+
+  // Reuses McpServerConfig's own health-field shape verbatim — actively
+  // populated by AiProviderHealthService (mirrors McpHealthService).
+  healthStatus      McpHealthStatus @default(UNKNOWN)
+  lastHealthCheckAt DateTime?
+  lastHealthMessage String?
+
+  models                   AiModel[]
+  credentials              AiProviderCredential[]
+  routingPoliciesPreferred AiRoutingPolicy[]      @relation("PreferredProvider")
+  routingPoliciesFallback  AiRoutingPolicy[]      @relation("FallbackProvider")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
+}
+
+// Encrypted, hosted-provider API key — identical shape to
+// AutomationConnection, reusing CredentialManagerService verbatim (no new
+// cryptography). Ollama (LOCAL) never has a row here — ADR-0020 Decision 1
+// established Ollama needs no credential.
+model AiProviderCredential {
+  id         String     @id @default(cuid())
+  providerId String
+  provider   AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  label String // e.g. "Production OpenAI key"
+
+  encryptedCredentials String
+  credentialsIv        String
+
+  status         ConnectionStatus @default(PENDING)
+  lastVerifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, label])
+  @@index([providerId])
+}
+
+// A specific model a provider exposes. `tags` are technical abilities
+// ("chat","coding","vision","reasoning","large-context") — never a business
+// Capability name (Phase 0.5 Finding 2's naming rule; see AiCapability
+// below for the business-task concept).
+model AiModel {
+  id         String     @id @default(cuid())
+  providerId String
+  provider   AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  modelKey    String // "qwen2.5-coder:7b", "gpt-4o", "claude-3-5-sonnet-latest", ...
+  displayName String
+  tags        String[] // plain strings, not an enum — grows per-provider, never needs a migration
+
+  contextWindow      Int?
+  costPerInputToken  Decimal? @db.Decimal(12, 8)
+  costPerOutputToken Decimal? @db.Decimal(12, 8)
+
+  isEnabled Boolean @default(true)
+
+  routingPoliciesPreferred AiRoutingPolicy[] @relation("PreferredModel")
+  routingPoliciesFallback  AiRoutingPolicy[] @relation("FallbackModel")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, modelKey])
+  @@index([providerId])
+}
+
+// A named, business-facing AI configuration (provider/model/prompt/routing
+// policy). A Brain is data, not code — adding a Brain is a seed/migration
+// operation, never a new service class (TDD §3).
+model AiBrain {
+  id String @id @default(cuid())
+
+  key         String @unique // "sales-brain", "content-brain", "general-chat-brain", ...
+  name        String
+  description String
+
+  category String // "Sales","Support","Coding",... — string, not enum, same reason as AiModel.tags
+
+  memoryStrategy AiMemoryStrategy @default(NONE)
+  isEnabled      Boolean          @default(true)
+
+  // Future-proofing only, unused today — same posture as Lead.organizationId.
+  organizationId String?
+
+  capabilities      AiCapability[]
+  prompts           AiPrompt[]
+  routingPolicies   AiRoutingPolicy[]
+  mcpToolAllowances AiBrainMcpTool[]
+  usageLogs         AiUsageLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+// A named business task, resolving to exactly one Brain. This is the one
+// thing a business module or n8n workflow ever references by key — never a
+// Brain, Provider, Model, or Prompt directly (Phase 0.5 review Finding 1;
+// architecture is frozen on this point, see ADR-0021). A Brain may back more
+// than one Capability. onDelete deliberately left at Prisma's default
+// (Restrict) — deleting a Brain that still backs an enabled Capability must
+// fail loudly, not silently orphan the Capability, since this schema has no
+// soft-delete anywhere to paper over a dangling reference.
+model AiCapability {
+  id String @id @default(cuid())
+
+  key         String @unique // "lead-qualification", "email-drafting", "content-generation", ...
+  name        String
+  description String
+
+  brainId String
+  brain   AiBrain @relation(fields: [brainId], references: [id])
+
+  isEnabled Boolean @default(true)
+
+  usageLogs AiUsageLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brainId])
+}
+
+// Additive-only versioned prompt (ADR-0020 Decision 2's exact rule),
+// never edited in place once a version exists. Rollback = activating an
+// older version, never a delete.
+model AiPrompt {
+  id String @id @default(cuid())
+
+  brainId String
+  brain   AiBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+
+  version  String // "v1","v2",...
+  body     String  @db.Text
+  isActive Boolean @default(false) // exactly one active version per brain, enforced by AiPromptService
+
+  createdAt     DateTime       @default(now())
+  aiEvaluations AiEvaluation[]
+
+  @@unique([brainId, version])
+  @@index([brainId])
+}
+
+// Additive-versioned routing configuration for a Brain (same isActive
+// convention as AiPrompt). requiredTag (renamed from requiredCapability —
+// Phase 0.5 Finding 2) is a technical AiModel.tags filter, never a business
+// Capability.
+model AiRoutingPolicy {
+  id String @id @default(cuid())
+
+  brainId String
+  brain   AiBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+
+  isActive Boolean           @default(false) // exactly one active row per brain, enforced by AiRoutingPolicyService, not the DB
+  strategy AiRoutingStrategy @default(BALANCED)
+
+  requiredTag String? // e.g. "reasoning" — filters AiModel.tags before falling back to preferredModelId
+
+  preferredProviderId String
+  preferredProvider   AiProvider @relation("PreferredProvider", fields: [preferredProviderId], references: [id])
+  preferredModelId    String
+  preferredModel      AiModel    @relation("PreferredModel", fields: [preferredModelId], references: [id])
+
+  fallbackProviderId String?
+  fallbackProvider   AiProvider? @relation("FallbackProvider", fields: [fallbackProviderId], references: [id])
+  fallbackModelId    String?
+  fallbackModel      AiModel?    @relation("FallbackModel", fields: [fallbackModelId], references: [id])
+
+  maxRetries Int @default(3)
+  timeoutMs  Int @default(60000)
+
+  confidenceHighThreshold   Float @default(0.75)
+  confidenceMediumThreshold Float @default(0.4)
+
+  createdAt DateTime @default(now())
+
+  @@index([brainId])
+  @@index([preferredProviderId])
+}
+
+// Thin join between a Brain and MCP Foundation's existing McpServerConfig —
+// no new tool registry. allowedTools empty = every tool on that server.
+model AiBrainMcpTool {
+  id String @id @default(cuid())
+
+  brainId String
+  brain   AiBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+
+  mcpServerConfigId String
+  mcpServerConfig   McpServerConfig @relation(fields: [mcpServerConfigId], references: [id], onDelete: Cascade)
+
+  allowedTools String[]
+
+  @@unique([brainId, mcpServerConfigId])
+  @@index([brainId])
+}
+
+// Fire-and-forget per-call telemetry, real columns not JSON (same reasoning
+// as AnalyticsEvent). domain distinguishes production Capability/Brain
+// traffic ("ai-core") from AI Playground executions ("ai-core-playground"),
+// which are always excluded from default usage/cost reporting (Phase 0.5
+// Finding 5) — mirrors WorkflowExecutionLog's own domain-tagging
+// convention (ADR-0018 Decision 4).
+model AiUsageLog {
+  id String @id @default(cuid())
+
+  brainId String?
+  brain   AiBrain? @relation(fields: [brainId], references: [id], onDelete: SetNull)
+
+  capabilityId String? // null for Playground/admin Brain-direct calls
+  capability   AiCapability? @relation(fields: [capabilityId], references: [id], onDelete: SetNull)
+
+  providerId String?
+  modelId    String?
+
+  workflowExecutionId String? // correlates to WorkflowExecutionLog.n8nExecutionId (Phase 3)
+  domain              String  @default("ai-core") // "ai-core" | "ai-core-playground"
+
+  outcome    AiCallOutcome
+  retryCount Int           @default(0)
+
+  tokensIn  Int?
+  tokensOut Int?
+  costUsd   Decimal? @db.Decimal(10, 6)
+  latencyMs Int?
+
+  needsManualReview Boolean @default(false)
+  errorMessage      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([brainId])
+  @@index([capabilityId])
+  @@index([providerId])
+  @@index([domain])
+  @@index([createdAt])
+}
+
+// A stored test case for a prompt version, run via AiEvaluationService /
+// the Playground's "Evaluate" action before a version is activated.
+model AiEvaluation {
+  id String @id @default(cuid())
+
+  promptId String
+  prompt   AiPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  testCaseName  String
+  input         Json
+  expectedShape Json?
+  actualOutput  Json?
+
+  passed Boolean
+  score  Float?
+
+  evaluatedAt DateTime @default(now())
+
+  @@index([promptId])
+}
+
+// Append-only audit trail — identical shape to AutomationAuditEvent /
+// FinanceAuditEvent, one .record() entrypoint (AiAuditService). Also the
+// hook AiRoutingService's in-memory cache invalidation listens to (TDD §8).
+model AiAuditEvent {
+  id String @id @default(cuid())
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     AiAuditAction
   targetType String
   targetId   String
   metadata   Json?

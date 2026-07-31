@@ -222,6 +222,38 @@ GET /health/ready
 
 ---
 
+# CRM (Sprint 1 — CRM Foundation)
+
+Added outside the original V1.0 scope, see `docs/ARCHITECTURE.md`'s "CRM Foundation Architecture" section and `.claude/decisions/ADR-0018-crm-foundation.md`.
+
+POST /crm/leads — public, no auth, rate-limited (the Lead Form's submission target)
+
+GET /crm/leads — requires `crm` permission
+
+GET /crm/leads/:id — includes activities, aiAnalyses, executionLogs
+
+PATCH /crm/leads/:id — editable contact fields only
+
+PATCH /crm/leads/:id/status — server-enforced lifecycle transition
+
+PATCH /crm/leads/:id/assign
+
+POST /crm/leads/:id/notes
+
+## CRM Automation (Sprint 2 — Automation Integration Contract)
+
+Service-facing, `authenticateService`-gated routes under `/crm/service/*` — a static bearer token (`AUTOMATION_SERVICE_API_KEY`), never a user JWT. See `docs/ARCHITECTURE.md`'s "Sprint 2 — Automation Integration Contract" section and `.claude/decisions/ADR-0019-automation-integration-contract.md`. `eyan-automation-hub` (the actual n8n workflows that would call these) is not built yet — verified this sprint via curl.
+
+GET /crm/service/leads?email= — dedupe lookup; `data.lead` is `null` on no match (not a 404)
+
+PATCH /crm/service/leads/:id/validation — body: `{ contractVersion, workflowExecutionId, workflowName, status: "VALIDATED" | "DISQUALIFIED", durationMs?, errorMessage? }`
+
+PATCH /crm/service/leads/:id/qualification — body: the frozen AI JSON schema (TDD §14) plus execution metadata; writes a `LeadAiAnalysis` row and moves the lead to `AI_ANALYZED`. This sprint's own "dummy qualification response" deliverable — exercised with a stub payload, not a real AI call.
+
+Every mutation above is idempotent on `{ workflowName, workflowExecutionId }` — a replayed call with an already-succeeded execution id is a no-op, returning the current lead state.
+
+---
+
 # Standard Success Response
 
 {

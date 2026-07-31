@@ -517,6 +517,70 @@ Full design rationale — why the registry mirrors `PlatformProviderFactory` rat
 
 ---
 
+# CRM Foundation Architecture
+
+Sprint 1 adds **CRM Foundation** — positioned as the first pillar of a future Sales Workspace (Leads today; Contacts, Companies, Deals, Tasks, Activities, Reports/Analytics later), not a one-off feature. `docs/product/02_ROADMAP.md` lists CRM as out of scope for Version 1.0 — this is a parallel initiative, approved via a dedicated Technical Design Document (`/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`) rather than a resumption of that scope.
+
+```
+Lead Form (external, not built this sprint)
+        │  POST /api/v1/crm/leads  (public, rate-limited, validated)
+        ▼
+      Lead  (status: NEW)
+        │
+        │  rep-driven, server-enforced transitions (CrmLeadService.ALLOWED_TRANSITIONS)
+        ▼
+NEW → VALIDATED → AI_ANALYZED → QUALIFIED → CONTACTED → NEGOTIATION → CONVERTED
+  │                    │             │           │            │
+  └→ DISQUALIFIED      └─────────────┴───────────┴────────────┴──→ LOST
+```
+
+- `Lead` — shared workspace (no per-row ownership, same posture as `Expense` — see ADR-0018), gated by a single `crm` permission. `assignedToId` records the responsible rep, never used for access control.
+- `LeadActivity` — one append-only timeline serving both "Activity History" and "Automation History" (`NOTE`/`STATUS_CHANGE`/`ASSIGNMENT`/`AI_ANALYSIS`/`AUTOMATION`), filtered by type in the UI rather than split into two tables. Status/assignment changes await this write rather than firing-and-forgetting it, unlike Finance's audit log — see ADR-0018 Decision 3.
+- `LeadAiAnalysis` / `WorkflowExecutionLog` — schema exists now, populated by nothing until n8n integration begins (Sprint 2/3). `WorkflowExecutionLog.domain` (default `"crm"`) is platform-wide from day one, not CRM-owned, so a future automation domain (support, recruitment, invoicing) reuses the same table.
+- `CrmLeadService` owns the lifecycle transition map — the only place that decides which status changes are legal; controllers and the frontend never re-derive it independently (the frontend's copy in `features/crm/lib/lead-lifecycle.ts` is display-only).
+
+**RBAC**: one permission, `crm`, gating the entire module — the Finance shared-workspace pattern, not the Automation module's two-tier (page-level + credential-mutation) pattern, since nothing in CRM Foundation touches another party's live credential.
+
+**API**: `POST /api/v1/crm/leads` is public (no `authenticate`) — the Lead Form's intended submission target, protected instead by a dedicated rate limiter and full input validation, since it's the actual internet-facing attack surface (host firewall is disabled; nginx binding + this endpoint's own guards are the real perimeter). Every other route under `/api/v1/crm/leads` requires `authenticate` + `requirePermission("crm")`. See `backend/src/routes/v1/crm-leads.routes.ts`.
+
+**Frontend**: `features/crm/` — a Dashboard (pipeline stat cards + status breakdown chart), Leads (searchable/filterable table), and Lead Detail (AI Analysis empty-state card, Timeline with inline note entry, Status/Assign dialogs, Edit dialog) under a new "Sales" sidebar group. Built entirely from existing `components/ui/*` and `components/data-table/*` — no new design-system components. Unchanged by Sprint 2 — nothing here is a frontend sprint.
+
+Full design rationale — why `LeadActivity` is one table not two, why the AI-analysis models exist unused, why the lifecycle map lives where it does, and why the service-facing routes were deferred out of Sprint 1: `.claude/decisions/ADR-0018-crm-foundation.md`. Full architecture/business-requirements context: `/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`.
+
+## Sprint 2 — Automation Integration Contract (EYAN side only)
+
+Sprint 2 builds the EYAN half of the cross-system contract ADR-0019 specifies — `eyan-automation-hub` (n8n's actual Workflow 1/2 JSON definitions) is explicitly out of scope this sprint and untouched; everything below is verified with curl standing in for n8n, not a live Automation Hub instance.
+
+```
+Lead created (POST /api/v1/crm/leads)
+        │
+        │  fire-and-forget, HMAC-signed (AutomationWebhookService)
+        ▼
+  n8n Workflow 1 — Lead Intake        (eyan-automation-hub, not built this sprint)
+        │
+        ▼
+  n8n Workflow 2 — Validation         (eyan-automation-hub, not built this sprint)
+        │  GET  /api/v1/crm/service/leads?email=            (dedupe check)
+        │  PATCH /api/v1/crm/service/leads/:id/validation    (VALIDATED | DISQUALIFIED)
+        ▼
+  "Workflow 3+4" stand-in — a dummy/stub qualification payload, exercised via curl this sprint
+        │  PATCH /api/v1/crm/service/leads/:id/qualification (writes LeadAiAnalysis + AI_ANALYZED)
+        ▼
+      Lead  (status: AI_ANALYZED, score, priority set)
+```
+
+- **`authenticateService`** (`backend/src/middleware/service-auth.middleware.ts`) — gates every `/api/v1/crm/service/*` route with a static bearer token (`AUTOMATION_SERVICE_API_KEY`), compared via `crypto.timingSafeEqual`. Fails closed (500) if the key isn't configured, rather than authenticating every caller against an empty value. Named at the platform level, not CRM-specific — a future automation domain reuses it unchanged (ADR-0018 Decision 6).
+- **Outbound webhook dispatch** (`AutomationWebhookService`) — `CrmLeadService.create()` fires an HMAC-SHA256-signed (`AUTOMATION_WEBHOOK_SIGNING_SECRET`), fire-and-forget POST to n8n's future Lead Intake webhook on every new lead. Never awaited, never blocks the Lead Form's response; a failure is logged and nothing else happens (no retry — that's n8n's job, once it exists).
+- **`CrmAutomationIngestService`** (`backend/src/services/crm-automation-ingest.service.ts`) — the n8n write-back surface, separate from `CrmLeadService` (user-facing CRUD) since the two have different callers and different idempotency needs, but both defer to the same `ALLOWED_TRANSITIONS` map (imported, not duplicated) as the one lifecycle authority.
+- **Idempotency**: every service mutation carries a `workflowExecutionId` + `workflowName`; a repeated call whose execution already succeeded (checked against `WorkflowExecutionLog`) is treated as a safe replay and returns the current state unchanged rather than re-applying the mutation.
+- **The "dummy qualification response"**: `PATCH /crm/service/leads/:id/qualification` is the real Workflow 3/4 write-back contract, exercised this sprint with a stub payload instead of a real AI call — proving the contract (auth, signing, idempotency) before Sprint 3 adds actual AI orchestration.
+
+Full contract decisions (webhook auth, service auth, retry/timeout/idempotency/versioning policy, and rejected alternatives): `.claude/decisions/ADR-0019-automation-integration-contract.md`.
+
+**Explicitly not built this sprint** (deferred to a later, dedicated Automation Hub sprint): the actual n8n Workflow 1/2 JSON definitions in `eyan-automation-hub`, real AI qualification (Workflow 3), notifications (Workflow 5), execution telemetry (Workflow 6), the Human Review Queue UI, and the Automation module's future "Automation Runs" page.
+
+---
+
 # AI Video Editing Pipeline Architecture
 
 Sprint 7.2 extends the existing AI Video Studio (above) with a pipeline that lets a user upload a real video file and, in later milestones, describe edits to it in plain English. Milestone 1 (Source Ingestion, Sprint 7.2.1) is the only part built so far — no planner, execution engine, FFmpeg editing, Whisper, or background job infrastructure exists yet.
@@ -539,6 +603,46 @@ This is a synchronous request/response operation, not a background job — `ffpr
 **Why `ffprobe` is more than a metadata reader**: it's also the authoritative validation that an uploaded file is really a video — a file that merely has a video-sounding extension or client-supplied mimetype but isn't a real video fails `ffprobe`'s parse with a clean, sanitized `InvalidVideoFileError`, before it can ever become a `VideoAsset` row. The multer `fileFilter`'s mimetype allowlist is a cheap first-pass rejection only, not the real check — the same "don't trust client-supplied metadata" posture this repo already takes with uploaded file extensions in `LocalDiskStorageProvider`.
 
 Full milestone-by-milestone detail: `tasks/completed/sprint-7-2-1-source-ingestion.md`.
+
+---
+
+# AI Core Foundation Architecture
+
+Phase 1 adds **AI Core** — a new platform module, structured as MCP Foundation's sibling, that every business module (starting with a future CRM/Content/Video migration in Phase 2) is meant to route AI calls through instead of each hardcoding a provider directly. It deliberately supersedes ADR-0001 ("Single AI Provider, No Gateway") for text/chat generation specifically — ADR-0001 itself anticipated this outcome and left the door open rather than closed it; AI Core is that door, opened now that a second real consumer (CRM's Sales Brain, planned for Phase 3) actually needs it.
+
+```
+Business Module / n8n Workflow
+        │  invoke(capabilityKey, input)
+        ▼
+AiCapability      (business task: "lead-qualification", ... — the only thing a caller ever references)
+        │
+        ▼
+AiBrain           (reusable AI configuration — provider, model, prompt, routing policy; one Brain may back several Capabilities)
+        │
+        ▼
+AiRoutingService  (resolves + caches Policy → Provider/Model → Prompt, executes retry/fallback, classifies outcomes)
+        │
+        ▼
+AiCoreProviderFactory → AiCoreProvider plugin (Ollama / OpenAI / Anthropic / Gemini — thin, translates request/response only)
+```
+
+- `AiCapability` / `AiBrain` — the two-level indirection the architecture is frozen on (`.claude/decisions/ADR-0021-ai-core-foundation.md`): a Capability is a business task, always resolving to exactly one Brain; a Brain is a reusable AI configuration, never referenced by a business-module caller directly (Brain-direct invoke is `aicoreadmin`-gated, administrative/Playground-only). `AiCapability.brainId` uses Prisma's default `Restrict` delete behavior on purpose — deleting a Brain that still backs an enabled Capability fails loudly rather than orphaning it silently, since this schema has no soft-delete anywhere to paper over a dangling reference.
+- `AiCoreProviderFactory` (`backend/src/providers/ai-core-provider.factory.ts`) — mirrors `McpConnectorFactory`'s registry shape exactly (`register()`/`create()`/`listRegistered()`/`reset()`, **no env-var default**), not `ImageProviderFactory`'s — every real caller (`AiRoutingService`) always resolves an explicit `AiProvider.key` from a Brain's active `AiRoutingPolicy` before calling `create()`, so there's never a scenario needing a global default the way `IMAGE_PROVIDER` exists for image generation. Four plugins are registered: `OllamaAiProvider` (LOCAL, no credential — relocated/generalized from the existing `OllamaProvider`, unchanged wire contract), `OpenAiAiProvider`, `AnthropicAiProvider`, `GeminiAiProvider` (all HOSTED, REST-only via `axios`, no new SDK dependency). Each implements `chat()` and a cheap `healthCheck()` (mirrors `McpConnector.healthCheck()`, applied to a text-generation provider instead of an MCP server).
+- `AiRoutingService` — the only component that talks to `AiCoreProviderFactory`. Resolves Capability → Brain → active `AiRoutingPolicy` → active `AiPrompt`, builds messages via `{{placeholder}}` substitution against the caller's input, and executes a corrective-retry loop (feeding the model its own bad output + the parse error back on a `SCHEMA_INVALID` classification) up to the policy's `maxRetries`, then one attempt against a configured fallback provider/model if the preferred path is exhausted or definitively failed. Never throws an unhandled error back to the caller — an exhausted call returns `needsManualReview: true` instead ("never strand a caller," generalizing CRM's own Workflow 3 principle). Failure classification (`SCHEMA_INVALID` / `TRANSIENT_FAILURE` / `DEFINITIVE_FAILURE`) mirrors `eyan-automation-hub`'s Classify Ollama Result node: a 4xx status (except 429) is definitive (no retry), everything else (network failure, 429, 5xx) is transient.
+- **Caching**: an in-process, in-memory `Map`-based cache (no Redis) holds the resolved Capability→Brain→Policy→Prompt chain, invalidated wholesale on a `CACHE_INVALIDATING_ACTIONS` `AiAuditEvent` (`ai-cache-invalidation.events.ts`, a plain Node `EventEmitter` — decouples `AiAuditService`, which knows *when* something changed, from `AiRoutingService`, which knows *what* to do about it). A Playground call always bypasses this cache — an override must never be served or pollute cached resolution state.
+- `AiPlaygroundService` / domain-tagged `AiUsageLog` — the engineering validation environment. Every Playground execution writes one `AiUsageLog` row tagged `domain: "ai-core-playground"` instead of `"ai-core"` (no duplicate logging system); `GET /ai-core/usage` and `GET /ai-core/costs` filter to `domain: "ai-core"` by default, so Playground traffic never inflates production numbers.
+- `AiProviderHealthService` — actually populates `AiProvider.healthStatus`/`lastHealthCheckAt`/`lastHealthMessage` (a real gap the Phase 0.5 review caught: the fields existed with no owning service). Mirrors `McpHealthService`'s real behavior, not just its role.
+- `CredentialManagerService` reused verbatim for `AiProviderCredential` (AES-256-GCM, `AUTOMATION_ENCRYPTION_KEY`) — zero new cryptography, same as MCP Foundation.
+
+**RBAC**: two new permissions, `aicore` (read/use — includes invoking a Capability) and `aicoreadmin` (mutate — Brain/Capability/Provider/Model CRUD, credential management, routing policy and prompt version changes, Brain-direct invoke, and every Playground execution), mirroring `automation`/`automationcredentials`'s two-tier split for the same reason (a credential-bearing module). `GET /ai-core/audit-logs` reuses the pre-existing `auditlogs` permission.
+
+**API**: `/api/v1/ai-core/{capabilities,brains,providers,models,playground,usage,costs,health,audit-logs}` — see `backend/src/routes/v1/ai-core-*.routes.ts`. `POST /ai-core/capabilities/:capabilityKey/invoke` is the one endpoint every business module/n8n workflow is meant to call (`aicore` only); `POST /ai-core/brains/:brainKey/invoke` and `POST /ai-core/playground/invoke` are `aicoreadmin`-gated administrative paths. Prompts and Routing Policies are nested under a Brain (`/ai-core/brains/:brainId/prompts`, `/ai-core/brains/:brainId/routing-policy`), additive-versioned with an `activate` action rather than an edit-in-place, matching ADR-0020 Decision 2's file-versioning rule now enforced in the database.
+
+**Frontend**: `features/ai-core/` — Dashboard, Capabilities, Brains, Providers (with health-check and credential-add actions), Models, Playground (functional Capability/Brain invoke form with provider/model/prompt overrides, structured-output and raw-response viewers, execution history), Usage, Costs, Health, and Audit Logs pages, under a new "AI Core" sidebar group. Prompt/Routing Policy management for a given Brain is reached via the API only in Phase 1 (no dedicated Brain-detail sub-page yet — see the Phase 1 completion report's Known Issues).
+
+**Phase 1 is purely additive**: zero changes to `ChatService`, `ContentService`, `VideoWorkflowPlannerService`, `VideoAssetService`, or `eyan-automation-hub` Workflow 3 — all continue exactly as built. Phase 2 (migrating those call sites to Capabilities, one at a time) and Phase 3 (re-pointing Workflow 3 at AI Core over HTTP) are named, sequenced, and explicitly not started.
+
+Full design rationale — the Capability/Brain two-level indirection, the ADR-0001 supersession, the Playground isolation guarantee, and the full Phase 0/0.5/Freeze history: `.claude/decisions/ADR-0021-ai-core-foundation.md`. Full TDD: `/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`.
 
 ---
 

@@ -79,6 +79,14 @@ Models
 Health
 - Health checks
 
+CRM (Sprint 1 — CRM Foundation, see ADR-0018; Sprint 2 — Automation Integration Contract, see ADR-0019)
+- Leads: create (public, rate-limited), list, detail, status transitions, assignment, notes
+- Shared workspace, `crm` permission
+- Sprint 2: `/crm/service/*` (n8n-facing, `authenticateService`-gated) — dedupe lookup, validation write-back, dummy qualification write-back, all idempotent on `workflowExecutionId`. Outbound HMAC-signed webhook dispatch on lead creation (`AutomationWebhookService`). `eyan-automation-hub` itself (real n8n workflows) is not built yet — verified via curl.
+- `LeadAiAnalysis`/`WorkflowExecutionLog` now populated (Sprint 2, stub/dummy data) — no longer empty
+
+(Note: this Backend Domains list predates Finance and MCP Foundation — see `.claude/decisions/ADR-0012-mcp-foundation.md` and `ADR-0013-finance-management-foundation.md` for those, not reflected here.)
+
 ---
 
 ## Frontend Features
@@ -102,6 +110,8 @@ Models
 Settings
 
 Error Pages
+
+CRM (Sprint 1 — Dashboard, Leads, Lead Detail)
 
 ---
 

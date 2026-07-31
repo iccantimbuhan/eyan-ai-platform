@@ -29,10 +29,12 @@ import { Route as AppAuthenticatedSettingsRouteRouteImport } from './routes/app/
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as AppAuthenticatedAiChatIndexRouteImport } from './routes/app/_authenticated/ai-chat/index'
+import { Route as AppAuthenticatedAiCoreIndexRouteImport } from './routes/app/_authenticated/ai-core/index'
 import { Route as AppAuthenticatedContentStudioIndexRouteImport } from './routes/app/_authenticated/content-studio/index'
 import { Route as AppAuthenticatedContentStudioProjectIdRouteImport } from './routes/app/_authenticated/content-studio/$projectId'
 import { Route as AppAuthenticatedContentStudioDashboardRouteImport } from './routes/app/_authenticated/content-studio/dashboard'
 import { Route as AppAuthenticatedContentStudioPromptLibraryRouteImport } from './routes/app/_authenticated/content-studio/prompt-library'
+import { Route as AppAuthenticatedCrmIndexRouteImport } from './routes/app/_authenticated/crm/index'
 import { Route as AppAuthenticatedErrorsErrorRouteImport } from './routes/app/_authenticated/errors/$error'
 import { Route as AppAuthenticatedFinanceIndexRouteImport } from './routes/app/_authenticated/finance/index'
 import { Route as AppAuthenticatedModelsIndexRouteImport } from './routes/app/_authenticated/models/index'
@@ -45,11 +47,22 @@ import { Route as AppAuthenticatedSettingsDisplayRouteImport } from './routes/ap
 import { Route as AppAuthenticatedSettingsNotificationsRouteImport } from './routes/app/_authenticated/settings/notifications'
 import { Route as AppAuthenticatedSettingsProvidersRouteImport } from './routes/app/_authenticated/settings/providers'
 import { Route as AppAuthenticatedUsersIndexRouteImport } from './routes/app/_authenticated/users/index'
+import { Route as AppAuthenticatedAiCoreAuditIndexRouteImport } from './routes/app/_authenticated/ai-core/audit/index'
+import { Route as AppAuthenticatedAiCoreBrainsIndexRouteImport } from './routes/app/_authenticated/ai-core/brains/index'
+import { Route as AppAuthenticatedAiCoreCapabilitiesIndexRouteImport } from './routes/app/_authenticated/ai-core/capabilities/index'
+import { Route as AppAuthenticatedAiCoreCostsIndexRouteImport } from './routes/app/_authenticated/ai-core/costs/index'
+import { Route as AppAuthenticatedAiCoreHealthIndexRouteImport } from './routes/app/_authenticated/ai-core/health/index'
+import { Route as AppAuthenticatedAiCoreModelsIndexRouteImport } from './routes/app/_authenticated/ai-core/models/index'
+import { Route as AppAuthenticatedAiCorePlaygroundIndexRouteImport } from './routes/app/_authenticated/ai-core/playground/index'
+import { Route as AppAuthenticatedAiCoreProvidersIndexRouteImport } from './routes/app/_authenticated/ai-core/providers/index'
+import { Route as AppAuthenticatedAiCoreUsageIndexRouteImport } from './routes/app/_authenticated/ai-core/usage/index'
 import { Route as AppAuthenticatedAutomationAuditLogsIndexRouteImport } from './routes/app/_authenticated/automation/audit-logs/index'
 import { Route as AppAuthenticatedAutomationConnectionsIndexRouteImport } from './routes/app/_authenticated/automation/connections/index'
 import { Route as AppAuthenticatedAutomationHealthIndexRouteImport } from './routes/app/_authenticated/automation/health/index'
 import { Route as AppAuthenticatedAutomationMcpServersIndexRouteImport } from './routes/app/_authenticated/automation/mcp-servers/index'
 import { Route as AppAuthenticatedAutomationProvidersIndexRouteImport } from './routes/app/_authenticated/automation/providers/index'
+import { Route as AppAuthenticatedCrmLeadsIndexRouteImport } from './routes/app/_authenticated/crm/leads/index'
+import { Route as AppAuthenticatedCrmLeadsLeadIdRouteImport } from './routes/app/_authenticated/crm/leads/$leadId'
 import { Route as AppAuthenticatedFinanceExpensesIndexRouteImport } from './routes/app/_authenticated/finance/expenses/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -152,6 +165,12 @@ const AppAuthenticatedAiChatIndexRoute =
     path: '/ai-chat/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedAiCoreIndexRoute =
+  AppAuthenticatedAiCoreIndexRouteImport.update({
+    id: '/ai-core/',
+    path: '/ai-core/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedContentStudioIndexRoute =
   AppAuthenticatedContentStudioIndexRouteImport.update({
     id: '/content-studio/',
@@ -174,6 +193,12 @@ const AppAuthenticatedContentStudioPromptLibraryRoute =
   AppAuthenticatedContentStudioPromptLibraryRouteImport.update({
     id: '/content-studio/prompt-library',
     path: '/content-studio/prompt-library',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedCrmIndexRoute =
+  AppAuthenticatedCrmIndexRouteImport.update({
+    id: '/crm/',
+    path: '/crm/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const AppAuthenticatedErrorsErrorRoute =
@@ -248,6 +273,60 @@ const AppAuthenticatedUsersIndexRoute =
     path: '/users/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedAiCoreAuditIndexRoute =
+  AppAuthenticatedAiCoreAuditIndexRouteImport.update({
+    id: '/ai-core/audit/',
+    path: '/ai-core/audit/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreBrainsIndexRoute =
+  AppAuthenticatedAiCoreBrainsIndexRouteImport.update({
+    id: '/ai-core/brains/',
+    path: '/ai-core/brains/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreCapabilitiesIndexRoute =
+  AppAuthenticatedAiCoreCapabilitiesIndexRouteImport.update({
+    id: '/ai-core/capabilities/',
+    path: '/ai-core/capabilities/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreCostsIndexRoute =
+  AppAuthenticatedAiCoreCostsIndexRouteImport.update({
+    id: '/ai-core/costs/',
+    path: '/ai-core/costs/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreHealthIndexRoute =
+  AppAuthenticatedAiCoreHealthIndexRouteImport.update({
+    id: '/ai-core/health/',
+    path: '/ai-core/health/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreModelsIndexRoute =
+  AppAuthenticatedAiCoreModelsIndexRouteImport.update({
+    id: '/ai-core/models/',
+    path: '/ai-core/models/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCorePlaygroundIndexRoute =
+  AppAuthenticatedAiCorePlaygroundIndexRouteImport.update({
+    id: '/ai-core/playground/',
+    path: '/ai-core/playground/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreProvidersIndexRoute =
+  AppAuthenticatedAiCoreProvidersIndexRouteImport.update({
+    id: '/ai-core/providers/',
+    path: '/ai-core/providers/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAiCoreUsageIndexRoute =
+  AppAuthenticatedAiCoreUsageIndexRouteImport.update({
+    id: '/ai-core/usage/',
+    path: '/ai-core/usage/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedAutomationAuditLogsIndexRoute =
   AppAuthenticatedAutomationAuditLogsIndexRouteImport.update({
     id: '/automation/audit-logs/',
@@ -276,6 +355,18 @@ const AppAuthenticatedAutomationProvidersIndexRoute =
   AppAuthenticatedAutomationProvidersIndexRouteImport.update({
     id: '/automation/providers/',
     path: '/automation/providers/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedCrmLeadsIndexRoute =
+  AppAuthenticatedCrmLeadsIndexRouteImport.update({
+    id: '/crm/leads/',
+    path: '/crm/leads/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedCrmLeadsLeadIdRoute =
+  AppAuthenticatedCrmLeadsLeadIdRouteImport.update({
+    id: '/crm/leads/$leadId',
+    path: '/crm/leads/$leadId',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const AppAuthenticatedFinanceExpensesIndexRoute =
@@ -313,18 +404,31 @@ export interface FileRoutesByFullPath {
   '/app/settings/notifications': typeof AppAuthenticatedSettingsNotificationsRoute
   '/app/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
   '/app/ai-chat/': typeof AppAuthenticatedAiChatIndexRoute
+  '/app/ai-core/': typeof AppAuthenticatedAiCoreIndexRoute
   '/app/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/crm/': typeof AppAuthenticatedCrmIndexRoute
   '/app/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models/': typeof AppAuthenticatedModelsIndexRoute
   '/app/presentation-engine/': typeof AppAuthenticatedPresentationEngineIndexRoute
   '/app/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users/': typeof AppAuthenticatedUsersIndexRoute
+  '/app/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  '/app/ai-core/audit/': typeof AppAuthenticatedAiCoreAuditIndexRoute
+  '/app/ai-core/brains/': typeof AppAuthenticatedAiCoreBrainsIndexRoute
+  '/app/ai-core/capabilities/': typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
+  '/app/ai-core/costs/': typeof AppAuthenticatedAiCoreCostsIndexRoute
+  '/app/ai-core/health/': typeof AppAuthenticatedAiCoreHealthIndexRoute
+  '/app/ai-core/models/': typeof AppAuthenticatedAiCoreModelsIndexRoute
+  '/app/ai-core/playground/': typeof AppAuthenticatedAiCorePlaygroundIndexRoute
+  '/app/ai-core/providers/': typeof AppAuthenticatedAiCoreProvidersIndexRoute
+  '/app/ai-core/usage/': typeof AppAuthenticatedAiCoreUsageIndexRoute
   '/app/automation/audit-logs/': typeof AppAuthenticatedAutomationAuditLogsIndexRoute
   '/app/automation/connections/': typeof AppAuthenticatedAutomationConnectionsIndexRoute
   '/app/automation/health/': typeof AppAuthenticatedAutomationHealthIndexRoute
   '/app/automation/mcp-servers/': typeof AppAuthenticatedAutomationMcpServersIndexRoute
   '/app/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
+  '/app/crm/leads/': typeof AppAuthenticatedCrmLeadsIndexRoute
   '/app/finance/expenses/': typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -353,18 +457,31 @@ export interface FileRoutesByTo {
   '/app/settings/notifications': typeof AppAuthenticatedSettingsNotificationsRoute
   '/app/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
   '/app/ai-chat': typeof AppAuthenticatedAiChatIndexRoute
+  '/app/ai-core': typeof AppAuthenticatedAiCoreIndexRoute
   '/app/content-studio': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/crm': typeof AppAuthenticatedCrmIndexRoute
   '/app/finance': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models': typeof AppAuthenticatedModelsIndexRoute
   '/app/presentation-engine': typeof AppAuthenticatedPresentationEngineIndexRoute
   '/app/roles': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users': typeof AppAuthenticatedUsersIndexRoute
+  '/app/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  '/app/ai-core/audit': typeof AppAuthenticatedAiCoreAuditIndexRoute
+  '/app/ai-core/brains': typeof AppAuthenticatedAiCoreBrainsIndexRoute
+  '/app/ai-core/capabilities': typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
+  '/app/ai-core/costs': typeof AppAuthenticatedAiCoreCostsIndexRoute
+  '/app/ai-core/health': typeof AppAuthenticatedAiCoreHealthIndexRoute
+  '/app/ai-core/models': typeof AppAuthenticatedAiCoreModelsIndexRoute
+  '/app/ai-core/playground': typeof AppAuthenticatedAiCorePlaygroundIndexRoute
+  '/app/ai-core/providers': typeof AppAuthenticatedAiCoreProvidersIndexRoute
+  '/app/ai-core/usage': typeof AppAuthenticatedAiCoreUsageIndexRoute
   '/app/automation/audit-logs': typeof AppAuthenticatedAutomationAuditLogsIndexRoute
   '/app/automation/connections': typeof AppAuthenticatedAutomationConnectionsIndexRoute
   '/app/automation/health': typeof AppAuthenticatedAutomationHealthIndexRoute
   '/app/automation/mcp-servers': typeof AppAuthenticatedAutomationMcpServersIndexRoute
   '/app/automation/providers': typeof AppAuthenticatedAutomationProvidersIndexRoute
+  '/app/crm/leads': typeof AppAuthenticatedCrmLeadsIndexRoute
   '/app/finance/expenses': typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 export interface FileRoutesById {
@@ -398,18 +515,31 @@ export interface FileRoutesById {
   '/app/_authenticated/settings/notifications': typeof AppAuthenticatedSettingsNotificationsRoute
   '/app/_authenticated/settings/providers': typeof AppAuthenticatedSettingsProvidersRoute
   '/app/_authenticated/ai-chat/': typeof AppAuthenticatedAiChatIndexRoute
+  '/app/_authenticated/ai-core/': typeof AppAuthenticatedAiCoreIndexRoute
   '/app/_authenticated/content-studio/': typeof AppAuthenticatedContentStudioIndexRoute
+  '/app/_authenticated/crm/': typeof AppAuthenticatedCrmIndexRoute
   '/app/_authenticated/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/_authenticated/models/': typeof AppAuthenticatedModelsIndexRoute
   '/app/_authenticated/presentation-engine/': typeof AppAuthenticatedPresentationEngineIndexRoute
   '/app/_authenticated/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/_authenticated/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/_authenticated/users/': typeof AppAuthenticatedUsersIndexRoute
+  '/app/_authenticated/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  '/app/_authenticated/ai-core/audit/': typeof AppAuthenticatedAiCoreAuditIndexRoute
+  '/app/_authenticated/ai-core/brains/': typeof AppAuthenticatedAiCoreBrainsIndexRoute
+  '/app/_authenticated/ai-core/capabilities/': typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
+  '/app/_authenticated/ai-core/costs/': typeof AppAuthenticatedAiCoreCostsIndexRoute
+  '/app/_authenticated/ai-core/health/': typeof AppAuthenticatedAiCoreHealthIndexRoute
+  '/app/_authenticated/ai-core/models/': typeof AppAuthenticatedAiCoreModelsIndexRoute
+  '/app/_authenticated/ai-core/playground/': typeof AppAuthenticatedAiCorePlaygroundIndexRoute
+  '/app/_authenticated/ai-core/providers/': typeof AppAuthenticatedAiCoreProvidersIndexRoute
+  '/app/_authenticated/ai-core/usage/': typeof AppAuthenticatedAiCoreUsageIndexRoute
   '/app/_authenticated/automation/audit-logs/': typeof AppAuthenticatedAutomationAuditLogsIndexRoute
   '/app/_authenticated/automation/connections/': typeof AppAuthenticatedAutomationConnectionsIndexRoute
   '/app/_authenticated/automation/health/': typeof AppAuthenticatedAutomationHealthIndexRoute
   '/app/_authenticated/automation/mcp-servers/': typeof AppAuthenticatedAutomationMcpServersIndexRoute
   '/app/_authenticated/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
+  '/app/_authenticated/crm/leads/': typeof AppAuthenticatedCrmLeadsIndexRoute
   '/app/_authenticated/finance/expenses/': typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 export interface FileRouteTypes {
@@ -442,18 +572,31 @@ export interface FileRouteTypes {
     | '/app/settings/notifications'
     | '/app/settings/providers'
     | '/app/ai-chat/'
+    | '/app/ai-core/'
     | '/app/content-studio/'
+    | '/app/crm/'
     | '/app/finance/'
     | '/app/models/'
     | '/app/presentation-engine/'
     | '/app/roles/'
     | '/app/settings/'
     | '/app/users/'
+    | '/app/crm/leads/$leadId'
+    | '/app/ai-core/audit/'
+    | '/app/ai-core/brains/'
+    | '/app/ai-core/capabilities/'
+    | '/app/ai-core/costs/'
+    | '/app/ai-core/health/'
+    | '/app/ai-core/models/'
+    | '/app/ai-core/playground/'
+    | '/app/ai-core/providers/'
+    | '/app/ai-core/usage/'
     | '/app/automation/audit-logs/'
     | '/app/automation/connections/'
     | '/app/automation/health/'
     | '/app/automation/mcp-servers/'
     | '/app/automation/providers/'
+    | '/app/crm/leads/'
     | '/app/finance/expenses/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -482,18 +625,31 @@ export interface FileRouteTypes {
     | '/app/settings/notifications'
     | '/app/settings/providers'
     | '/app/ai-chat'
+    | '/app/ai-core'
     | '/app/content-studio'
+    | '/app/crm'
     | '/app/finance'
     | '/app/models'
     | '/app/presentation-engine'
     | '/app/roles'
     | '/app/settings'
     | '/app/users'
+    | '/app/crm/leads/$leadId'
+    | '/app/ai-core/audit'
+    | '/app/ai-core/brains'
+    | '/app/ai-core/capabilities'
+    | '/app/ai-core/costs'
+    | '/app/ai-core/health'
+    | '/app/ai-core/models'
+    | '/app/ai-core/playground'
+    | '/app/ai-core/providers'
+    | '/app/ai-core/usage'
     | '/app/automation/audit-logs'
     | '/app/automation/connections'
     | '/app/automation/health'
     | '/app/automation/mcp-servers'
     | '/app/automation/providers'
+    | '/app/crm/leads'
     | '/app/finance/expenses'
   id:
     | '__root__'
@@ -526,18 +682,31 @@ export interface FileRouteTypes {
     | '/app/_authenticated/settings/notifications'
     | '/app/_authenticated/settings/providers'
     | '/app/_authenticated/ai-chat/'
+    | '/app/_authenticated/ai-core/'
     | '/app/_authenticated/content-studio/'
+    | '/app/_authenticated/crm/'
     | '/app/_authenticated/finance/'
     | '/app/_authenticated/models/'
     | '/app/_authenticated/presentation-engine/'
     | '/app/_authenticated/roles/'
     | '/app/_authenticated/settings/'
     | '/app/_authenticated/users/'
+    | '/app/_authenticated/crm/leads/$leadId'
+    | '/app/_authenticated/ai-core/audit/'
+    | '/app/_authenticated/ai-core/brains/'
+    | '/app/_authenticated/ai-core/capabilities/'
+    | '/app/_authenticated/ai-core/costs/'
+    | '/app/_authenticated/ai-core/health/'
+    | '/app/_authenticated/ai-core/models/'
+    | '/app/_authenticated/ai-core/playground/'
+    | '/app/_authenticated/ai-core/providers/'
+    | '/app/_authenticated/ai-core/usage/'
     | '/app/_authenticated/automation/audit-logs/'
     | '/app/_authenticated/automation/connections/'
     | '/app/_authenticated/automation/health/'
     | '/app/_authenticated/automation/mcp-servers/'
     | '/app/_authenticated/automation/providers/'
+    | '/app/_authenticated/crm/leads/'
     | '/app/_authenticated/finance/expenses/'
   fileRoutesById: FileRoutesById
 }
@@ -699,6 +868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAiChatIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/ai-core/': {
+      id: '/app/_authenticated/ai-core/'
+      path: '/ai-core'
+      fullPath: '/app/ai-core/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/content-studio/': {
       id: '/app/_authenticated/content-studio/'
       path: '/content-studio'
@@ -725,6 +901,13 @@ declare module '@tanstack/react-router' {
       path: '/content-studio/prompt-library'
       fullPath: '/app/content-studio/prompt-library'
       preLoaderRoute: typeof AppAuthenticatedContentStudioPromptLibraryRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/crm/': {
+      id: '/app/_authenticated/crm/'
+      path: '/crm'
+      fullPath: '/app/crm/'
+      preLoaderRoute: typeof AppAuthenticatedCrmIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/errors/$error': {
@@ -811,6 +994,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedUsersIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/ai-core/audit/': {
+      id: '/app/_authenticated/ai-core/audit/'
+      path: '/ai-core/audit'
+      fullPath: '/app/ai-core/audit/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreAuditIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/brains/': {
+      id: '/app/_authenticated/ai-core/brains/'
+      path: '/ai-core/brains'
+      fullPath: '/app/ai-core/brains/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreBrainsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/capabilities/': {
+      id: '/app/_authenticated/ai-core/capabilities/'
+      path: '/ai-core/capabilities'
+      fullPath: '/app/ai-core/capabilities/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreCapabilitiesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/costs/': {
+      id: '/app/_authenticated/ai-core/costs/'
+      path: '/ai-core/costs'
+      fullPath: '/app/ai-core/costs/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreCostsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/health/': {
+      id: '/app/_authenticated/ai-core/health/'
+      path: '/ai-core/health'
+      fullPath: '/app/ai-core/health/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreHealthIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/models/': {
+      id: '/app/_authenticated/ai-core/models/'
+      path: '/ai-core/models'
+      fullPath: '/app/ai-core/models/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreModelsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/playground/': {
+      id: '/app/_authenticated/ai-core/playground/'
+      path: '/ai-core/playground'
+      fullPath: '/app/ai-core/playground/'
+      preLoaderRoute: typeof AppAuthenticatedAiCorePlaygroundIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/providers/': {
+      id: '/app/_authenticated/ai-core/providers/'
+      path: '/ai-core/providers'
+      fullPath: '/app/ai-core/providers/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreProvidersIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/ai-core/usage/': {
+      id: '/app/_authenticated/ai-core/usage/'
+      path: '/ai-core/usage'
+      fullPath: '/app/ai-core/usage/'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreUsageIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/automation/audit-logs/': {
       id: '/app/_authenticated/automation/audit-logs/'
       path: '/automation/audit-logs'
@@ -844,6 +1090,20 @@ declare module '@tanstack/react-router' {
       path: '/automation/providers'
       fullPath: '/app/automation/providers/'
       preLoaderRoute: typeof AppAuthenticatedAutomationProvidersIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/crm/leads/': {
+      id: '/app/_authenticated/crm/leads/'
+      path: '/crm/leads'
+      fullPath: '/app/crm/leads/'
+      preLoaderRoute: typeof AppAuthenticatedCrmLeadsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/crm/leads/$leadId': {
+      id: '/app/_authenticated/crm/leads/$leadId'
+      path: '/crm/leads/$leadId'
+      fullPath: '/app/crm/leads/$leadId'
+      preLoaderRoute: typeof AppAuthenticatedCrmLeadsLeadIdRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/finance/expenses/': {
@@ -919,17 +1179,30 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedContentStudioPromptLibraryRoute: typeof AppAuthenticatedContentStudioPromptLibraryRoute
   AppAuthenticatedErrorsErrorRoute: typeof AppAuthenticatedErrorsErrorRoute
   AppAuthenticatedAiChatIndexRoute: typeof AppAuthenticatedAiChatIndexRoute
+  AppAuthenticatedAiCoreIndexRoute: typeof AppAuthenticatedAiCoreIndexRoute
   AppAuthenticatedContentStudioIndexRoute: typeof AppAuthenticatedContentStudioIndexRoute
+  AppAuthenticatedCrmIndexRoute: typeof AppAuthenticatedCrmIndexRoute
   AppAuthenticatedFinanceIndexRoute: typeof AppAuthenticatedFinanceIndexRoute
   AppAuthenticatedModelsIndexRoute: typeof AppAuthenticatedModelsIndexRoute
   AppAuthenticatedPresentationEngineIndexRoute: typeof AppAuthenticatedPresentationEngineIndexRoute
   AppAuthenticatedRolesIndexRoute: typeof AppAuthenticatedRolesIndexRoute
   AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
+  AppAuthenticatedCrmLeadsLeadIdRoute: typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  AppAuthenticatedAiCoreAuditIndexRoute: typeof AppAuthenticatedAiCoreAuditIndexRoute
+  AppAuthenticatedAiCoreBrainsIndexRoute: typeof AppAuthenticatedAiCoreBrainsIndexRoute
+  AppAuthenticatedAiCoreCapabilitiesIndexRoute: typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
+  AppAuthenticatedAiCoreCostsIndexRoute: typeof AppAuthenticatedAiCoreCostsIndexRoute
+  AppAuthenticatedAiCoreHealthIndexRoute: typeof AppAuthenticatedAiCoreHealthIndexRoute
+  AppAuthenticatedAiCoreModelsIndexRoute: typeof AppAuthenticatedAiCoreModelsIndexRoute
+  AppAuthenticatedAiCorePlaygroundIndexRoute: typeof AppAuthenticatedAiCorePlaygroundIndexRoute
+  AppAuthenticatedAiCoreProvidersIndexRoute: typeof AppAuthenticatedAiCoreProvidersIndexRoute
+  AppAuthenticatedAiCoreUsageIndexRoute: typeof AppAuthenticatedAiCoreUsageIndexRoute
   AppAuthenticatedAutomationAuditLogsIndexRoute: typeof AppAuthenticatedAutomationAuditLogsIndexRoute
   AppAuthenticatedAutomationConnectionsIndexRoute: typeof AppAuthenticatedAutomationConnectionsIndexRoute
   AppAuthenticatedAutomationHealthIndexRoute: typeof AppAuthenticatedAutomationHealthIndexRoute
   AppAuthenticatedAutomationMcpServersIndexRoute: typeof AppAuthenticatedAutomationMcpServersIndexRoute
   AppAuthenticatedAutomationProvidersIndexRoute: typeof AppAuthenticatedAutomationProvidersIndexRoute
+  AppAuthenticatedCrmLeadsIndexRoute: typeof AppAuthenticatedCrmLeadsIndexRoute
   AppAuthenticatedFinanceExpensesIndexRoute: typeof AppAuthenticatedFinanceExpensesIndexRoute
 }
 
@@ -945,14 +1218,32 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedContentStudioPromptLibraryRoute,
   AppAuthenticatedErrorsErrorRoute: AppAuthenticatedErrorsErrorRoute,
   AppAuthenticatedAiChatIndexRoute: AppAuthenticatedAiChatIndexRoute,
+  AppAuthenticatedAiCoreIndexRoute: AppAuthenticatedAiCoreIndexRoute,
   AppAuthenticatedContentStudioIndexRoute:
     AppAuthenticatedContentStudioIndexRoute,
+  AppAuthenticatedCrmIndexRoute: AppAuthenticatedCrmIndexRoute,
   AppAuthenticatedFinanceIndexRoute: AppAuthenticatedFinanceIndexRoute,
   AppAuthenticatedModelsIndexRoute: AppAuthenticatedModelsIndexRoute,
   AppAuthenticatedPresentationEngineIndexRoute:
     AppAuthenticatedPresentationEngineIndexRoute,
   AppAuthenticatedRolesIndexRoute: AppAuthenticatedRolesIndexRoute,
   AppAuthenticatedUsersIndexRoute: AppAuthenticatedUsersIndexRoute,
+  AppAuthenticatedCrmLeadsLeadIdRoute: AppAuthenticatedCrmLeadsLeadIdRoute,
+  AppAuthenticatedAiCoreAuditIndexRoute: AppAuthenticatedAiCoreAuditIndexRoute,
+  AppAuthenticatedAiCoreBrainsIndexRoute:
+    AppAuthenticatedAiCoreBrainsIndexRoute,
+  AppAuthenticatedAiCoreCapabilitiesIndexRoute:
+    AppAuthenticatedAiCoreCapabilitiesIndexRoute,
+  AppAuthenticatedAiCoreCostsIndexRoute: AppAuthenticatedAiCoreCostsIndexRoute,
+  AppAuthenticatedAiCoreHealthIndexRoute:
+    AppAuthenticatedAiCoreHealthIndexRoute,
+  AppAuthenticatedAiCoreModelsIndexRoute:
+    AppAuthenticatedAiCoreModelsIndexRoute,
+  AppAuthenticatedAiCorePlaygroundIndexRoute:
+    AppAuthenticatedAiCorePlaygroundIndexRoute,
+  AppAuthenticatedAiCoreProvidersIndexRoute:
+    AppAuthenticatedAiCoreProvidersIndexRoute,
+  AppAuthenticatedAiCoreUsageIndexRoute: AppAuthenticatedAiCoreUsageIndexRoute,
   AppAuthenticatedAutomationAuditLogsIndexRoute:
     AppAuthenticatedAutomationAuditLogsIndexRoute,
   AppAuthenticatedAutomationConnectionsIndexRoute:
@@ -963,6 +1254,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedAutomationMcpServersIndexRoute,
   AppAuthenticatedAutomationProvidersIndexRoute:
     AppAuthenticatedAutomationProvidersIndexRoute,
+  AppAuthenticatedCrmLeadsIndexRoute: AppAuthenticatedCrmLeadsIndexRoute,
   AppAuthenticatedFinanceExpensesIndexRoute:
     AppAuthenticatedFinanceExpensesIndexRoute,
 }
