@@ -26,7 +26,7 @@ export function useModelsList() {
 
     // Sort
     const sorted = [...filtered].sort((a, b) => {
-      let cmp = 0
+      let cmp: number
       if (sortKey === 'size') {
         cmp = a.size - b.size
       } else if (sortKey === 'parameters') {

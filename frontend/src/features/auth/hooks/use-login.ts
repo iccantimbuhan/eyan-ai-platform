@@ -10,12 +10,6 @@ export function useLogin() {
       password,
     })
 
-    console.log('========== LOGIN RESPONSE ==========')
-    console.log(result)
-    console.log('Access Token:', result.tokens?.accessToken)
-    console.log('Refresh Token:', result.tokens?.refreshToken)
-    console.log('====================================')
-
     auth.setTokens(result.tokens.accessToken, result.tokens.refreshToken)
 
     auth.setUser(result.user)

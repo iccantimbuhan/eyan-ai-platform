@@ -29,8 +29,11 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useConnections } from '../hooks/use-connections'
-import { useMcpProviders } from '../hooks/use-mcp-servers'
-import { useCreateMcpServer, useUpdateMcpServer } from '../hooks/use-mcp-servers'
+import {
+  useCreateMcpServer,
+  useMcpProviders,
+  useUpdateMcpServer,
+} from '../hooks/use-mcp-servers'
 import {
   defaultMcpServerValues,
   mcpServerSchema,

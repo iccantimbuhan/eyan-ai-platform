@@ -49,7 +49,6 @@ export function useModels(): UseModelsResult {
       const result = await getModels()
       setData(result)
     } catch (error) {
-      console.error('[useModels] Failed to load models', error)
       setError(describeError(error))
       setData(null)
     } finally {
@@ -58,8 +57,25 @@ export function useModels(): UseModelsResult {
   }, [])
 
   useEffect(() => {
-    fetchModels()
-  }, [fetchModels])
+    let cancelled = false
+
+    getModels()
+      .then((result) => {
+        if (cancelled) return
+        setData(result)
+        setIsLoading(false)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setError(describeError(error))
+        setData(null)
+        setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return { data, isLoading, error, refetch: fetchModels }
 }

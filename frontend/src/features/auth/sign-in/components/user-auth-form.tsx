@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { isAxiosError } from 'axios'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
@@ -68,12 +69,14 @@ export function UserAuthForm({
         to: redirectTo || '/app',
         replace: true,
       })
-    } catch (error: any) {
+    } catch (error) {
       toast.dismiss()
 
-      toast.error(
-        error?.response?.data?.message ?? 'Invalid email or password.'
-      )
+      const message = isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined
+
+      toast.error(message ?? 'Invalid email or password.')
     } finally {
       setIsLoading(false)
     }

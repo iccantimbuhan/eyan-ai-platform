@@ -2,10 +2,6 @@ import { api } from '@/services/api'
 
 const NGROK_SKIP_HEADER = 'ngrok-skip-browser-warning'
 
-function responseHeadersToRecord(headers: Headers) {
-  return Object.fromEntries(headers.entries())
-}
-
 export interface ChatResponse {
   model: string
   response: string
@@ -68,13 +64,6 @@ export async function streamChat(
     [NGROK_SKIP_HEADER]: 'true',
   }
 
-  console.info('[streamChat] Request', {
-    method: 'POST',
-    url,
-    headers,
-    aborted: signal?.aborted ?? false,
-  })
-
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -85,18 +74,8 @@ export async function streamChat(
       signal,
     })
 
-    console.info('[streamChat] Response', {
-      url: response.url,
-      redirected: response.redirected,
-      status: response.status,
-      statusText: response.statusText,
-      type: response.type,
-      headers: responseHeadersToRecord(response.headers),
-    })
-
     if (!response.ok) {
-      const body = await response.text().catch(() => '')
-      console.error('[streamChat] Non-OK response body', body)
+      await response.text().catch(() => '')
 
       if (response.status === 400) {
         onError('Invalid message.')
@@ -152,19 +131,8 @@ export async function streamChat(
     }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      console.info('[streamChat] Aborted', {
-        url,
-        stack: error.stack,
-      })
       return
     }
-    console.error('[streamChat] Fetch error', {
-      url,
-      error,
-      name: error instanceof Error ? error.name : undefined,
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    })
     if (error instanceof TypeError && error.message.includes('fetch')) {
       onError('Cannot connect to backend.')
     } else {

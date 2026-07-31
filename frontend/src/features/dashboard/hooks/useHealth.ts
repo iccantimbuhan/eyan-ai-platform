@@ -49,7 +49,6 @@ export function useHealth(): UseHealthResult {
       const result = await getHealth()
       setData(result)
     } catch (error) {
-      console.error('[useHealth] Failed to load backend health', error)
       setError(describeError(error))
       setData(null)
     } finally {
@@ -58,8 +57,25 @@ export function useHealth(): UseHealthResult {
   }, [])
 
   useEffect(() => {
-    fetchHealth()
-  }, [fetchHealth])
+    let cancelled = false
+
+    getHealth()
+      .then((result) => {
+        if (cancelled) return
+        setData(result)
+        setIsLoading(false)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setError(describeError(error))
+        setData(null)
+        setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return { data, isLoading, error, refetch: fetchHealth }
 }

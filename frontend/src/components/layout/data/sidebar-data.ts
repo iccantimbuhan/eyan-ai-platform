@@ -138,7 +138,7 @@ export const sidebarData: SidebarData = {
       title: 'AI Core',
       items: [
         {
-          title: 'Dashboard',
+          title: 'AI Core Dashboard',
           url: '/app/ai-core',
           icon: BrainCircuit,
           permission: 'aicore',

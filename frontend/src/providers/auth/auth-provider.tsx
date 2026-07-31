@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
 import { me } from '@/features/auth/api/auth-api'
 
