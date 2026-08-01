@@ -8,6 +8,7 @@ import { ForbiddenError } from '@/features/errors/forbidden'
 import { ModelDialog } from './model-dialog'
 import { useDeleteModel, useModels } from '../hooks/use-models'
 import { useProviders } from '../hooks/use-providers'
+import type { AiModel } from '../types/ai-core'
 
 export function ModelsPage() {
   const can = useCan()
@@ -15,6 +16,7 @@ export function ModelsPage() {
   const { data: providers = [] } = useProviders()
   const deleteModel = useDeleteModel()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingModel, setEditingModel] = useState<AiModel | null>(null)
 
   if (!can('aicore')) return <ForbiddenError />
 
@@ -43,7 +45,7 @@ export function ModelsPage() {
                 <TableHead>Model Key</TableHead>
                 <TableHead>Provider</TableHead>
                 <TableHead>Tags</TableHead>
-                <TableHead className='w-24' />
+                <TableHead className='w-48' />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,16 +67,21 @@ export function ModelsPage() {
                         </Badge>
                       ))}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className='flex flex-wrap gap-2'>
                       {can('aicoreadmin') && (
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          disabled={deleteModel.isPending}
-                          onClick={() => deleteModel.mutate(model.id)}
-                        >
-                          Delete
-                        </Button>
+                        <>
+                          <Button size='sm' variant='outline' onClick={() => setEditingModel(model)}>
+                            Edit
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            disabled={deleteModel.isPending}
+                            onClick={() => deleteModel.mutate(model.id)}
+                          >
+                            Delete
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
@@ -86,6 +93,7 @@ export function ModelsPage() {
       )}
 
       <ModelDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ModelDialog open={editingModel !== null} onOpenChange={(open) => !open && setEditingModel(null)} model={editingModel} />
     </Main>
   )
 }

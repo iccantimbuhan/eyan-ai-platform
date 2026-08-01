@@ -14,14 +14,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { useProviderPlugins, useCreateProvider } from '../hooks/use-providers'
+import { useProviderPlugins, useCreateProvider, useUpdateProvider } from '../hooks/use-providers'
 import { defaultProviderValues, providerSchema, type ProviderFormValues } from '../schemas/provider-schema'
+import type { AiProvider } from '../types/ai-core'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void }
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; provider?: AiProvider | null }
 
-export function ProviderDialog({ open, onOpenChange }: Props) {
+export function ProviderDialog({ open, onOpenChange, provider = null }: Props) {
+  const isEdit = provider !== null
   const { data: plugins = [] } = useProviderPlugins()
   const create = useCreateProvider()
+  const update = useUpdateProvider()
+  const isPending = create.isPending || update.isPending
 
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerSchema),
@@ -29,11 +33,29 @@ export function ProviderDialog({ open, onOpenChange }: Props) {
   })
 
   useEffect(() => {
-    if (open) form.reset(defaultProviderValues)
-  }, [form, open])
+    if (!open) return
+    form.reset(
+      provider
+        ? {
+            key: provider.key,
+            displayName: provider.displayName,
+            kind: provider.kind,
+            baseUrl: provider.baseUrl ?? '',
+            isEnabled: provider.isEnabled,
+          }
+        : defaultProviderValues
+    )
+  }, [form, open, provider])
 
   async function submit(values: ProviderFormValues) {
-    await create.mutateAsync({ ...values, baseUrl: values.baseUrl || undefined })
+    if (isEdit && provider) {
+      await update.mutateAsync({
+        id: provider.id,
+        payload: { displayName: values.displayName, baseUrl: values.baseUrl || null, isEnabled: values.isEnabled },
+      })
+    } else {
+      await create.mutateAsync({ ...values, baseUrl: values.baseUrl || undefined })
+    }
     onOpenChange(false)
   }
 
@@ -41,7 +63,7 @@ export function ProviderDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>New Provider</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Provider' : 'New Provider'}</DialogTitle>
           <DialogDescription>
             The registry key must match a registered AiCoreProviderFactory plugin (see below).
           </DialogDescription>
@@ -55,7 +77,7 @@ export function ProviderDialog({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>Registry Key</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
                       <SelectTrigger className='w-full'>
                         <SelectValue placeholder='Select a registered plugin' />
                       </SelectTrigger>
@@ -92,7 +114,7 @@ export function ProviderDialog({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>Kind</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
                       <SelectTrigger className='w-full'>
                         <SelectValue />
                       </SelectTrigger>
@@ -132,11 +154,11 @@ export function ProviderDialog({ open, onOpenChange }: Props) {
               )}
             />
             <DialogFooter>
-              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={create.isPending}>
+              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
                 Cancel
               </Button>
-              <Button type='submit' disabled={create.isPending}>
-                {create.isPending ? 'Saving...' : 'Save'}
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>
           </form>

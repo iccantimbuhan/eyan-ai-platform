@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ContentService } from "./content.service.js";
+import { ApiError } from "../errors/api-error.js";
 
 function createRepository(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -33,11 +34,22 @@ function createBrandKitRepository(
   };
 }
 
-function createChatService(overrides: Partial<Record<string, unknown>> = {}) {
+function createCapabilityService(
+  overrides: Partial<Record<string, unknown>> = {}
+) {
   return {
-    chat: vi
-      .fn()
-      .mockResolvedValue({ response: "Generated output", model: "qwen2.5" }),
+    invoke: vi.fn().mockResolvedValue({
+      output: "Generated output",
+      model: "qwen2.5",
+      provider: "ollama",
+      outcome: "VALID",
+      confidence: null,
+      needsManualReview: false,
+      retryCount: 0,
+      latencyMs: 10,
+      brain: "content-blog-brain",
+      promptVersion: "v1",
+    }),
     ...overrides,
   };
 }
@@ -56,14 +68,14 @@ function buildService(
     repository?: Partial<Record<string, unknown>>;
     projectRepository?: Partial<Record<string, unknown>>;
     brandKitRepository?: Partial<Record<string, unknown>>;
-    chatService?: Partial<Record<string, unknown>>;
+    capabilityService?: Partial<Record<string, unknown>>;
     analyticsEventRepository?: Partial<Record<string, unknown>>;
   } = {}
 ) {
   const repository = createRepository(overrides.repository);
   const projectRepository = createProjectRepository(overrides.projectRepository);
   const brandKitRepository = createBrandKitRepository(overrides.brandKitRepository);
-  const chatService = createChatService(overrides.chatService);
+  const capabilityService = createCapabilityService(overrides.capabilityService);
   const analyticsEventRepository = createAnalyticsEventRepository(
     overrides.analyticsEventRepository
   );
@@ -72,7 +84,7 @@ function buildService(
     repository as never,
     projectRepository as never,
     brandKitRepository as never,
-    chatService as never,
+    capabilityService as never,
     analyticsEventRepository as never
   );
 
@@ -81,14 +93,14 @@ function buildService(
     repository,
     projectRepository,
     brandKitRepository,
-    chatService,
+    capabilityService,
     analyticsEventRepository,
   };
 }
 
 describe("ContentService", () => {
   it("generate() throws NotFoundError when the project doesn't exist or isn't owned by the caller", async () => {
-    const { service, chatService, repository } = buildService({
+    const { service, capabilityService, repository } = buildService({
       projectRepository: { findById: vi.fn().mockResolvedValue(null) },
     });
 
@@ -99,12 +111,12 @@ describe("ContentService", () => {
       )
     ).rejects.toThrow("Project not found.");
 
-    expect(chatService.chat).not.toHaveBeenCalled();
+    expect(capabilityService.invoke).not.toHaveBeenCalled();
     expect(repository.create).not.toHaveBeenCalled();
   });
 
-  it("generate() scopes the project lookup to the requesting userId and persists with createdBy set", async () => {
-    const { service, repository, projectRepository } = buildService();
+  it("generate() invokes the Capability matching the ContentType and persists the result with createdBy set", async () => {
+    const { service, repository, projectRepository, capabilityService } = buildService();
 
     await service.generate(
       { projectId: "proj-1", type: "BLOG", prompt: "Write about X" },
@@ -113,6 +125,12 @@ describe("ContentService", () => {
 
     expect(projectRepository.findById).toHaveBeenCalledWith(
       "proj-1",
+      "user-1"
+    );
+    expect(capabilityService.invoke).toHaveBeenCalledWith(
+      "content-blog",
+      { prompt: "Write about X", brandGuidance: "" },
+      { expectJson: false },
       "user-1"
     );
     expect(repository.create).toHaveBeenCalledWith({
@@ -127,7 +145,23 @@ describe("ContentService", () => {
     });
   });
 
-  it("generate() captures a non-negative generationTimeMs around the chat call", async () => {
+  it("generate() resolves the Capability key for each ContentType", async () => {
+    const { service, capabilityService } = buildService();
+
+    await service.generate(
+      { projectId: "proj-1", type: "EMAIL", prompt: "Write about X" },
+      "user-1"
+    );
+
+    expect(capabilityService.invoke).toHaveBeenCalledWith(
+      "content-email",
+      expect.anything(),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  it("generate() captures a non-negative generationTimeMs around the invoke() call", async () => {
     const { service, repository } = buildService();
 
     await service.generate(
@@ -139,8 +173,32 @@ describe("ContentService", () => {
     expect(payload.generationTimeMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("generate() throws a 503 ApiError when the routing engine doesn't produce a VALID outcome", async () => {
+    const { service, repository, capabilityService } = buildService({
+      capabilityService: {
+        invoke: vi.fn().mockResolvedValue({
+          output: "",
+          model: "qwen2.5",
+          provider: "ollama",
+          outcome: "TRANSIENT_FAILURE",
+          needsManualReview: true,
+        }),
+      },
+    });
+
+    await expect(
+      service.generate(
+        { projectId: "proj-1", type: "BLOG", prompt: "Write about X" },
+        "user-1"
+      )
+    ).rejects.toThrow(ApiError);
+
+    expect(capabilityService.invoke).toHaveBeenCalled();
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it("generate() throws NotFoundError when brandKitId doesn't resolve to a kit owned by the caller", async () => {
-    const { service, chatService } = buildService({
+    const { service, capabilityService } = buildService({
       brandKitRepository: { findById: vi.fn().mockResolvedValue(null) },
     });
 
@@ -151,7 +209,7 @@ describe("ContentService", () => {
       )
     ).rejects.toThrow("Brand kit not found.");
 
-    expect(chatService.chat).not.toHaveBeenCalled();
+    expect(capabilityService.invoke).not.toHaveBeenCalled();
   });
 
   it("generate() throws NotFoundError when the brand kit belongs to a different project", async () => {
@@ -169,7 +227,7 @@ describe("ContentService", () => {
     ).rejects.toThrow("Brand kit not found.");
   });
 
-  it("generate() folds brand kit guidance into the system prompt and persists brandKitId", async () => {
+  it("generate() folds brand kit guidance into the invoke() input and persists brandKitId", async () => {
     const brandKit = {
       id: "bk-1",
       projectId: "proj-1",
@@ -182,7 +240,7 @@ describe("ContentService", () => {
       restrictedWords: ["cheap"],
       brandGuidelines: null,
     };
-    const { service, repository, chatService } = buildService({
+    const { service, repository, capabilityService } = buildService({
       brandKitRepository: { findById: vi.fn().mockResolvedValue(brandKit) },
     });
 
@@ -191,11 +249,10 @@ describe("ContentService", () => {
       "user-1"
     );
 
-    const [messages] = chatService.chat.mock.calls[0];
-    expect(messages[0].role).toBe("system");
-    expect(messages[0].content).toContain("Confident and friendly");
-    expect(messages[0].content).toContain("Acme");
-    expect(messages[0].content).toContain("cheap");
+    const [, input] = capabilityService.invoke.mock.calls[0];
+    expect(input.brandGuidance).toContain("Confident and friendly");
+    expect(input.brandGuidance).toContain("Acme");
+    expect(input.brandGuidance).toContain("cheap");
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({ brandKitId: "bk-1" })
     );

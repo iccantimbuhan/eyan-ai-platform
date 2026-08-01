@@ -78,6 +78,15 @@ export class AiCapabilityService {
     return this.repository.findAll();
   }
 
+  // Read-only Capability -> Brain resolution for callers that need to know
+  // which Brain/provider/model a Capability is configured for without going
+  // through invoke() (e.g. ChatService resolving its provider/model config
+  // — Sprint 3 Phase 1). Returns null rather than throwing so callers decide
+  // how to handle an unconfigured Capability.
+  async getByKeyWithBrain(key: string) {
+    return this.repository.findByKeyWithBrain(key);
+  }
+
   private async getOrThrow(id: string): Promise<AiCapability> {
     const capability = await this.repository.findById(id);
     if (!capability) {

@@ -3,6 +3,13 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 import { hashPassword } from '../src/utils/password'
 import { seedDemoContentStudioProject } from './seed-demo-content'
+import {
+  seedAiCoreFoundation,
+  seedGeneralChatBrain,
+  seedContentBrains,
+  seedVideoPlanningBrain,
+  seedVideoTextBrains,
+} from './seed-ai-core'
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
 
@@ -98,5 +105,13 @@ async function main() {
   // Content Studio Tour Pack has real generated content/images/brand kit/
   // video assets/review/publishing state to show — see seed-demo-content.ts.
   await seedDemoContentStudioProject(prisma, demoUser.id)
+
+  // AI Core Sprint 2 — the first production Capability/Brain pair, config
+  // relocated verbatim from ADR-0020 — see seed-ai-core.ts.
+  await seedAiCoreFoundation(prisma)
+  await seedGeneralChatBrain(prisma)
+  await seedContentBrains(prisma)
+  await seedVideoPlanningBrain(prisma)
+  await seedVideoTextBrains(prisma)
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

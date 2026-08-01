@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { aiCoreApi } from '../api/ai-core-api'
-import type { CreateAiModelInput } from '../types/ai-core'
+import type { CreateAiModelInput, UpdateAiModelInput } from '../types/ai-core'
 
 const MODELS_KEY = ['ai-core', 'models'] as const
 
@@ -23,6 +23,18 @@ export function useCreateModel() {
       await invalidate()
     },
     onError: () => toast.error('Failed to register model.'),
+  })
+}
+
+export function useUpdateModel() {
+  const invalidate = useInvalidateModels()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAiModelInput }) => aiCoreApi.updateModel(id, payload),
+    onSuccess: async () => {
+      toast.success('Model updated successfully.')
+      await invalidate()
+    },
+    onError: () => toast.error('Failed to update model.'),
   })
 }
 

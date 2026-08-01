@@ -15,15 +15,19 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { useCreateBrain } from '../hooks/use-brains'
+import { useCreateBrain, useUpdateBrain } from '../hooks/use-brains'
 import { brainSchema, defaultBrainValues, type BrainFormValues } from '../schemas/brain-schema'
+import type { AiBrain } from '../types/ai-core'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void }
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; brain?: AiBrain | null }
 
 const MEMORY_STRATEGIES = ['NONE', 'CONVERSATION', 'KNOWLEDGE_BASE', 'VECTOR', 'RAG', 'LONG_TERM'] as const
 
-export function BrainDialog({ open, onOpenChange }: Props) {
+export function BrainDialog({ open, onOpenChange, brain = null }: Props) {
+  const isEdit = brain !== null
   const create = useCreateBrain()
+  const update = useUpdateBrain()
+  const isPending = create.isPending || update.isPending
 
   const form = useForm<BrainFormValues>({
     resolver: zodResolver(brainSchema),
@@ -31,11 +35,36 @@ export function BrainDialog({ open, onOpenChange }: Props) {
   })
 
   useEffect(() => {
-    if (open) form.reset(defaultBrainValues)
-  }, [form, open])
+    if (!open) return
+    form.reset(
+      brain
+        ? {
+            key: brain.key,
+            name: brain.name,
+            description: brain.description,
+            category: brain.category,
+            memoryStrategy: brain.memoryStrategy,
+            isEnabled: brain.isEnabled,
+          }
+        : defaultBrainValues
+    )
+  }, [form, open, brain])
 
   async function submit(values: BrainFormValues) {
-    await create.mutateAsync(values)
+    if (isEdit && brain) {
+      await update.mutateAsync({
+        id: brain.id,
+        payload: {
+          name: values.name,
+          description: values.description,
+          category: values.category,
+          memoryStrategy: values.memoryStrategy,
+          isEnabled: values.isEnabled,
+        },
+      })
+    } else {
+      await create.mutateAsync(values)
+    }
     onOpenChange(false)
   }
 
@@ -43,7 +72,7 @@ export function BrainDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>New Brain</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Brain' : 'New Brain'}</DialogTitle>
           <DialogDescription>
             A reusable AI configuration — provider, model, prompt, and routing policy are configured after creation.
           </DialogDescription>
@@ -57,7 +86,7 @@ export function BrainDialog({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>Key</FormLabel>
                   <FormControl>
-                    <Input placeholder='e.g. sales-brain' {...field} />
+                    <Input placeholder='e.g. sales-brain' {...field} disabled={isEdit} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,11 +170,11 @@ export function BrainDialog({ open, onOpenChange }: Props) {
               )}
             />
             <DialogFooter>
-              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={create.isPending}>
+              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
                 Cancel
               </Button>
-              <Button type='submit' disabled={create.isPending}>
-                {create.isPending ? 'Saving...' : 'Save'}
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>
           </form>

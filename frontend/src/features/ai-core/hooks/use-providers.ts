@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { aiCoreApi } from '../api/ai-core-api'
-import type { CreateAiProviderInput } from '../types/ai-core'
+import type { CreateAiProviderInput, UpdateAiProviderInput } from '../types/ai-core'
 
 const PROVIDERS_KEY = ['ai-core', 'providers'] as const
 const PLUGINS_KEY = ['ai-core', 'provider-plugins'] as const
@@ -31,6 +31,19 @@ export function useCreateProvider() {
       await invalidate()
     },
     onError: () => toast.error('Failed to create provider.'),
+  })
+}
+
+export function useUpdateProvider() {
+  const invalidate = useInvalidateProviders()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAiProviderInput }) =>
+      aiCoreApi.updateProvider(id, payload),
+    onSuccess: async () => {
+      toast.success('Provider updated successfully.')
+      await invalidate()
+    },
+    onError: () => toast.error('Failed to update provider.'),
   })
 }
 

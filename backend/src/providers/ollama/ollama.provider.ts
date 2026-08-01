@@ -18,11 +18,25 @@ export const SYSTEM_PROMPT =
 // even though Ollama was reachable and healthy the whole time.
 const REQUEST_TIMEOUT_MS = 300_000;
 
+export interface OllamaProviderOptions {
+  baseUrl?: string;
+  model?: string;
+}
+
 export class OllamaProvider implements AIProvider {
-  private readonly client = axios.create({
-    baseURL: env.ollamaBaseUrl,
-    timeout: REQUEST_TIMEOUT_MS,
-  });
+  private readonly model: string;
+  private readonly client;
+
+  // model/baseUrl default to env config (unchanged, original behavior) but
+  // can be overridden by a caller resolving them from AI Core's Brain/
+  // RoutingPolicy config instead (ChatService, Sprint 3 Phase 1).
+  constructor(options?: OllamaProviderOptions) {
+    this.model = options?.model ?? env.ollamaModel;
+    this.client = axios.create({
+      baseURL: options?.baseUrl ?? env.ollamaBaseUrl,
+      timeout: REQUEST_TIMEOUT_MS,
+    });
+  }
 
   async listModels() {
     const response = await this.client.get("/api/tags");
@@ -39,7 +53,7 @@ export class OllamaProvider implements AIProvider {
     ];
 
     const response = await this.client.post("/api/chat", {
-      model: env.ollamaModel,
+      model: this.model,
       messages: allMessages,
       stream: false,
       options: {
@@ -63,7 +77,7 @@ export class OllamaProvider implements AIProvider {
     return this.client.post(
       "/api/chat",
       {
-        model: env.ollamaModel,
+        model: this.model,
         messages: allMessages,
         stream: true,
         options: {

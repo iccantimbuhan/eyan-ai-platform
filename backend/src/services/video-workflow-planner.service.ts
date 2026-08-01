@@ -1,9 +1,10 @@
 import { VideoAssetRepository } from "../repositories/video-asset.repository.js";
 import { VideoWorkflowPlanRepository } from "../repositories/video-workflow-plan.repository.js";
 import { ProjectRepository } from "../repositories/project.repository.js";
-import { ChatService } from "./chat.service.js";
-import type { OllamaMessage } from "../providers/interfaces/ai-provider.js";
+import { aiCapabilityService, AiCapabilityService } from "./ai-capability.service.js";
+import type { AiInvokeResult } from "./ai-routing.service.js";
 import { NotFoundError } from "../errors/auth.error.js";
+import { ApiError } from "../errors/api-error.js";
 import {
   InvalidWorkflowSourceError,
   WorkflowPlanningFailedError,
@@ -18,19 +19,23 @@ export interface PlanWorkflowInput {
 }
 
 const MAX_ATTEMPTS = 2;
+const VIDEO_PLANNING_CAPABILITY_KEY = "video-planning";
 
 // Sprint 7.2.2 — Workflow Planner only: turns a natural-language editing
 // request into a validated, structured plan. Never executes it — that's
 // the Execution Engine's job (Sprint 7.2.3+, a deliberately separate
-// milestone per the approved architecture). No new AI abstraction: this
-// calls ChatService directly, the same precedent VideoAssetService's text
-// kinds already set (see ADR-0001 — this hardware has no room for a
-// second, separate "planner model").
+// milestone per the approved architecture). Sprint 3 (AI Core adoption)
+// replaced the direct ChatService call with an AI Core `video-planning`
+// Capability invoke — the operation catalog, Zod validation, and the
+// 2-attempt corrective-retry loop below are unchanged planning logic; only
+// how the actual model call happens moved to AI Core (see
+// prisma/seed-ai-core.ts's seedVideoPlanningBrain() for the Brain/Prompt
+// this resolves to).
 export class VideoWorkflowPlannerService {
   constructor(
     private readonly videoAssetRepository = new VideoAssetRepository(),
     private readonly workflowPlanRepository = new VideoWorkflowPlanRepository(),
-    private readonly chatService = new ChatService(),
+    private readonly capabilityService: AiCapabilityService = aiCapabilityService,
     private readonly projectRepository = new ProjectRepository()
   ) {}
 
@@ -64,19 +69,38 @@ export class VideoWorkflowPlannerService {
       throw new InvalidWorkflowSourceError();
     }
 
-    const messages: OllamaMessage[] = [
-      { role: "system", content: buildPlannerSystemPrompt(videoAsset) },
-      { role: "user", content: data.prompt },
-    ];
+    const baseInput = {
+      durationMs: videoAsset.durationMs ?? "unknown",
+      width: videoAsset.width ?? "unknown",
+      height: videoAsset.height ?? "unknown",
+      videoFormat: videoAsset.videoFormat ?? "unknown",
+      operationCatalog: OPERATION_CATALOG,
+      allowedOperationsLine: ALLOWED_OPERATIONS_LINE,
+      prompt: data.prompt,
+    };
 
     let lastError = "The AI did not return a response.";
     let modelUsed: string | undefined;
+    let correctionNotice = "";
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-      const response = await this.chatService.chat(messages);
-      modelUsed = response.model;
+      const invokeResult = await this.capabilityService.invoke(
+        VIDEO_PLANNING_CAPABILITY_KEY,
+        { ...baseInput, correctionNotice },
+        { expectJson: true },
+        userId
+      );
 
-      const result = parseWorkflow(response.response);
+      if (invokeResult.outcome === "TRANSIENT_FAILURE" || invokeResult.outcome === "DEFINITIVE_FAILURE") {
+        // A real provider/network failure, not a content-quality issue —
+        // the old direct-ChatService call propagated this immediately
+        // rather than consuming a corrective-retry attempt on it; preserved
+        // here for identical error handling.
+        throw new ApiError(503, "Unable to connect to AI provider.");
+      }
+
+      modelUsed = invokeResult.model;
+      const result = parseWorkflow(invokeResult);
 
       if (result.success) {
         const created = await this.workflowPlanRepository.create({
@@ -98,14 +122,11 @@ export class VideoWorkflowPlannerService {
       );
 
       // One corrective retry: hand the model its own bad output plus the
-      // exact validation error and ask for a fixed, pure-JSON response.
-      messages.push(
-        { role: "assistant", content: response.response },
-        {
-          role: "user",
-          content: `Your previous response was invalid: ${lastError}\n\nRespond again with ONLY the corrected JSON object. No markdown, no explanations, no code fences.`,
-        }
-      );
+      // exact validation error and ask for a fixed, pure-JSON response. AI
+      // Core's invoke() has no multi-turn conversation support (Sprint 3
+      // scope decision), so this is folded into the next attempt's input
+      // instead of appended as separate assistant/user turns.
+      correctionNotice = `Your previous response was invalid: ${lastError}\n\nYour previous response was:\n${invokeResult.output}\n\nRespond again with ONLY the corrected JSON object. No markdown, no explanations, no code fences.`;
     }
 
     logger.error(
@@ -119,63 +140,29 @@ export class VideoWorkflowPlannerService {
 // Derived from the shared EXECUTABLE_OPERATIONS list (see
 // backend/src/constants/workflow-operations.ts) so the prompt can never list
 // an operation the Zod schema below it (and the execution engine) wouldn't
-// also accept.
+// also accept. Passed as invoke() input (rendered into the Brain's prompt
+// via {{operationCatalog}}/{{allowedOperationsLine}}) rather than baked into
+// the seeded prompt text, so this stays in sync with the constant even if
+// the seed is never re-run.
 const OPERATION_CATALOG = EXECUTABLE_OPERATIONS.map(
   ({ operation, description }) => `${operation} — ${description}`
 ).join("\n");
 
 const ALLOWED_OPERATIONS_LINE = `You may ONLY generate these operations: ${EXECUTABLE_OPERATION_NAMES.join(", ")}. Generating any other operation is forbidden.`;
 
-function buildPlannerSystemPrompt(videoAsset: {
-  durationMs: number | null;
-  width: number | null;
-  height: number | null;
-  videoFormat: string | null;
-}): string {
-  return `You are a video editing planner. Convert the user's natural-language request into a JSON editing plan.
-
-Source video metadata:
-- duration: ${videoAsset.durationMs ?? "unknown"} ms
-- resolution: ${videoAsset.width ?? "unknown"}x${videoAsset.height ?? "unknown"}
-- format: ${videoAsset.videoFormat ?? "unknown"}
-
-You may ONLY use these operations, each with exactly these parameters:
-${OPERATION_CATALOG}
-
-${ALLOWED_OPERATIONS_LINE}
-
-Output ONLY a JSON object of this exact shape, and nothing else:
-{"steps":[{"operation":"<one of the operations above>","params":{...}}]}
-
-Rules:
-- Output ONLY valid JSON. No markdown. No explanations. No prose. No code fences.
-- Only use operations from the list above. Never invent a new operation.
-- Only include the parameters listed for that operation. Never add extra parameters.
-- Order the steps in a sensible execution order.`;
-}
-
 type ParseResult = { success: true; workflow: Workflow } | { success: false; error: string };
 
-// Local LLMs frequently wrap JSON in a markdown code fence despite explicit
-// instructions not to — stripped defensively before parsing, since this is
-// about correctly reading the existing single ChatService response, not
-// new functionality.
-function extractJson(raw: string): string {
-  const trimmed = raw.trim();
-  const fenceMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  return fenceMatch ? fenceMatch[1].trim() : trimmed;
-}
-
-function parseWorkflow(raw: string): ParseResult {
-  let json: unknown;
-
-  try {
-    json = JSON.parse(extractJson(raw));
-  } catch {
+// invokeResult.outcome is only ever VALID or SCHEMA_INVALID by the time this
+// runs — TRANSIENT_FAILURE/DEFINITIVE_FAILURE are handled (thrown) before
+// parseWorkflow() is called. AI Core's own extractJson() already strips
+// markdown fences before attempting JSON.parse, same as the old local
+// helper did.
+function parseWorkflow(invokeResult: AiInvokeResult): ParseResult {
+  if (invokeResult.outcome === "SCHEMA_INVALID") {
     return { success: false, error: "The AI response was not valid JSON." };
   }
 
-  const result = WorkflowSchema.safeParse(json);
+  const result = WorkflowSchema.safeParse(invokeResult.outputJson);
 
   if (!result.success) {
     const issue = result.error.issues[0];

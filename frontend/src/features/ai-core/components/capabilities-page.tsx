@@ -7,12 +7,14 @@ import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { CapabilityDialog } from './capability-dialog'
 import { useCapabilities, useDeleteCapability } from '../hooks/use-capabilities'
+import type { AiCapability } from '../types/ai-core'
 
 export function CapabilitiesPage() {
   const can = useCan()
   const { data: capabilities = [], isLoading, error } = useCapabilities()
   const deleteCapability = useDeleteCapability()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingCapability, setEditingCapability] = useState<AiCapability | null>(null)
 
   if (!can('aicore')) return <ForbiddenError />
 
@@ -42,7 +44,7 @@ export function CapabilitiesPage() {
                 <TableHead>Key</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className='w-24' />
+                <TableHead className='w-48' />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -62,16 +64,21 @@ export function CapabilitiesPage() {
                         {capability.isEnabled ? 'Enabled' : 'Disabled'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className='flex flex-wrap gap-2'>
                       {can('aicoreadmin') && (
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          disabled={deleteCapability.isPending}
-                          onClick={() => deleteCapability.mutate(capability.id)}
-                        >
-                          Delete
-                        </Button>
+                        <>
+                          <Button size='sm' variant='outline' onClick={() => setEditingCapability(capability)}>
+                            Edit
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            disabled={deleteCapability.isPending}
+                            onClick={() => deleteCapability.mutate(capability.id)}
+                          >
+                            Delete
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
@@ -83,6 +90,11 @@ export function CapabilitiesPage() {
       )}
 
       <CapabilityDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <CapabilityDialog
+        open={editingCapability !== null}
+        onOpenChange={(open) => !open && setEditingCapability(null)}
+        capability={editingCapability}
+      />
     </Main>
   )
 }

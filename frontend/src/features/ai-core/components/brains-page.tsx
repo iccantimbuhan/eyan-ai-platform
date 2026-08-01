@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -7,18 +8,18 @@ import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { BrainDialog } from './brain-dialog'
 import { useBrains, useDeleteBrain } from '../hooks/use-brains'
+import type { AiBrain } from '../types/ai-core'
 
 // Deliberately no "invoke" action here — Brain-direct invocation is
 // administrative/Playground-only (architecture frozen, ADR-0021); use the
-// Playground page to test a Brain directly. This page manages the Brain
-// row itself. Prompt/Routing Policy configuration for a Brain is reached
-// via the API for now (Phase 1 scope) — see Known Issues in the Phase 1
-// completion report.
+// Playground page to test a Brain directly. Provider/model/prompt/routing
+// policy/MCP tool configuration lives on the Brain detail page (Manage).
 export function BrainsPage() {
   const can = useCan()
   const { data: brains = [], isLoading, error } = useBrains()
   const deleteBrain = useDeleteBrain()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingBrain, setEditingBrain] = useState<AiBrain | null>(null)
 
   if (!can('aicore')) return <ForbiddenError />
 
@@ -50,14 +51,14 @@ export function BrainsPage() {
                 <TableHead>Category</TableHead>
                 <TableHead>Memory</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className='w-24' />
+                <TableHead className='w-64' />
               </TableRow>
             </TableHeader>
             <TableBody>
               {brains.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className='h-24 text-center text-muted-foreground'>
-                    No Brains yet — create one, then add a Routing Policy and a Prompt version.
+                    No Brains yet — create one, then open it to add a Routing Policy and a Prompt version.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -74,16 +75,26 @@ export function BrainsPage() {
                         {brain.isEnabled ? 'Enabled' : 'Disabled'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className='flex flex-wrap gap-2'>
+                      <Button size='sm' variant='outline' asChild>
+                        <Link to='/app/ai-core/brains/$brainId' params={{ brainId: brain.id }}>
+                          Manage
+                        </Link>
+                      </Button>
                       {can('aicoreadmin') && (
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          disabled={deleteBrain.isPending}
-                          onClick={() => deleteBrain.mutate(brain.id)}
-                        >
-                          Delete
-                        </Button>
+                        <>
+                          <Button size='sm' variant='outline' onClick={() => setEditingBrain(brain)}>
+                            Edit
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            disabled={deleteBrain.isPending}
+                            onClick={() => deleteBrain.mutate(brain.id)}
+                          >
+                            Delete
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
@@ -95,6 +106,7 @@ export function BrainsPage() {
       )}
 
       <BrainDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <BrainDialog open={editingBrain !== null} onOpenChange={(open) => !open && setEditingBrain(null)} brain={editingBrain} />
     </Main>
   )
 }

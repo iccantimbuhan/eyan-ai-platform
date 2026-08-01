@@ -15,14 +15,18 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useProviders } from '../hooks/use-providers'
-import { useCreateModel } from '../hooks/use-models'
+import { useCreateModel, useUpdateModel } from '../hooks/use-models'
 import { defaultModelValues, modelSchema, parseTagsText, type ModelFormValues } from '../schemas/provider-schema'
+import type { AiModel } from '../types/ai-core'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void }
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; model?: AiModel | null }
 
-export function ModelDialog({ open, onOpenChange }: Props) {
+export function ModelDialog({ open, onOpenChange, model = null }: Props) {
+  const isEdit = model !== null
   const { data: providers = [] } = useProviders()
   const create = useCreateModel()
+  const update = useUpdateModel()
+  const isPending = create.isPending || update.isPending
 
   const form = useForm<ModelFormValues>({
     resolver: zodResolver(modelSchema),
@@ -30,17 +34,39 @@ export function ModelDialog({ open, onOpenChange }: Props) {
   })
 
   useEffect(() => {
-    if (open) form.reset(defaultModelValues)
-  }, [form, open])
+    if (!open) return
+    form.reset(
+      model
+        ? {
+            providerId: model.providerId,
+            modelKey: model.modelKey,
+            displayName: model.displayName,
+            tagsText: model.tags.join(', '),
+            isEnabled: model.isEnabled,
+          }
+        : defaultModelValues
+    )
+  }, [form, open, model])
 
   async function submit(values: ModelFormValues) {
-    await create.mutateAsync({
-      providerId: values.providerId,
-      modelKey: values.modelKey,
-      displayName: values.displayName,
-      tags: parseTagsText(values.tagsText),
-      isEnabled: values.isEnabled,
-    })
+    if (isEdit && model) {
+      await update.mutateAsync({
+        id: model.id,
+        payload: {
+          displayName: values.displayName,
+          tags: parseTagsText(values.tagsText),
+          isEnabled: values.isEnabled,
+        },
+      })
+    } else {
+      await create.mutateAsync({
+        providerId: values.providerId,
+        modelKey: values.modelKey,
+        displayName: values.displayName,
+        tags: parseTagsText(values.tagsText),
+        isEnabled: values.isEnabled,
+      })
+    }
     onOpenChange(false)
   }
 
@@ -48,7 +74,7 @@ export function ModelDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>New Model</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Model' : 'New Model'}</DialogTitle>
           <DialogDescription>Tags are technical abilities (e.g. "reasoning"), never a business Capability.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -60,7 +86,7 @@ export function ModelDialog({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>Provider</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
                       <SelectTrigger className='w-full'>
                         <SelectValue placeholder='Select a provider' />
                       </SelectTrigger>
@@ -84,7 +110,7 @@ export function ModelDialog({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>Model Key</FormLabel>
                   <FormControl>
-                    <Input placeholder='e.g. qwen2.5-coder:7b' {...field} />
+                    <Input placeholder='e.g. qwen2.5-coder:7b' {...field} disabled={isEdit} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,11 +155,11 @@ export function ModelDialog({ open, onOpenChange }: Props) {
               )}
             />
             <DialogFooter>
-              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={create.isPending}>
+              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
                 Cancel
               </Button>
-              <Button type='submit' disabled={create.isPending}>
-                {create.isPending ? 'Saving...' : 'Save'}
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>
           </form>

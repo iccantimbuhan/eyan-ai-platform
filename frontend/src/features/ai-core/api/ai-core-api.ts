@@ -3,18 +3,30 @@ import type { ApiResponse, PaginatedResponse } from '@/types/api'
 import type {
   AiAuditEvent,
   AiBrain,
+  AiBrainMcpTool,
   AiCapability,
   AiCostSummary,
+  AiEvaluation,
   AiInvokeResult,
   AiModel,
+  AiPrompt,
   AiProvider,
   AiProviderCredential,
+  AiRoutingPolicy,
   AiUsageLog,
   CreateAiBrainInput,
+  CreateAiBrainMcpToolInput,
   CreateAiCapabilityInput,
   CreateAiModelInput,
+  CreateAiPromptInput,
   CreateAiProviderInput,
+  CreateAiRoutingPolicyInput,
   PlaygroundInvokeInput,
+  RunAiEvaluationInput,
+  UpdateAiBrainInput,
+  UpdateAiCapabilityInput,
+  UpdateAiModelInput,
+  UpdateAiProviderInput,
 } from '../types/ai-core'
 
 export interface PageListResponse<T> {
@@ -35,6 +47,10 @@ export const aiCoreApi = {
     const { data } = await api.post<ApiResponse<AiCapability>>('/ai-core/capabilities', payload)
     return data.data
   },
+  async updateCapability(id: string, payload: UpdateAiCapabilityInput): Promise<AiCapability> {
+    const { data } = await api.patch<ApiResponse<AiCapability>>(`/ai-core/capabilities/${id}`, payload)
+    return data.data
+  },
   async deleteCapability(id: string): Promise<void> {
     await api.delete(`/ai-core/capabilities/${id}`)
   },
@@ -48,8 +64,70 @@ export const aiCoreApi = {
     const { data } = await api.post<ApiResponse<AiBrain>>('/ai-core/brains', payload)
     return data.data
   },
+  async updateBrain(id: string, payload: UpdateAiBrainInput): Promise<AiBrain> {
+    const { data } = await api.patch<ApiResponse<AiBrain>>(`/ai-core/brains/${id}`, payload)
+    return data.data
+  },
   async deleteBrain(id: string): Promise<void> {
     await api.delete(`/ai-core/brains/${id}`)
+  },
+
+  // --- Prompts (nested under a Brain) ---
+  async listPrompts(brainId: string): Promise<AiPrompt[]> {
+    const { data } = await api.get<ApiResponse<AiPrompt[]>>(`/ai-core/brains/${brainId}/prompts`)
+    return data.data
+  },
+  async createPrompt(brainId: string, payload: CreateAiPromptInput): Promise<AiPrompt> {
+    const { data } = await api.post<ApiResponse<AiPrompt>>(`/ai-core/brains/${brainId}/prompts`, payload)
+    return data.data
+  },
+  async activatePrompt(brainId: string, promptId: string): Promise<void> {
+    await api.post(`/ai-core/brains/${brainId}/prompts/${promptId}/activate`)
+  },
+
+  // --- Routing Policy (nested under a Brain) ---
+  async listRoutingPolicies(brainId: string): Promise<AiRoutingPolicy[]> {
+    const { data } = await api.get<ApiResponse<AiRoutingPolicy[]>>(`/ai-core/brains/${brainId}/routing-policy`)
+    return data.data
+  },
+  async createRoutingPolicy(brainId: string, payload: CreateAiRoutingPolicyInput): Promise<AiRoutingPolicy> {
+    const { data } = await api.post<ApiResponse<AiRoutingPolicy>>(`/ai-core/brains/${brainId}/routing-policy`, payload)
+    return data.data
+  },
+  async activateRoutingPolicy(brainId: string, policyId: string): Promise<void> {
+    await api.post(`/ai-core/brains/${brainId}/routing-policy/${policyId}/activate`)
+  },
+
+  // --- MCP Tool Allowlist (nested under a Brain) ---
+  async listBrainMcpTools(brainId: string): Promise<AiBrainMcpTool[]> {
+    const { data } = await api.get<ApiResponse<AiBrainMcpTool[]>>(`/ai-core/brains/${brainId}/mcp-tools`)
+    return data.data
+  },
+  async allowBrainMcpTool(brainId: string, payload: CreateAiBrainMcpToolInput): Promise<AiBrainMcpTool> {
+    const { data } = await api.post<ApiResponse<AiBrainMcpTool>>(`/ai-core/brains/${brainId}/mcp-tools`, payload)
+    return data.data
+  },
+  async revokeBrainMcpTool(brainId: string, mcpToolId: string): Promise<void> {
+    await api.delete(`/ai-core/brains/${brainId}/mcp-tools/${mcpToolId}`)
+  },
+
+  // --- Evaluations (nested under a Brain's prompt) ---
+  async runEvaluation(
+    brainId: string,
+    promptId: string,
+    payload: Omit<RunAiEvaluationInput, 'promptId'>
+  ): Promise<AiEvaluation> {
+    const { data } = await api.post<ApiResponse<AiEvaluation>>(
+      `/ai-core/brains/${brainId}/prompts/${promptId}/evaluate`,
+      { ...payload, promptId }
+    )
+    return data.data
+  },
+  async listEvaluations(brainId: string, promptId: string): Promise<AiEvaluation[]> {
+    const { data } = await api.get<ApiResponse<AiEvaluation[]>>(
+      `/ai-core/brains/${brainId}/prompts/${promptId}/evaluations`
+    )
+    return data.data
   },
 
   // --- Providers ---
@@ -63,6 +141,10 @@ export const aiCoreApi = {
   },
   async createProvider(payload: CreateAiProviderInput): Promise<AiProvider> {
     const { data } = await api.post<ApiResponse<AiProvider>>('/ai-core/providers', payload)
+    return data.data
+  },
+  async updateProvider(id: string, payload: UpdateAiProviderInput): Promise<AiProvider> {
+    const { data } = await api.patch<ApiResponse<AiProvider>>(`/ai-core/providers/${id}`, payload)
     return data.data
   },
   async deleteProvider(id: string): Promise<void> {
@@ -95,6 +177,10 @@ export const aiCoreApi = {
   },
   async createModel(payload: CreateAiModelInput): Promise<AiModel> {
     const { data } = await api.post<ApiResponse<AiModel>>('/ai-core/models', payload)
+    return data.data
+  },
+  async updateModel(id: string, payload: UpdateAiModelInput): Promise<AiModel> {
+    const { data } = await api.patch<ApiResponse<AiModel>>(`/ai-core/models/${id}`, payload)
     return data.data
   },
   async deleteModel(id: string): Promise<void> {

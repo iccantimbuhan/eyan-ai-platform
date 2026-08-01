@@ -4,6 +4,7 @@ import { AiBrainController } from "../../controllers/ai-brain.controller.js";
 import { AiPromptController } from "../../controllers/ai-prompt.controller.js";
 import { AiRoutingPolicyController } from "../../controllers/ai-routing-policy.controller.js";
 import { AiEvaluationController } from "../../controllers/ai-evaluation.controller.js";
+import { AiBrainMcpToolController } from "../../controllers/ai-brain-mcp-tool.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
 import { requirePermission } from "../../middleware/permission.middleware.js";
@@ -27,6 +28,11 @@ import {
   createAiRoutingPolicyValidator,
 } from "../../validators/ai-routing-policy.validator.js";
 import { runAiEvaluationValidator } from "../../validators/ai-evaluation.validator.js";
+import {
+  aiBrainIdForMcpToolParamValidator,
+  aiBrainMcpToolIdParamValidator,
+  createAiBrainMcpToolValidator,
+} from "../../validators/ai-brain-mcp-tool.validator.js";
 
 const router: ExpressRouter = Router();
 
@@ -141,6 +147,37 @@ router.post(
   aiRoutingPolicyIdParamValidator,
   validate,
   AiRoutingPolicyController.activate
+);
+
+// --- MCP Tool Allowlist (nested under a Brain) -----------------------------
+
+router.get(
+  "/:brainId/mcp-tools",
+  authenticate,
+  requirePermission("aicore"),
+  aiBrainIdForMcpToolParamValidator,
+  validate,
+  AiBrainMcpToolController.list
+);
+
+router.post(
+  "/:brainId/mcp-tools",
+  authenticate,
+  requirePermission("aicoreadmin"),
+  aiBrainIdForMcpToolParamValidator,
+  createAiBrainMcpToolValidator,
+  validate,
+  AiBrainMcpToolController.allow
+);
+
+router.delete(
+  "/:brainId/mcp-tools/:mcpToolId",
+  authenticate,
+  requirePermission("aicoreadmin"),
+  aiBrainIdForMcpToolParamValidator,
+  aiBrainMcpToolIdParamValidator,
+  validate,
+  AiBrainMcpToolController.revoke
 );
 
 export default router;

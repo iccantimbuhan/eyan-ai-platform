@@ -9,6 +9,7 @@ import { ProviderDialog } from './provider-dialog'
 import { ProviderCredentialDialog } from './provider-credential-dialog'
 import { useCheckProviderHealth, useDeleteProvider, useProviders } from '../hooks/use-providers'
 import { AiHealthStatusBadge } from '../lib/status-badges'
+import type { AiProvider } from '../types/ai-core'
 
 export function ProvidersPage() {
   const can = useCan()
@@ -17,6 +18,7 @@ export function ProvidersPage() {
   const checkHealth = useCheckProviderHealth()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [credentialProviderId, setCredentialProviderId] = useState<string | null>(null)
+  const [editingProvider, setEditingProvider] = useState<AiProvider | null>(null)
 
   if (!can('aicore')) return <ForbiddenError />
 
@@ -80,14 +82,19 @@ export function ProvidersPage() {
                         </Button>
                       )}
                       {can('aicoreadmin') && (
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          disabled={deleteProvider.isPending}
-                          onClick={() => deleteProvider.mutate(provider.id)}
-                        >
-                          Delete
-                        </Button>
+                        <>
+                          <Button size='sm' variant='outline' onClick={() => setEditingProvider(provider)}>
+                            Edit
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            disabled={deleteProvider.isPending}
+                            onClick={() => deleteProvider.mutate(provider.id)}
+                          >
+                            Delete
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
@@ -99,6 +106,11 @@ export function ProvidersPage() {
       )}
 
       <ProviderDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ProviderDialog
+        open={editingProvider !== null}
+        onOpenChange={(open) => !open && setEditingProvider(null)}
+        provider={editingProvider}
+      />
       <ProviderCredentialDialog
         providerId={credentialProviderId}
         onOpenChange={(open) => !open && setCredentialProviderId(null)}

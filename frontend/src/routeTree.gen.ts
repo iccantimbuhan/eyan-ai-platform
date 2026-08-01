@@ -49,6 +49,7 @@ import { Route as AppAuthenticatedSettingsProvidersRouteImport } from './routes/
 import { Route as AppAuthenticatedUsersIndexRouteImport } from './routes/app/_authenticated/users/index'
 import { Route as AppAuthenticatedAiCoreAuditIndexRouteImport } from './routes/app/_authenticated/ai-core/audit/index'
 import { Route as AppAuthenticatedAiCoreBrainsIndexRouteImport } from './routes/app/_authenticated/ai-core/brains/index'
+import { Route as AppAuthenticatedAiCoreBrainsBrainIdRouteImport } from './routes/app/_authenticated/ai-core/brains/$brainId'
 import { Route as AppAuthenticatedAiCoreCapabilitiesIndexRouteImport } from './routes/app/_authenticated/ai-core/capabilities/index'
 import { Route as AppAuthenticatedAiCoreCostsIndexRouteImport } from './routes/app/_authenticated/ai-core/costs/index'
 import { Route as AppAuthenticatedAiCoreHealthIndexRouteImport } from './routes/app/_authenticated/ai-core/health/index'
@@ -285,6 +286,12 @@ const AppAuthenticatedAiCoreBrainsIndexRoute =
     path: '/ai-core/brains/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedAiCoreBrainsBrainIdRoute =
+  AppAuthenticatedAiCoreBrainsBrainIdRouteImport.update({
+    id: '/ai-core/brains/$brainId',
+    path: '/ai-core/brains/$brainId',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedAiCoreCapabilitiesIndexRoute =
   AppAuthenticatedAiCoreCapabilitiesIndexRouteImport.update({
     id: '/ai-core/capabilities/',
@@ -413,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/app/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users/': typeof AppAuthenticatedUsersIndexRoute
+  '/app/ai-core/brains/$brainId': typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   '/app/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
   '/app/ai-core/audit/': typeof AppAuthenticatedAiCoreAuditIndexRoute
   '/app/ai-core/brains/': typeof AppAuthenticatedAiCoreBrainsIndexRoute
@@ -466,6 +474,7 @@ export interface FileRoutesByTo {
   '/app/roles': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users': typeof AppAuthenticatedUsersIndexRoute
+  '/app/ai-core/brains/$brainId': typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   '/app/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
   '/app/ai-core/audit': typeof AppAuthenticatedAiCoreAuditIndexRoute
   '/app/ai-core/brains': typeof AppAuthenticatedAiCoreBrainsIndexRoute
@@ -524,6 +533,7 @@ export interface FileRoutesById {
   '/app/_authenticated/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/_authenticated/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/_authenticated/users/': typeof AppAuthenticatedUsersIndexRoute
+  '/app/_authenticated/ai-core/brains/$brainId': typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   '/app/_authenticated/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
   '/app/_authenticated/ai-core/audit/': typeof AppAuthenticatedAiCoreAuditIndexRoute
   '/app/_authenticated/ai-core/brains/': typeof AppAuthenticatedAiCoreBrainsIndexRoute
@@ -581,6 +591,7 @@ export interface FileRouteTypes {
     | '/app/roles/'
     | '/app/settings/'
     | '/app/users/'
+    | '/app/ai-core/brains/$brainId'
     | '/app/crm/leads/$leadId'
     | '/app/ai-core/audit/'
     | '/app/ai-core/brains/'
@@ -634,6 +645,7 @@ export interface FileRouteTypes {
     | '/app/roles'
     | '/app/settings'
     | '/app/users'
+    | '/app/ai-core/brains/$brainId'
     | '/app/crm/leads/$leadId'
     | '/app/ai-core/audit'
     | '/app/ai-core/brains'
@@ -691,6 +703,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/roles/'
     | '/app/_authenticated/settings/'
     | '/app/_authenticated/users/'
+    | '/app/_authenticated/ai-core/brains/$brainId'
     | '/app/_authenticated/crm/leads/$leadId'
     | '/app/_authenticated/ai-core/audit/'
     | '/app/_authenticated/ai-core/brains/'
@@ -1008,6 +1021,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAiCoreBrainsIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/ai-core/brains/$brainId': {
+      id: '/app/_authenticated/ai-core/brains/$brainId'
+      path: '/ai-core/brains/$brainId'
+      fullPath: '/app/ai-core/brains/$brainId'
+      preLoaderRoute: typeof AppAuthenticatedAiCoreBrainsBrainIdRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/ai-core/capabilities/': {
       id: '/app/_authenticated/ai-core/capabilities/'
       path: '/ai-core/capabilities'
@@ -1187,6 +1207,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedPresentationEngineIndexRoute: typeof AppAuthenticatedPresentationEngineIndexRoute
   AppAuthenticatedRolesIndexRoute: typeof AppAuthenticatedRolesIndexRoute
   AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
+  AppAuthenticatedAiCoreBrainsBrainIdRoute: typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   AppAuthenticatedCrmLeadsLeadIdRoute: typeof AppAuthenticatedCrmLeadsLeadIdRoute
   AppAuthenticatedAiCoreAuditIndexRoute: typeof AppAuthenticatedAiCoreAuditIndexRoute
   AppAuthenticatedAiCoreBrainsIndexRoute: typeof AppAuthenticatedAiCoreBrainsIndexRoute
@@ -1228,6 +1249,8 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedPresentationEngineIndexRoute,
   AppAuthenticatedRolesIndexRoute: AppAuthenticatedRolesIndexRoute,
   AppAuthenticatedUsersIndexRoute: AppAuthenticatedUsersIndexRoute,
+  AppAuthenticatedAiCoreBrainsBrainIdRoute:
+    AppAuthenticatedAiCoreBrainsBrainIdRoute,
   AppAuthenticatedCrmLeadsLeadIdRoute: AppAuthenticatedCrmLeadsLeadIdRoute,
   AppAuthenticatedAiCoreAuditIndexRoute: AppAuthenticatedAiCoreAuditIndexRoute,
   AppAuthenticatedAiCoreBrainsIndexRoute:

@@ -1,6 +1,7 @@
 export { AiCoreDashboardPage } from './components/dashboard-page'
 export { CapabilitiesPage } from './components/capabilities-page'
 export { BrainsPage } from './components/brains-page'
+export { BrainDetailPage } from './components/brain-detail-page'
 export { ProvidersPage } from './components/providers-page'
 export { ModelsPage } from './components/models-page'
 export { PlaygroundPage } from './components/playground-page'

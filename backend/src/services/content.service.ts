@@ -7,11 +7,11 @@ import { ContentRepository } from "../repositories/content.repository.js";
 import { ProjectRepository } from "../repositories/project.repository.js";
 import { BrandKitRepository } from "../repositories/brand-kit.repository.js";
 import { AnalyticsEventRepository } from "../repositories/analytics-event.repository.js";
-import { ChatService } from "./chat.service.js";
-import { CONTENT_SYSTEM_PROMPTS } from "../config/content-prompts.js";
+import { aiCapabilityService, AiCapabilityService } from "./ai-capability.service.js";
+import { CONTENT_TYPE_AI_CONFIG } from "../config/content-prompts.js";
 import { buildContentBrandGuidance } from "../dto/brand-kit-guidance.js";
-import { CONTENT_PROVIDER_NAME } from "../dto/asset.mapper.js";
 import { NotFoundError } from "../errors/auth.error.js";
+import { ApiError } from "../errors/api-error.js";
 import { logger } from "../lib/logger.js";
 
 export class ContentService {
@@ -19,7 +19,7 @@ export class ContentService {
     private readonly repository = new ContentRepository(),
     private readonly projectRepository = new ProjectRepository(),
     private readonly brandKitRepository = new BrandKitRepository(),
-    private readonly chatService = new ChatService(),
+    private readonly capabilityService: AiCapabilityService = aiCapabilityService,
     private readonly analyticsEventRepository = new AnalyticsEventRepository(),
   ) {}
 
@@ -33,7 +33,7 @@ export class ContentService {
       throw new NotFoundError("Project not found.");
     }
 
-    let systemPrompt = CONTENT_SYSTEM_PROMPTS[data.type];
+    let brandGuidance = "";
 
     if (data.brandKitId) {
       const brandKit = await this.brandKitRepository.findById(
@@ -45,17 +45,29 @@ export class ContentService {
         throw new NotFoundError("Brand kit not found.");
       }
 
-      systemPrompt = `${systemPrompt}\n\n${buildContentBrandGuidance(brandKit)}`;
+      brandGuidance = buildContentBrandGuidance(brandKit);
     }
 
     // Captured for Asset Details' "Generation Time" field (Sprint 5) — pure
     // timing around the existing call, no change to control flow or errors.
     const startedAt = Date.now();
 
-    const result = await this.chatService.chat([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: data.prompt },
-    ]);
+    const { capabilityKey } = CONTENT_TYPE_AI_CONFIG[data.type];
+    const result = await this.capabilityService.invoke(
+      capabilityKey,
+      { prompt: data.prompt, brandGuidance },
+      { expectJson: false },
+      userId
+    );
+
+    // AiRoutingService never throws on a provider-call failure (it reports
+    // outcome/needsManualReview instead — "never strand a caller") — this
+    // service still needs to surface that as an error the way it always
+    // has, so ContentController's existing error handling (and callers of
+    // ContentService.generate()) see no behavior change.
+    if (result.outcome !== "VALID") {
+      throw new ApiError(503, "Unable to connect to AI provider.");
+    }
 
     const generationTimeMs = Date.now() - startedAt;
 
@@ -64,7 +76,7 @@ export class ContentService {
       brandKitId: data.brandKitId ?? null,
       type: data.type,
       prompt: data.prompt,
-      output: result.response,
+      output: result.output,
       model: result.model,
       createdBy: userId,
       generationTimeMs,
@@ -80,7 +92,10 @@ export class ContentService {
         sourceId: created.id,
         type: "GENERATED",
         actorId: userId,
-        provider: CONTENT_PROVIDER_NAME,
+        // Sourced from AI Core's own resolved chain rather than a hardcoded
+        // constant, since AI Core — not this service — now decides which
+        // provider serves the call (Sprint 3 Phase 2).
+        provider: result.provider,
         model: result.model,
         generationTimeMs,
         brandKitId: data.brandKitId ?? null,

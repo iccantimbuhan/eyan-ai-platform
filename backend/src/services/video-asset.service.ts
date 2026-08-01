@@ -18,20 +18,20 @@ import { VideoAssetRepository } from "../repositories/video-asset.repository.js"
 import { ProjectRepository } from "../repositories/project.repository.js";
 import { BrandKitRepository } from "../repositories/brand-kit.repository.js";
 import { AnalyticsEventRepository } from "../repositories/analytics-event.repository.js";
-import { ChatService } from "./chat.service.js";
-import { CONTENT_PROVIDER_NAME } from "../dto/asset.mapper.js";
+import { aiCapabilityService, AiCapabilityService } from "./ai-capability.service.js";
 import { ImageProviderFactory } from "../providers/image-provider.factory.js";
 import { StorageProviderFactory } from "../providers/storage-provider.factory.js";
 import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
 import { NotFoundError } from "../errors/auth.error.js";
+import { ApiError } from "../errors/api-error.js";
 import {
   buildContentBrandGuidance,
   buildImageBrandGuidance,
 } from "../dto/brand-kit-guidance.js";
 import {
   isTextVideoKind,
-  VIDEO_SYSTEM_PROMPTS,
+  VIDEO_TEXT_KIND_AI_CONFIG,
   type TextVideoAssetKind,
 } from "../config/video-prompts.js";
 import {
@@ -61,7 +61,7 @@ export class VideoAssetService {
     private readonly repository = new VideoAssetRepository(),
     private readonly projectRepository = new ProjectRepository(),
     private readonly brandKitRepository = new BrandKitRepository(),
-    private readonly chatService = new ChatService(),
+    private readonly capabilityService: AiCapabilityService = aiCapabilityService,
     private readonly imageProviderFactory: ImageProviderResolver = ImageProviderFactory,
     private readonly storageProvider: StorageProvider = StorageProviderFactory.create(),
     private readonly analyticsEventRepository = new AnalyticsEventRepository()
@@ -89,25 +89,36 @@ export class VideoAssetService {
     userId: string,
     videoGroupId: string
   ) {
-    // Safe: generate() only ever reaches here after its own
-    // isTextVideoKind(data.kind) check — TS can't see that link across the
-    // two methods.
-    let systemPrompt = VIDEO_SYSTEM_PROMPTS[data.kind as TextVideoAssetKind];
+    let brandGuidance = "";
 
     if (data.brandKitId) {
       const brandKit = await this.resolveBrandKit(data.brandKitId, data.projectId, userId);
-      systemPrompt = `${systemPrompt}\n\n${buildContentBrandGuidance(brandKit)}`;
+      brandGuidance = buildContentBrandGuidance(brandKit);
     }
 
-    // Text kinds are only ever persisted after a successful chat call — no
-    // partial row, status always COMPLETED at creation. Same posture as
+    // Text kinds are only ever persisted after a successful invoke() call —
+    // no partial row, status always COMPLETED at creation. Same posture as
     // ContentService.generate().
     const startedAt = Date.now();
 
-    const result = await this.chatService.chat([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: data.prompt },
-    ]);
+    // Safe: generate() only ever reaches here after its own
+    // isTextVideoKind(data.kind) check — TS can't see that link across the
+    // two methods.
+    const { capabilityKey } = VIDEO_TEXT_KIND_AI_CONFIG[data.kind as TextVideoAssetKind];
+    const result = await this.capabilityService.invoke(
+      capabilityKey,
+      { prompt: data.prompt, brandGuidance },
+      { expectJson: false },
+      userId
+    );
+
+    // AiRoutingService never throws on a provider-call failure (it reports
+    // outcome/needsManualReview instead) — surfaced as an error here the
+    // way this method always has, matching ContentService.generate()'s
+    // identical adaptation (Sprint 3 Phase 2).
+    if (result.outcome !== "VALID") {
+      throw new ApiError(503, "Unable to connect to AI provider.");
+    }
 
     const generationTimeMs = Date.now() - startedAt;
 
@@ -117,7 +128,7 @@ export class VideoAssetService {
       videoGroupId,
       kind: data.kind,
       prompt: data.prompt,
-      output: result.response,
+      output: result.output,
       model: result.model,
       status: "COMPLETED",
       generationTimeMs,
@@ -128,7 +139,9 @@ export class VideoAssetService {
       projectId: data.projectId,
       sourceId: created.id,
       userId,
-      provider: CONTENT_PROVIDER_NAME,
+      // Sourced from AI Core's own resolved chain rather than a hardcoded
+      // constant (Sprint 3 Phase 4) — see ContentService's identical change.
+      provider: result.provider,
       model: result.model,
       generationTimeMs,
       brandKitId: data.brandKitId,

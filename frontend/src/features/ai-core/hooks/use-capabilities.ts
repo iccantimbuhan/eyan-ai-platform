@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { aiCoreApi } from '../api/ai-core-api'
-import type { CreateAiCapabilityInput } from '../types/ai-core'
+import type { CreateAiCapabilityInput, UpdateAiCapabilityInput } from '../types/ai-core'
 
 const CAPABILITIES_KEY = ['ai-core', 'capabilities'] as const
 
@@ -23,6 +23,19 @@ export function useCreateCapability() {
       await invalidate()
     },
     onError: () => toast.error('Failed to create Capability.'),
+  })
+}
+
+export function useUpdateCapability() {
+  const invalidate = useInvalidateCapabilities()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAiCapabilityInput }) =>
+      aiCoreApi.updateCapability(id, payload),
+    onSuccess: async () => {
+      toast.success('Capability updated successfully.')
+      await invalidate()
+    },
+    onError: () => toast.error('Failed to update Capability.'),
   })
 }
 

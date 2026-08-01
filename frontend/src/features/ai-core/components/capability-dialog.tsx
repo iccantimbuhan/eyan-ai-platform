@@ -16,18 +16,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useBrains } from '../hooks/use-brains'
-import { useCreateCapability } from '../hooks/use-capabilities'
+import { useCreateCapability, useUpdateCapability } from '../hooks/use-capabilities'
 import { capabilitySchema, defaultCapabilityValues, type CapabilityFormValues } from '../schemas/capability-schema'
+import type { AiCapability } from '../types/ai-core'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void }
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; capability?: AiCapability | null }
 
-// Only "create" — Capabilities are additive-key resources (TDD §5), and
-// editing the brainId a Capability resolves to is an admin-level routing
-// decision deferred to a later pass. Deleting is available from the list
-// page.
-export function CapabilityDialog({ open, onOpenChange }: Props) {
+// Key is create-only — Capabilities are additive-key resources (TDD §5).
+// Everything else (name, description, brainId, isEnabled) is editable.
+export function CapabilityDialog({ open, onOpenChange, capability = null }: Props) {
+  const isEdit = capability !== null
   const { data: brains = [] } = useBrains()
   const create = useCreateCapability()
+  const update = useUpdateCapability()
+  const isPending = create.isPending || update.isPending
 
   const form = useForm<CapabilityFormValues>({
     resolver: zodResolver(capabilitySchema),
@@ -35,11 +37,34 @@ export function CapabilityDialog({ open, onOpenChange }: Props) {
   })
 
   useEffect(() => {
-    if (open) form.reset(defaultCapabilityValues)
-  }, [form, open])
+    if (!open) return
+    form.reset(
+      capability
+        ? {
+            key: capability.key,
+            name: capability.name,
+            description: capability.description,
+            brainId: capability.brainId,
+            isEnabled: capability.isEnabled,
+          }
+        : defaultCapabilityValues
+    )
+  }, [form, open, capability])
 
   async function submit(values: CapabilityFormValues) {
-    await create.mutateAsync(values)
+    if (isEdit && capability) {
+      await update.mutateAsync({
+        id: capability.id,
+        payload: {
+          name: values.name,
+          description: values.description,
+          brainId: values.brainId,
+          isEnabled: values.isEnabled,
+        },
+      })
+    } else {
+      await create.mutateAsync(values)
+    }
     onOpenChange(false)
   }
 
@@ -47,7 +72,7 @@ export function CapabilityDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>New Capability</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Capability' : 'New Capability'}</DialogTitle>
           <DialogDescription>
             A business task business modules invoke by key. Resolves to exactly one Brain.
           </DialogDescription>
@@ -61,7 +86,7 @@ export function CapabilityDialog({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>Key</FormLabel>
                   <FormControl>
-                    <Input placeholder='e.g. lead-qualification' {...field} />
+                    <Input placeholder='e.g. lead-qualification' {...field} disabled={isEdit} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,11 +155,11 @@ export function CapabilityDialog({ open, onOpenChange }: Props) {
               )}
             />
             <DialogFooter>
-              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={create.isPending}>
+              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
                 Cancel
               </Button>
-              <Button type='submit' disabled={create.isPending}>
-                {create.isPending ? 'Saving...' : 'Save'}
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>
           </form>

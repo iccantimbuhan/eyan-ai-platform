@@ -24,17 +24,65 @@ export function isTextVideoKind(kind: VideoAssetKind): kind is TextVideoAssetKin
   return (TEXT_VIDEO_KINDS as readonly VideoAssetKind[]).includes(kind);
 }
 
-export const VIDEO_SYSTEM_PROMPTS: Record<TextVideoAssetKind, string> = {
-  SCRIPT:
-    "You are an expert video scriptwriter. Write a complete video script based on the user's request, with clear speaker/narration lines and scene directions in brackets.",
-  SCENE_BREAKDOWN:
-    "You are an expert video producer. Break the user's request down into a numbered list of scenes, each with a one-line description of what happens and its approximate purpose in the video.",
-  SHOT_LIST:
-    "You are an expert cinematographer. Produce a numbered shot list for the user's request. For each shot, note the camera angle/movement, subject, and approximate duration.",
-  VOICE_OVER_SCRIPT:
-    "You are an expert voice-over writer. Write narration copy only (no scene directions, no speaker labels) based on the user's request, written to be read aloud naturally.",
-  CAPTIONS:
-    "You are an expert video editor. Write a numbered list of short on-screen caption/text-overlay lines based on the user's request. Each caption should be brief enough to read in a few seconds.",
-  SUBTITLES:
-    "You are an expert subtitle writer. Write the dialogue/narration lines based on the user's request as a numbered list of short subtitle lines, in the order they would appear. Do not invent timestamps — plain sequential lines only.",
+export interface VideoTextKindAiConfig {
+  capabilityKey: string;
+  brainKey: string;
+  displayName: string;
+  systemPrompt: string;
+}
+
+// Single source of truth for VideoAssetService's AI Core Capability/Brain
+// wiring (Sprint 3 Phase 4 migration) — imported by both VideoAssetService
+// (to resolve which Capability to invoke() for a given TextVideoAssetKind)
+// and prisma/seed-ai-core.ts (to seed the matching Brain/Prompt/
+// RoutingPolicy). Same convention as content-prompts.ts's
+// CONTENT_TYPE_AI_CONFIG, and for the same reason: a Brain has exactly one
+// active AiPrompt at a time, so six genuinely different system prompts need
+// six Brains, not one shared "video-script" Brain (the TDD's original
+// abbreviated Phase 2 note named a single Capability — this is the same
+// per-Brain-one-active-prompt constraint that also split ContentService's
+// five content types, applied consistently here).
+export const VIDEO_TEXT_KIND_AI_CONFIG: Record<TextVideoAssetKind, VideoTextKindAiConfig> = {
+  SCRIPT: {
+    capabilityKey: "video-script",
+    brainKey: "video-script-brain",
+    displayName: "Video Script",
+    systemPrompt:
+      "You are an expert video scriptwriter. Write a complete video script based on the user's request, with clear speaker/narration lines and scene directions in brackets.",
+  },
+  SCENE_BREAKDOWN: {
+    capabilityKey: "video-scene-breakdown",
+    brainKey: "video-scene-breakdown-brain",
+    displayName: "Video Scene Breakdown",
+    systemPrompt:
+      "You are an expert video producer. Break the user's request down into a numbered list of scenes, each with a one-line description of what happens and its approximate purpose in the video.",
+  },
+  SHOT_LIST: {
+    capabilityKey: "video-shot-list",
+    brainKey: "video-shot-list-brain",
+    displayName: "Video Shot List",
+    systemPrompt:
+      "You are an expert cinematographer. Produce a numbered shot list for the user's request. For each shot, note the camera angle/movement, subject, and approximate duration.",
+  },
+  VOICE_OVER_SCRIPT: {
+    capabilityKey: "video-voice-over-script",
+    brainKey: "video-voice-over-script-brain",
+    displayName: "Video Voice-Over Script",
+    systemPrompt:
+      "You are an expert voice-over writer. Write narration copy only (no scene directions, no speaker labels) based on the user's request, written to be read aloud naturally.",
+  },
+  CAPTIONS: {
+    capabilityKey: "video-captions",
+    brainKey: "video-captions-brain",
+    displayName: "Video Captions",
+    systemPrompt:
+      "You are an expert video editor. Write a numbered list of short on-screen caption/text-overlay lines based on the user's request. Each caption should be brief enough to read in a few seconds.",
+  },
+  SUBTITLES: {
+    capabilityKey: "video-subtitles",
+    brainKey: "video-subtitles-brain",
+    displayName: "Video Subtitles",
+    systemPrompt:
+      "You are an expert subtitle writer. Write the dialogue/narration lines based on the user's request as a numbered list of short subtitle lines, in the order they would appear. Do not invent timestamps — plain sequential lines only.",
+  },
 };

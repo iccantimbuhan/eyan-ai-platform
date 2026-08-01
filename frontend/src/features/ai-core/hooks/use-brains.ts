@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { aiCoreApi } from '../api/ai-core-api'
-import type { CreateAiBrainInput } from '../types/ai-core'
+import type { CreateAiBrainInput, UpdateAiBrainInput } from '../types/ai-core'
 
 const BRAINS_KEY = ['ai-core', 'brains'] as const
 
@@ -23,6 +23,18 @@ export function useCreateBrain() {
       await invalidate()
     },
     onError: () => toast.error('Failed to create Brain.'),
+  })
+}
+
+export function useUpdateBrain() {
+  const invalidate = useInvalidateBrains()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAiBrainInput }) => aiCoreApi.updateBrain(id, payload),
+    onSuccess: async () => {
+      toast.success('Brain updated successfully.')
+      await invalidate()
+    },
+    onError: () => toast.error('Failed to update Brain.'),
   })
 }
 

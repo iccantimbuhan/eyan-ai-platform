@@ -24,6 +24,13 @@ export interface CreateAiCapabilityInput {
   isEnabled?: boolean
 }
 
+export interface UpdateAiCapabilityInput {
+  name?: string
+  description?: string
+  brainId?: string
+  isEnabled?: boolean
+}
+
 export interface AiBrain {
   id: string
   key: string
@@ -41,6 +48,14 @@ export interface CreateAiBrainInput {
   name: string
   description: string
   category: string
+  memoryStrategy?: AiMemoryStrategy
+  isEnabled?: boolean
+}
+
+export interface UpdateAiBrainInput {
+  name?: string
+  description?: string
+  category?: string
   memoryStrategy?: AiMemoryStrategy
   isEnabled?: boolean
 }
@@ -67,6 +82,13 @@ export interface CreateAiProviderInput {
   baseUrl?: string
   isEnabled?: boolean
   rateLimitPerMinute?: number
+}
+
+export interface UpdateAiProviderInput {
+  displayName?: string
+  baseUrl?: string | null
+  isEnabled?: boolean
+  rateLimitPerMinute?: number | null
 }
 
 export interface AiProviderCredential {
@@ -103,6 +125,15 @@ export interface CreateAiModelInput {
   isEnabled?: boolean
 }
 
+export interface UpdateAiModelInput {
+  displayName?: string
+  tags?: string[]
+  contextWindow?: number | null
+  costPerInputToken?: number | null
+  costPerOutputToken?: number | null
+  isEnabled?: boolean
+}
+
 export interface AiPrompt {
   id: string
   brainId: string
@@ -110,6 +141,11 @@ export interface AiPrompt {
   body: string
   isActive: boolean
   createdAt: string
+}
+
+export interface CreateAiPromptInput {
+  version: string
+  body: string
 }
 
 export interface AiRoutingPolicy {
@@ -127,6 +163,50 @@ export interface AiRoutingPolicy {
   confidenceHighThreshold: number
   confidenceMediumThreshold: number
   createdAt: string
+}
+
+export interface CreateAiRoutingPolicyInput {
+  strategy?: AiRoutingStrategy
+  requiredTag?: string | null
+  preferredProviderId: string
+  preferredModelId: string
+  fallbackProviderId?: string | null
+  fallbackModelId?: string | null
+  maxRetries?: number
+  timeoutMs?: number
+  confidenceHighThreshold?: number
+  confidenceMediumThreshold?: number
+}
+
+export interface AiBrainMcpTool {
+  id: string
+  brainId: string
+  mcpServerConfigId: string
+  allowedTools: string[]
+}
+
+export interface CreateAiBrainMcpToolInput {
+  mcpServerConfigId: string
+  allowedTools?: string[]
+}
+
+export interface AiEvaluation {
+  id: string
+  promptId: string
+  testCaseName: string
+  input: Record<string, unknown>
+  expectedShape: Record<string, unknown> | null
+  actualOutput: Record<string, unknown> | null
+  passed: boolean
+  score: number | null
+  evaluatedAt: string
+}
+
+export interface RunAiEvaluationInput {
+  promptId: string
+  testCaseName: string
+  input: Record<string, unknown>
+  expectedShape?: Record<string, unknown>
 }
 
 export interface AiUsageLog {
