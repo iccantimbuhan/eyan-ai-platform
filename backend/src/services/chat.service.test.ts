@@ -1,165 +1,144 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ChatService } from "./chat.service.js";
 import { ApiError } from "../errors/api-error.js";
+import { AiConversationError } from "../errors/ai-core-provider.error.js";
+import { logger } from "../lib/logger.js";
 
-const { chatMock, streamChatMock, ollamaProviderCtor } = vi.hoisted(() => {
-  const chatMock = vi.fn().mockResolvedValue({
-    model: "qwen2.5-coder:7b",
-    response: "hi",
-    createdAt: "now",
-  });
-  const streamChatMock = vi.fn().mockResolvedValue({
-    data: { on: vi.fn(), pipe: vi.fn() },
-  });
-  class FakeOllamaProvider {
-    chat = chatMock;
-    streamChat = streamChatMock;
+function createConversationService(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    converse: vi.fn().mockResolvedValue({
+      conversationId: "conv-1",
+      content: "hi there",
+      model: "qwen2.5-coder:7b",
+      provider: "ollama",
+      brain: "general-chat-brain",
+      latencyMs: 10,
+    }),
+    streamConverse: vi.fn(),
+    ...overrides,
+  };
+}
+
+async function* asyncChunks(chunks: unknown[]) {
+  for (const chunk of chunks) {
+    yield chunk;
   }
-  const ollamaProviderCtor = vi.fn(function (this: unknown, ..._args: unknown[]) {
-    return new FakeOllamaProvider();
+}
+
+function createRes() {
+  return {
+    setHeader: vi.fn(),
+    flushHeaders: vi.fn(),
+    write: vi.fn(),
+    end: vi.fn(),
+    destroyed: false,
+    destroy: vi.fn(),
+  };
+}
+
+describe("ChatService.chat", () => {
+  it("delegates to AiConversationService.converse() with the general-chat Brain and returns the shaped result", async () => {
+    const conversationService = createConversationService();
+    const service = new ChatService(conversationService as never);
+
+    const result = await service.chat([{ role: "user", content: "hi" }], undefined, "user-1");
+
+    expect(conversationService.converse).toHaveBeenCalledWith({
+      brainKey: "general-chat-brain",
+      conversationId: undefined,
+      messages: [{ role: "user", content: "hi" }],
+      actorId: "user-1",
+    });
+    expect(result).toEqual({
+      model: "qwen2.5-coder:7b",
+      response: "hi there",
+      createdAt: expect.any(String),
+      conversationId: "conv-1",
+    });
   });
-  return { chatMock, streamChatMock, ollamaProviderCtor };
+
+  it("forwards a supplied conversationId so a continued conversation is possible", async () => {
+    const conversationService = createConversationService();
+    const service = new ChatService(conversationService as never);
+
+    await service.chat([{ role: "user", content: "and then?" }], "conv-1", null);
+
+    expect(conversationService.converse).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: "conv-1" })
+    );
+  });
+
+  it("propagates an AiConversationError from AiConversationService unchanged (already classified)", async () => {
+    const conversationService = createConversationService({
+      converse: vi.fn().mockRejectedValue(new AiConversationError(503, "The AI model is still loading — please try again in a moment.", "MODEL_LOADING")),
+    });
+    const service = new ChatService(conversationService as never);
+
+    await expect(service.chat([{ role: "user", content: "hi" }])).rejects.toMatchObject({
+      statusCode: 503,
+      category: "MODEL_LOADING",
+    });
+  });
 });
 
-vi.mock("../providers/ollama/ollama.provider.js", () => ({
-  OllamaProvider: ollamaProviderCtor,
-}));
-
-const { ChatService } = await import("./chat.service.js");
-
-function createCapabilityService(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    getByKeyWithBrain: vi.fn().mockResolvedValue({
-      id: "cap-1",
-      key: "general-chat",
-      isEnabled: true,
-      brain: { id: "brain-1", isEnabled: true },
-    }),
-    ...overrides,
-  };
-}
-
-function createRoutingPolicyService(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    getActiveByBrain: vi.fn().mockResolvedValue({
-      id: "policy-1",
-      preferredProvider: { key: "ollama", baseUrl: "http://127.0.0.1:11434" },
-      preferredModel: { modelKey: "qwen2.5-coder:7b" },
-    }),
-    ...overrides,
-  };
-}
-
-describe("ChatService", () => {
+describe("ChatService.stream", () => {
   beforeEach(() => {
-    chatMock.mockClear();
-    streamChatMock.mockClear();
-    ollamaProviderCtor.mockClear();
+    vi.restoreAllMocks();
   });
 
-  it("resolves provider/model from the general-chat Capability's active Brain/RoutingPolicy before calling chat()", async () => {
-    const capabilityService = createCapabilityService();
-    const routingPolicyService = createRoutingPolicyService();
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
-
-    const result = await service.chat([{ role: "user", content: "hi" }]);
-
-    expect(capabilityService.getByKeyWithBrain).toHaveBeenCalledWith("general-chat");
-    expect(routingPolicyService.getActiveByBrain).toHaveBeenCalledWith("brain-1");
-    expect(ollamaProviderCtor).toHaveBeenCalledWith({
-      baseUrl: "http://127.0.0.1:11434",
-      model: "qwen2.5-coder:7b",
+  it("writes each chunk's raw payload as one NDJSON line and sets the conversation id header", async () => {
+    const chunks = [
+      { delta: "hi", done: false, raw: { message: { content: "hi" }, done: false }, conversationId: "conv-1" },
+      { delta: "", done: true, raw: { message: { content: "" }, done: true }, conversationId: "conv-1" },
+    ];
+    const conversationService = createConversationService({
+      streamConverse: vi.fn().mockReturnValue(asyncChunks(chunks)),
     });
-    expect(result).toEqual({ model: "qwen2.5-coder:7b", response: "hi", createdAt: "now" });
+    const service = new ChatService(conversationService as never);
+    const res = createRes();
+
+    await service.stream([{ role: "user", content: "hi" }], res as never, undefined, null);
+
+    expect(res.setHeader).toHaveBeenCalledWith("X-Ai-Conversation-Id", "conv-1");
+    expect(res.write).toHaveBeenNthCalledWith(1, `${JSON.stringify(chunks[0].raw)}\n`);
+    expect(res.write).toHaveBeenNthCalledWith(2, `${JSON.stringify(chunks[1].raw)}\n`);
+    expect(res.end).toHaveBeenCalled();
   });
 
-  it("resolves the provider only once per instance across chat() and stream() calls", async () => {
-    const capabilityService = createCapabilityService();
-    const routingPolicyService = createRoutingPolicyService();
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
-
-    await service.chat([{ role: "user", content: "hi" }]);
-    await service.chat([{ role: "user", content: "hi again" }]);
-
-    expect(capabilityService.getByKeyWithBrain).toHaveBeenCalledTimes(1);
-    expect(ollamaProviderCtor).toHaveBeenCalledTimes(1);
-  });
-
-  it("throws a 503 ApiError when the Capability does not exist", async () => {
-    const capabilityService = createCapabilityService({ getByKeyWithBrain: vi.fn().mockResolvedValue(null) });
-    const routingPolicyService = createRoutingPolicyService();
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
-
-    await expect(service.chat([{ role: "user", content: "hi" }])).rejects.toThrow(ApiError);
-  });
-
-  it("throws a 503 ApiError when the Capability is disabled", async () => {
-    const capabilityService = createCapabilityService({
-      getByKeyWithBrain: vi.fn().mockResolvedValue({
-        id: "cap-1",
-        isEnabled: false,
-        brain: { id: "brain-1", isEnabled: true },
-      }),
+  it("throws (never writes to res) when streamConverse fails before any chunk is produced", async () => {
+    const conversationService = createConversationService({
+      streamConverse: vi.fn().mockReturnValue(
+        (async function* () {
+          throw new AiConversationError(503, "Unable to connect to the AI provider. Please try again shortly.", "PROVIDER_UNAVAILABLE");
+        })()
+      ),
     });
-    const routingPolicyService = createRoutingPolicyService();
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
+    const service = new ChatService(conversationService as never);
+    const res = createRes();
 
-    await expect(service.chat([{ role: "user", content: "hi" }])).rejects.toThrow(ApiError);
+    await expect(service.stream([{ role: "user", content: "hi" }], res as never)).rejects.toBeInstanceOf(ApiError);
+    expect(res.write).not.toHaveBeenCalled();
+    expect(res.destroy).not.toHaveBeenCalled();
   });
 
-  it("throws a 503 ApiError when the Brain is disabled", async () => {
-    const capabilityService = createCapabilityService({
-      getByKeyWithBrain: vi.fn().mockResolvedValue({
-        id: "cap-1",
-        isEnabled: true,
-        brain: { id: "brain-1", isEnabled: false },
-      }),
+  it("destroys the response instead of throwing when the stream breaks mid-response (headers already sent)", async () => {
+    const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+    const conversationService = createConversationService({
+      streamConverse: vi.fn().mockReturnValue(
+        (async function* () {
+          yield { delta: "hi", done: false, raw: { message: { content: "hi" }, done: false }, conversationId: "conv-1" };
+          throw new Error("upstream connection reset");
+        })()
+      ),
     });
-    const routingPolicyService = createRoutingPolicyService();
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
+    const service = new ChatService(conversationService as never);
+    const res = createRes();
 
-    await expect(service.chat([{ role: "user", content: "hi" }])).rejects.toThrow(ApiError);
-  });
+    await expect(service.stream([{ role: "user", content: "hi" }], res as never)).resolves.toBeUndefined();
 
-  it("throws a 503 ApiError when the Brain has no active RoutingPolicy", async () => {
-    const capabilityService = createCapabilityService();
-    const routingPolicyService = createRoutingPolicyService({
-      getActiveByBrain: vi.fn().mockResolvedValue(null),
-    });
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
-
-    await expect(service.chat([{ role: "user", content: "hi" }])).rejects.toThrow(ApiError);
-  });
-
-  it("throws a 503 ApiError when the active RoutingPolicy's provider is not Ollama (unsupported execution path)", async () => {
-    const capabilityService = createCapabilityService();
-    const routingPolicyService = createRoutingPolicyService({
-      getActiveByBrain: vi.fn().mockResolvedValue({
-        id: "policy-1",
-        preferredProvider: { key: "openai", baseUrl: null },
-        preferredModel: { modelKey: "gpt-4o" },
-      }),
-    });
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
-
-    await expect(service.chat([{ role: "user", content: "hi" }])).rejects.toThrow(ApiError);
-    expect(ollamaProviderCtor).not.toHaveBeenCalled();
-  });
-
-  it("stream() resolves the same way and pipes the provider's stream response", async () => {
-    const capabilityService = createCapabilityService();
-    const routingPolicyService = createRoutingPolicyService();
-    const service = new ChatService(capabilityService as never, routingPolicyService as never);
-    const res = {
-      setHeader: vi.fn(),
-      flushHeaders: vi.fn(),
-      destroyed: false,
-      destroy: vi.fn(),
-    };
-
-    await service.stream([{ role: "user", content: "hi" }], res as never);
-
-    expect(streamChatMock).toHaveBeenCalled();
-    expect(res.flushHeaders).toHaveBeenCalled();
+    expect(res.write).toHaveBeenCalledTimes(1);
+    expect(res.destroy).toHaveBeenCalledWith(expect.any(Error));
+    errorSpy.mockRestore();
   });
 });

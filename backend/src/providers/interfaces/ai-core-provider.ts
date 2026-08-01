@@ -25,6 +25,18 @@ export interface AiCoreHealthCheckResult {
   message?: string;
 }
 
+// One incremental piece of a streamed response. `raw` carries the
+// provider's own unmodified chunk object (e.g. one parsed Ollama NDJSON
+// line) so a caller that needs the exact original wire shape — ChatService,
+// preserving today's NDJSON response format for the (untouched) frontend —
+// can re-serialize it verbatim, while `delta`/`done` give every other
+// caller a normalized, provider-independent view of the same chunk.
+export interface AiCoreStreamChunk {
+  delta: string;
+  done: boolean;
+  raw: unknown;
+}
+
 // A pluggable text-generation provider — the shape every AI Core provider
 // plugin implements. Deliberately separate from the existing single-provider
 // `AIProvider` interface (backend/src/providers/interfaces/ai-provider.ts,
@@ -55,4 +67,16 @@ export interface AiCoreProvider {
   // model-selection concern) — AiProviderHealthService (TDD §14) is the
   // only caller.
   healthCheck(baseUrl?: string | null, credentials?: Record<string, unknown>): Promise<AiCoreHealthCheckResult>;
+
+  // Sprint 4 — optional so existing/future providers with no streaming
+  // wire format (or not yet implemented, e.g. OpenAI/Anthropic/Gemini
+  // today) simply omit it; AiConversationService checks for its presence
+  // and falls back to a clear "streaming not supported" error rather than
+  // guessing. Only OllamaAiProvider implements this in Sprint 4, per the
+  // brief's "only Ollama needs to be fully implemented" scope.
+  streamChat?(
+    messages: AiCoreMessage[],
+    options: AiCoreChatOptions,
+    credentials?: Record<string, unknown>
+  ): AsyncGenerator<AiCoreStreamChunk>;
 }

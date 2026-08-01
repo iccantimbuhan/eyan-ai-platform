@@ -14,7 +14,11 @@ export class ChatController {
 
     const service = new ChatService();
 
-    const result = await service.chat(parsed.data.messages);
+    // No authenticate middleware on this route (pre-existing, unchanged by
+    // this sprint) — req.user is never populated here, so actorId is always
+    // null. Only relevant for a HOSTED provider's credential audit trail;
+    // Chat's Brain is Ollama (LOCAL, no credentials) today.
+    const result = await service.chat(parsed.data.messages, parsed.data.conversationId, req.user?.id ?? null);
 
     return ApiResponse.success(res, result);
   }
@@ -32,6 +36,6 @@ export class ChatController {
 
     const service = new ChatService();
 
-    return service.stream(parsed.data.messages, res);
+    return service.stream(parsed.data.messages, res, parsed.data.conversationId, req.user?.id ?? null);
   }
 }

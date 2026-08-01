@@ -83,7 +83,7 @@ function toAiProviderCallError(providerKey: string, error: unknown): AiProviderC
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
     const message = error.response?.data?.error?.message ?? error.message;
-    return new AiProviderCallError(providerKey, `OpenAI request failed: ${message}`, status);
+    return new AiProviderCallError(providerKey, `OpenAI request failed: ${message}`, status, error.code);
   }
   return new AiProviderCallError(providerKey, error instanceof Error ? error.message : "OpenAI request failed.");
 }

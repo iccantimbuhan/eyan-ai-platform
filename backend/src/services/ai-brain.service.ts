@@ -78,6 +78,15 @@ export class AiBrainService {
     return this.repository.findAll();
   }
 
+  // Read-only lookup for the Sprint 4 Conversation Engine's frozen
+  // "Conversation -> Brain" chain, which deliberately has no Capability
+  // step (see AiConversationService) — mirrors AiCapabilityService's own
+  // getByKeyWithBrain() addition in Sprint 3. Returns null rather than
+  // throwing so callers decide how to handle an unconfigured Brain.
+  async getByKey(key: string): Promise<AiBrain | null> {
+    return this.repository.findByKey(key);
+  }
+
   private async getOrThrow(id: string): Promise<AiBrain> {
     const brain = await this.repository.findById(id);
     if (!brain) {

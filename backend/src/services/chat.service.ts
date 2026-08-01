@@ -1,114 +1,100 @@
 import type { Response } from "express";
-import { AxiosError } from "axios";
-import { aiCapabilityService, AiCapabilityService } from "./ai-capability.service.js";
-import { aiRoutingPolicyService, AiRoutingPolicyService } from "./ai-routing-policy.service.js";
-import { OllamaProvider } from "../providers/ollama/ollama.provider.js";
+import { aiConversationService, AiConversationService } from "./ai-conversation.service.js";
 import { ApiError } from "../errors/api-error.js";
-import type {
-  AIProvider,
-  ChatOptions,
-  OllamaMessage,
-} from "../providers/interfaces/ai-provider.js";
+import { logger } from "../lib/logger.js";
+import type { ChatMessage } from "../validators/chat.validator.js";
 
-// The Capability this service resolves its provider/model from — see
-// prisma/seed-ai-core.ts's seedGeneralChatBrain() for why this only
-// resolves configuration (not execution) through AI Core.
-const GENERAL_CHAT_CAPABILITY_KEY = "general-chat";
+// The Brain Chat resolves against — see prisma/seed-ai-core.ts's
+// seedGeneralChatBrain(). Sprint 4: this is the only AI-Core-specific
+// knowledge left in ChatService; everything else (provider, model,
+// streaming implementation, error classification) lives inside
+// AiConversationService now. ChatController/ChatService together only ever
+// resolve "Conversation -> Brain" — never a provider or model directly.
+const GENERAL_CHAT_BRAIN_KEY = "general-chat-brain";
+
+export interface ChatResult {
+  model: string;
+  response: string;
+  createdAt: string;
+  conversationId: string;
+}
 
 export class ChatService {
-  private providerPromise: Promise<AIProvider> | null = null;
+  constructor(private readonly conversationService: AiConversationService = aiConversationService) {}
 
-  constructor(
-    private readonly capabilityService: AiCapabilityService = aiCapabilityService,
-    private readonly routingPolicyService: AiRoutingPolicyService = aiRoutingPolicyService
-  ) {}
-
-  // Resolves which provider/model to call via AI Core's Capability -> Brain
-  // -> RoutingPolicy chain (Sprint 3 Phase 1) instead of the retired
-  // hardcoded ProviderFactory. Cached per ChatService instance (one per
-  // request) so a single chat/stream call only resolves once.
-  private resolveProvider(): Promise<AIProvider> {
-    if (!this.providerPromise) {
-      this.providerPromise = this.buildProvider();
-    }
-    return this.providerPromise;
-  }
-
-  private async buildProvider(): Promise<AIProvider> {
-    const capability = await this.capabilityService.getByKeyWithBrain(GENERAL_CHAT_CAPABILITY_KEY);
-    if (!capability || !capability.isEnabled || !capability.brain.isEnabled) {
-      throw new ApiError(503, "Unable to connect to AI provider.");
-    }
-
-    const policy = await this.routingPolicyService.getActiveByBrain(capability.brain.id);
-    if (!policy || policy.preferredProvider.key !== "ollama") {
-      // Chat's execution path only understands the legacy Ollama-compatible
-      // AIProvider interface today — see seedGeneralChatBrain()'s doc
-      // comment. Re-pointing this Brain at a different provider in the UI
-      // is a Phase 4 prerequisite (a generic multi-provider adapter), not a
-      // silently-ignored config change.
-      throw new ApiError(503, "Unable to connect to AI provider.");
-    }
-
-    return new OllamaProvider({
-      baseUrl: policy.preferredProvider.baseUrl ?? undefined,
-      model: policy.preferredModel.modelKey,
+  async chat(messages: ChatMessage[], conversationId?: string, actorId: string | null = null): Promise<ChatResult> {
+    const result = await this.conversationService.converse({
+      brainKey: GENERAL_CHAT_BRAIN_KEY,
+      conversationId,
+      messages,
+      actorId,
     });
+
+    return {
+      model: result.model,
+      response: result.content,
+      createdAt: new Date().toISOString(),
+      conversationId: result.conversationId,
+    };
   }
 
-  async chat(messages: OllamaMessage[], options?: ChatOptions) {
-    try {
-      const provider = await this.resolveProvider();
-      return await provider.chat(messages, options);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
+  async stream(
+    messages: ChatMessage[],
+    res: Response,
+    conversationId?: string,
+    actorId: string | null = null
+  ): Promise<void> {
+    let streamStarted = false;
 
-      // The client only ever sees the generic message below — this is
-      // purely for server-side diagnosis, since without it a real cause
-      // (e.g. a cold-start timeout) is indistinguishable from Ollama being
-      // genuinely unreachable.
-      console.error("[chat] AI provider request failed", {
-        type: error instanceof AxiosError ? "AxiosError" : error?.constructor?.name,
-        message: error instanceof Error ? error.message : String(error),
-        code: error instanceof AxiosError ? error.code : undefined,
-        timeoutMs: error instanceof AxiosError ? error.config?.timeout : undefined,
+    try {
+      const chunks = this.conversationService.streamConverse({
+        brainKey: GENERAL_CHAT_BRAIN_KEY,
+        conversationId,
+        messages,
+        actorId,
       });
 
-      throw new ApiError(503, "Unable to connect to AI provider.");
-    }
-  }
-
-  async stream(messages: OllamaMessage[], res: Response, options?: ChatOptions) {
-    try {
-      const provider = await this.resolveProvider();
-      const response = await provider.streamChat?.(messages, options);
-
-      if (!response) {
-        throw new ApiError(501, "Streaming not supported.");
-      }
-
-      res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
-      res.setHeader("Cache-Control", "no-cache, no-transform");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("X-Accel-Buffering", "no");
-      res.setHeader("Transfer-Encoding", "chunked");
-      res.flushHeaders();
-
-      response.data.on("error", (error: Error) => {
-        console.error("[stream] Upstream stream error", error);
-        if (!res.destroyed) {
-          res.destroy(error);
+      for await (const chunk of chunks) {
+        if (!streamStarted) {
+          streamStarted = true;
+          res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+          res.setHeader("Cache-Control", "no-cache, no-transform");
+          res.setHeader("Connection", "keep-alive");
+          res.setHeader("X-Accel-Buffering", "no");
+          res.setHeader("Transfer-Encoding", "chunked");
+          // Additive, out-of-band — existing NDJSON body consumers are
+          // unaffected; a conversation-aware caller can read this header to
+          // continue the same conversation on its next request.
+          res.setHeader("X-Ai-Conversation-Id", chunk.conversationId);
+          res.flushHeaders();
         }
+
+        // `raw` is the provider's own unmodified chunk object — writing it
+        // straight back out reproduces the exact NDJSON wire format the
+        // (unchanged) frontend already parses today.
+        res.write(`${JSON.stringify(chunk.raw)}\n`);
+      }
+
+      res.end();
+    } catch (error) {
+      if (!streamStarted) {
+        // Nothing sent yet — a normal thrown ApiError, forwarded to
+        // Express's error handler exactly like the non-streaming path.
+        throw error instanceof ApiError ? error : new ApiError(503, "Unable to connect to AI provider.");
+      }
+
+      // Headers/bytes are already on the wire — a fresh JSON error response
+      // isn't valid HTTP at this point. Log full diagnostics server-side
+      // (AiConversationService already logged the classified category; this
+      // is the HTTP-layer half of that same failure) and destroy the
+      // connection, same posture as the legacy stream() handler.
+      logger.error("[ChatService] Streaming interrupted after response start", {
+        message: error instanceof Error ? error.message : String(error),
       });
 
-      response.data.pipe(res);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
+      if (!res.destroyed) {
+        res.destroy(error instanceof Error ? error : new Error(String(error)));
       }
-      throw new ApiError(503, "Unable to connect to AI provider.");
     }
   }
 }

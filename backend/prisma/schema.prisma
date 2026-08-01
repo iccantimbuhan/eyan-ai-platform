@@ -1318,6 +1318,15 @@ enum AiCallOutcome {
   DEFINITIVE_FAILURE
 }
 
+// Sprint 4 — Conversation Engine. Mirrors AiCoreMessage's role union
+// (system/user/assistant) as a Prisma enum, since a persisted message row
+// needs a closed, indexable type rather than a plain string.
+enum AiConversationRole {
+  SYSTEM
+  USER
+  ASSISTANT
+}
+
 enum AiAuditAction {
   BRAIN_CREATED
   BRAIN_UPDATED
@@ -1452,6 +1461,7 @@ model AiBrain {
   routingPolicies   AiRoutingPolicy[]
   mcpToolAllowances AiBrainMcpTool[]
   usageLogs         AiUsageLog[]
+  conversations     AiConversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1600,6 +1610,45 @@ model AiUsageLog {
   @@index([providerId])
   @@index([domain])
   @@index([createdAt])
+}
+
+// Sprint 4 — Conversation Engine. A persisted multi-turn chat session tied
+// directly to a Brain (never a Capability — the frozen "Conversation ->
+// Brain" chain is a deliberate, sprint-directed exception to the
+// Capability-only rule invoke() enforces for one-shot task execution;
+// conversations are a stateful, continuously-configured interaction, not a
+// discrete business task). Purely additive: nothing in Sprint 2/3's schema
+// changes, and a caller that never supplies a conversationId never creates
+// one of these rows (ChatService's existing stateless behavior is
+// unaffected — see AiConversationService).
+model AiConversation {
+  id String @id @default(cuid())
+
+  brainId String
+  brain   AiBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+
+  metadata Json?
+
+  messages AiConversationMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brainId])
+}
+
+model AiConversationMessage {
+  id String @id @default(cuid())
+
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role    AiConversationRole
+  content String             @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
 }
 
 // A stored test case for a prompt version, run via AiEvaluationService /

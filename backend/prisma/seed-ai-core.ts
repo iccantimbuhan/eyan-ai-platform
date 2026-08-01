@@ -179,21 +179,23 @@ const GENERAL_CHAT_MODEL_KEY = env.ollamaModel
 const GENERAL_CHAT_BRAIN_KEY = 'general-chat-brain'
 const GENERAL_CHAT_CAPABILITY_KEY = 'general-chat'
 
+// Sprint 4 Phase 6 (Model Switching Validation) — additional models
+// available on this same Ollama provider so the General Chat Brain's
+// Routing Policy can be re-pointed at any of the three installed models
+// (create a new AiRoutingPolicy version with a different preferredModelId,
+// then activate it) with zero code changes.
+const GEMMA_MODEL_KEY = 'gemma3:4b'
+const MISTRAL_MODEL_KEY = 'mistral:7b'
+
 /**
- * Seeds the General Chat Brain. Deliberately configuration-only: this Brain
- * has no active AiPrompt because ChatService's execution path is a raw,
- * caller-supplied multi-turn conversation (system/user/assistant messages
- * passed straight through, with real-time NDJSON streaming on
- * `/api/v1/chat/stream`) — neither multi-turn history nor streaming is
- * supported by AiRoutingService's single-turn, template-rendered invoke()
- * contract today. Rather than redesign that frozen contract, ChatService
- * resolves this Brain's active AiRoutingPolicy directly (Capability -> Brain
- * -> RoutingPolicy -> Provider -> Model) to determine which provider/model
- * to call, then executes the call itself via the existing OllamaProvider
- * (legacy AIProvider interface, ADR-0001) — AI Core is the configuration
- * authority for Chat, not (yet) the execution engine. See the Sprint 3
- * completion report for the full rationale and the Phase 4 recommendation
- * to extend AI Core's provider contract with conversation/streaming support.
+ * Seeds the General Chat Brain. As of Sprint 4, ChatService resolves this
+ * Brain directly by key — via AiConversationService's "Conversation -> Brain"
+ * chain, deliberately skipping the Capability step (the frozen invoke()
+ * contract is single-turn/non-streaming; conversations are a different,
+ * sprint-4-introduced execution surface) — rather than through the
+ * `general-chat` Capability seeded below, which now exists only as a
+ * still-usable, ordinary one-shot invoke() Capability for anyone who wants
+ * it, not as Chat's own resolution path (Sprint 3's original design).
  */
 export async function seedGeneralChatBrain(prisma: PrismaClient): Promise<void> {
   const provider = await prisma.aiProvider.upsert({
@@ -216,6 +218,30 @@ export async function seedGeneralChatBrain(prisma: PrismaClient): Promise<void> 
       modelKey: GENERAL_CHAT_MODEL_KEY,
       displayName: 'Qwen 2.5 Coder 7B',
       tags: ['chat', 'reasoning', 'coding'],
+      isEnabled: true,
+    },
+  })
+
+  await prisma.aiModel.upsert({
+    where: { providerId_modelKey: { providerId: provider.id, modelKey: GEMMA_MODEL_KEY } },
+    update: {},
+    create: {
+      providerId: provider.id,
+      modelKey: GEMMA_MODEL_KEY,
+      displayName: 'Gemma 3 4B',
+      tags: ['chat'],
+      isEnabled: true,
+    },
+  })
+
+  await prisma.aiModel.upsert({
+    where: { providerId_modelKey: { providerId: provider.id, modelKey: MISTRAL_MODEL_KEY } },
+    update: {},
+    create: {
+      providerId: provider.id,
+      modelKey: MISTRAL_MODEL_KEY,
+      displayName: 'Mistral 7B',
+      tags: ['chat', 'reasoning'],
       isEnabled: true,
     },
   })
