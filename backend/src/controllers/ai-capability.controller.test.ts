@@ -61,6 +61,25 @@ describe("AiCapabilityController", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  it("invokeService() forwards capabilityKey/input/context with a null actorId (no req.user)", async () => {
+    invokeMock.mockResolvedValue({ output: "ok", brain: "sales-brain", outcome: "VALID" });
+    const req = {
+      params: { capabilityKey: "lead-qualification" },
+      body: { input: { name: "Acme" }, context: { workflowExecutionId: "wf-exec-1" } },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await AiCapabilityController.invokeService(req, res);
+
+    expect(invokeMock).toHaveBeenCalledWith(
+      "lead-qualification",
+      { name: "Acme" },
+      { workflowExecutionId: "wf-exec-1" },
+      null
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   it("create() forwards the body and the caller's user id as actor", async () => {
     createMock.mockResolvedValue(SAMPLE_CAPABILITY);
     const req = {

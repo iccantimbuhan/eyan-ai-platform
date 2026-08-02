@@ -79,4 +79,14 @@ export class CrmLeadController {
 
     return ApiResponse.success(res, lead, 201, "Note added successfully.");
   }
+
+  // Phase 7 (Manual Review Queue) — "Re-run AI Qualification".
+  static async rerunQualification(req: Request, res: Response) {
+    const lead = await crmLeadService.rerunQualification(
+      CrmLeadController.getId(req),
+      req.user.id
+    );
+
+    return ApiResponse.success(res, lead, 200, "AI qualification re-run successfully.");
+  }
 }

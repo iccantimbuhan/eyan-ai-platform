@@ -5,6 +5,7 @@ import {
   assignLead,
   getLead,
   getLeads,
+  rerunLeadQualification,
   updateLead,
   updateLeadStatus,
   type ListLeadsParams,
@@ -81,6 +82,23 @@ export function useAssignLead(id: string) {
 
     onError: () => {
       toast.error('Failed to update lead assignment.')
+    },
+  })
+}
+
+export function useRerunLeadQualification(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => rerunLeadQualification(id),
+
+    onSuccess: async () => {
+      toast.success('AI qualification re-run.')
+      await invalidateLeadQueries(queryClient, id)
+    },
+
+    onError: () => {
+      toast.error('Failed to re-run AI qualification.')
     },
   })
 }

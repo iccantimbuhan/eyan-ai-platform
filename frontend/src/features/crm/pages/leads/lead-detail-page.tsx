@@ -81,7 +81,7 @@ export function LeadDetailPage() {
 
         <div className='grid gap-6 lg:grid-cols-3'>
           <div className='space-y-6 lg:col-span-2'>
-            <AiAnalysisCard aiAnalyses={lead.aiAnalyses} />
+            <AiAnalysisCard leadId={lead.id} leadStatus={lead.status} aiAnalyses={lead.aiAnalyses} />
             <LeadTimeline leadId={lead.id} activities={lead.activities} />
           </div>
 

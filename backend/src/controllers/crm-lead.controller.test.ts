@@ -9,6 +9,7 @@ const updateMock = vi.fn();
 const updateStatusMock = vi.fn();
 const assignMock = vi.fn();
 const addNoteMock = vi.fn();
+const rerunQualificationMock = vi.fn();
 
 vi.mock("../services/crm-lead.service.js", () => ({
   CrmLeadService: vi.fn().mockImplementation(function (this: unknown) {
@@ -20,6 +21,7 @@ vi.mock("../services/crm-lead.service.js", () => ({
       updateStatus: updateStatusMock,
       assign: assignMock,
       addNote: addNoteMock,
+      rerunQualification: rerunQualificationMock,
     };
   }),
 }));
@@ -134,5 +136,16 @@ describe("CrmLeadController", () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, data: [SAMPLE_LEAD] })
     );
+  });
+
+  it("rerunQualification() forwards the lead id and the caller's user id", async () => {
+    rerunQualificationMock.mockResolvedValue({ ...SAMPLE_LEAD, status: "QUALIFIED" });
+    const req = { params: { id: "lead-1" }, user: { id: "user-1" } } as unknown as Request;
+    const res = createResponse();
+
+    await CrmLeadController.rerunQualification(req, res);
+
+    expect(rerunQualificationMock).toHaveBeenCalledWith("lead-1", "user-1");
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 });

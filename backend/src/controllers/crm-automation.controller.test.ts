@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 const findByEmailMock = vi.fn();
 const applyValidationResultMock = vi.fn();
 const applyQualificationResultMock = vi.fn();
+const assignLeadMock = vi.fn();
 
 vi.mock("../services/crm-automation-ingest.service.js", () => ({
   CrmAutomationIngestService: vi.fn().mockImplementation(function (this: unknown) {
@@ -11,6 +12,7 @@ vi.mock("../services/crm-automation-ingest.service.js", () => ({
       findByEmail: findByEmailMock,
       applyValidationResult: applyValidationResultMock,
       applyQualificationResult: applyQualificationResultMock,
+      assignLead: assignLeadMock,
     };
   }),
 }));
@@ -64,6 +66,20 @@ describe("CrmAutomationController", () => {
     await CrmAutomationController.applyQualificationResult(req, res);
 
     expect(applyQualificationResultMock).toHaveBeenCalledWith("lead-1", req.body);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("assignLead() forwards the lead id and body to the service", async () => {
+    assignLeadMock.mockResolvedValue({ id: "lead-1", assignedToId: "user-2" });
+    const req = {
+      params: { id: "lead-1" },
+      body: { assignedToId: "user-2", workflowExecutionId: "exec-3" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await CrmAutomationController.assignLead(req, res);
+
+    expect(assignLeadMock).toHaveBeenCalledWith("lead-1", req.body);
     expect(res.status).toHaveBeenCalledWith(200);
   });
 

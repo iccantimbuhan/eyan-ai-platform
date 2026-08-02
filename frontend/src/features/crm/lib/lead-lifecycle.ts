@@ -9,7 +9,10 @@ const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
   NEW: ['VALIDATED', 'DISQUALIFIED'],
   VALIDATED: ['AI_ANALYZED', 'LOST'],
   DISQUALIFIED: [],
-  AI_ANALYZED: ['QUALIFIED', 'LOST'],
+  // DISQUALIFIED added in Sprint 5 — a LOW-confidence AI qualification
+  // result auto-routes here too (backend), and a rep can reject a
+  // needs-review lead the same way (Manual Review Queue).
+  AI_ANALYZED: ['QUALIFIED', 'DISQUALIFIED', 'LOST'],
   QUALIFIED: ['CONTACTED', 'LOST'],
   CONTACTED: ['NEGOTIATION', 'LOST'],
   NEGOTIATION: ['CONVERTED', 'LOST'],

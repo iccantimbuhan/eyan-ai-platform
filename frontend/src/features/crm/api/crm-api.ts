@@ -68,3 +68,11 @@ export async function addLeadNote(id: string, body: string): Promise<LeadDetail>
   const { data } = await api.post<ApiResponse<LeadDetail>>(`/crm/leads/${id}/notes`, { body })
   return data.data
 }
+
+// Phase 7 (Manual Review Queue) — re-runs AI Core's lead-qualification
+// Capability in-process and re-applies the result (new LeadAiAnalysis row,
+// pipeline routing, Activities) — see CrmLeadService.rerunQualification.
+export async function rerunLeadQualification(id: string): Promise<Lead> {
+  const { data } = await api.post<ApiResponse<Lead>>(`/crm/leads/${id}/qualification/rerun`)
+  return data.data
+}

@@ -20,6 +20,12 @@ export interface DedupeLeadQueryDto {
   email: string;
 }
 
+// Workflow 4's "assign salesperson" write-back (Sprint 5, Phase 6) — same
+// idempotency contract as the other two /crm/service/leads/:id/* mutations.
+export interface AssignLeadAutomatedDto extends AutomationExecutionMetaDto {
+  assignedToId: string;
+}
+
 // Workflow 2 (Validation) write-back — only VALIDATED/DISQUALIFIED are
 // legal targets from NEW; CrmLeadService's own ALLOWED_TRANSITIONS map is
 // still the authority that enforces this, not the validator.
@@ -55,4 +61,5 @@ export interface ApplyQualificationResultDto extends AutomationExecutionMetaDto 
   summary: string;
   reasoning: string;
   needsManualReview?: boolean;
+  confidenceTier?: QualificationLevel;
 }

@@ -13,6 +13,10 @@ describe('getValidNextStatuses', () => {
     expect(getValidNextStatuses('VALIDATED')).toEqual(['AI_ANALYZED', 'LOST'])
   })
 
+  it('AI_ANALYZED can move to QUALIFIED, DISQUALIFIED, or LOST (Sprint 5 Manual Review Queue)', () => {
+    expect(getValidNextStatuses('AI_ANALYZED')).toEqual(['QUALIFIED', 'DISQUALIFIED', 'LOST'])
+  })
+
   it('every non-terminal status includes LOST as an option, except NEW', () => {
     const nonTerminalExceptNew: Array<'VALIDATED' | 'AI_ANALYZED' | 'QUALIFIED' | 'CONTACTED' | 'NEGOTIATION'> =
       ['VALIDATED', 'AI_ANALYZED', 'QUALIFIED', 'CONTACTED', 'NEGOTIATION']

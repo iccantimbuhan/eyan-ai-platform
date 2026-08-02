@@ -33,6 +33,12 @@ export const dedupeLeadQueryValidator = [
 
 export const leadIdParamValidator = [param("id").notEmpty().withMessage("Lead ID is required.")];
 
+export const assignLeadAutomatedValidator = [
+  ...executionMetaValidators,
+
+  body("assignedToId").trim().notEmpty().withMessage("assignedToId is required."),
+];
+
 export const applyValidationResultValidator = [
   ...executionMetaValidators,
 
@@ -91,4 +97,14 @@ export const applyQualificationResultValidator = [
     .isLength({ max: 4000 }),
 
   body("needsManualReview").optional().isBoolean().toBoolean(),
+
+  // AI Core's own HIGH/MEDIUM/LOW confidence tier (AiInvokeResult.confidence
+  // — distinct from the numeric `confidence` field above, which is the raw
+  // 0.0-1.0 value the model returned). Drives Phase 4's pipeline
+  // auto-routing; not recomputed backend-side to avoid duplicating
+  // AiRoutingPolicy's threshold logic in two places.
+  body("confidenceTier")
+    .optional()
+    .isIn(QUALIFICATION_LEVELS)
+    .withMessage("Invalid confidenceTier."),
 ];

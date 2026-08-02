@@ -1,18 +1,31 @@
 import { Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { LeadAiAnalysis } from '../../../types/crm'
+import { useRerunLeadQualification, useUpdateLeadStatus } from '../../../hooks/use-leads'
+import type { LeadAiAnalysis, LeadStatus } from '../../../types/crm'
 
 type AiAnalysisCardProps = {
+  leadId: string
+  leadStatus: LeadStatus
   aiAnalyses: LeadAiAnalysis[]
 }
 
-// AI qualification runs in n8n starting Sprint 2/3 (TDD §10/§12) — this
-// card renders the empty state honestly rather than faking data, and picks
-// up real content automatically once LeadAiAnalysis rows exist (no UI
-// change needed then, the contract is already the Sprint 1 shape).
-export function AiAnalysisCard({ aiAnalyses }: AiAnalysisCardProps) {
+// AI qualification runs via AI Core starting Sprint 5 — this card renders
+// the empty state honestly rather than faking data, and picks up real
+// content automatically once LeadAiAnalysis rows exist (no UI change
+// needed then, the contract is already the Sprint 1 shape).
+export function AiAnalysisCard({ leadId, leadStatus, aiAnalyses }: AiAnalysisCardProps) {
   const latest = aiAnalyses[0]
+  const updateStatus = useUpdateLeadStatus(leadId)
+  const rerun = useRerunLeadQualification(leadId)
+
+  // Phase 4/7 (Sprint 5) — AI_ANALYZED *is* the Manual Review Queue bucket
+  // (HIGH confidence auto-routes to QUALIFIED, LOW to DISQUALIFIED; only
+  // MEDIUM/uncertain results land and stay here), so these actions only
+  // make sense while the lead is still in it.
+  const inReview = leadStatus === 'AI_ANALYZED'
+  const busy = updateStatus.isPending || rerun.isPending
 
   return (
     <Card>
@@ -25,7 +38,7 @@ export function AiAnalysisCard({ aiAnalyses }: AiAnalysisCardProps) {
       <CardContent>
         {!latest ? (
           <p className='text-sm text-muted-foreground'>
-            No AI analysis yet. Automated qualification arrives in a later sprint.
+            No AI analysis yet. Automated qualification runs once this lead is validated.
           </p>
         ) : (
           <div className='space-y-3'>
@@ -36,6 +49,34 @@ export function AiAnalysisCard({ aiAnalyses }: AiAnalysisCardProps) {
             </div>
             <p className='text-sm'>{latest.summary}</p>
             <p className='text-sm text-muted-foreground'>{latest.recommendedAction}</p>
+
+            {inReview && (
+              <div className='flex flex-wrap gap-2 pt-1'>
+                <Button
+                  size='sm'
+                  disabled={busy}
+                  onClick={() => updateStatus.mutate({ status: 'QUALIFIED' })}
+                >
+                  Accept
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={busy}
+                  onClick={() => updateStatus.mutate({ status: 'DISQUALIFIED' })}
+                >
+                  Reject
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={busy}
+                  onClick={() => rerun.mutate()}
+                >
+                  {rerun.isPending ? 'Re-running...' : 'Re-run AI Qualification'}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

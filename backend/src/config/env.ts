@@ -207,5 +207,10 @@ export const env = {
   // the dispatch — see automation-webhook.service.ts.
   automationHubWebhookUrl: process.env.AUTOMATION_HUB_WEBHOOK_URL ?? "",
 
+  // Full URL of n8n's Sales Automation webhook (Workflow 4, Sprint 5) — same
+  // empty-default/fail-open reasoning as automationHubWebhookUrl above.
+  automationHubLeadQualifiedWebhookUrl:
+    process.env.AUTOMATION_HUB_LEAD_QUALIFIED_WEBHOOK_URL ?? "",
+
   automationWebhookTimeout,
 };

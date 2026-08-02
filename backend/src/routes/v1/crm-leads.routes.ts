@@ -89,4 +89,14 @@ router.post(
   CrmLeadController.addNote
 );
 
+// Phase 7 (Manual Review Queue, Sprint 5) — "Re-run AI Qualification".
+router.post(
+  "/:id/qualification/rerun",
+  authenticate,
+  requirePermission("crm"),
+  leadIdParamValidator,
+  validate,
+  CrmLeadController.rerunQualification
+);
+
 export default router;

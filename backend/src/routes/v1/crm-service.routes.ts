@@ -8,6 +8,7 @@ import { validate } from "../../middleware/validation.middleware.js";
 import {
   applyQualificationResultValidator,
   applyValidationResultValidator,
+  assignLeadAutomatedValidator,
   dedupeLeadQueryValidator,
   leadIdParamValidator,
 } from "../../validators/crm-automation.validator.js";
@@ -36,6 +37,15 @@ router.patch(
   applyQualificationResultValidator,
   validate,
   CrmAutomationController.applyQualificationResult
+);
+
+// Workflow 4's "assign salesperson" step (Sprint 5, Phase 6).
+router.patch(
+  "/leads/:id/assign",
+  leadIdParamValidator,
+  assignLeadAutomatedValidator,
+  validate,
+  CrmAutomationController.assignLead
 );
 
 export default router;

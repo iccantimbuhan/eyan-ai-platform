@@ -38,4 +38,13 @@ export class CrmAutomationController {
 
     return ApiResponse.success(res, lead, 200, "Qualification result applied.");
   }
+
+  static async assignLead(req: Request, res: Response) {
+    const lead = await crmAutomationIngestService.assignLead(
+      CrmAutomationController.getId(req),
+      req.body
+    );
+
+    return ApiResponse.success(res, lead, 200, "Lead assigned.");
+  }
 }

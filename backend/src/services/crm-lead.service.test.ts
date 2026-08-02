@@ -58,6 +58,39 @@ function createWebhookService(overrides: Partial<Record<string, unknown>> = {}) 
   };
 }
 
+function createAutomationIngestService(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    rerunQualification: vi.fn().mockResolvedValue({ id: "lead-1", status: "QUALIFIED" }),
+    ...overrides,
+  };
+}
+
+function createCapabilityService(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    invoke: vi.fn().mockResolvedValue({
+      output: "{}",
+      outputJson: {
+        leadScore: 88,
+        confidence: 0.82,
+        priority: "HIGH",
+        recommendedAction: "Schedule a demo",
+        summary: "Strong fit.",
+        reasoning: "High budget signal.",
+      },
+      brain: "sales-brain",
+      provider: "ollama",
+      model: "qwen2.5-coder:7b",
+      promptVersion: "v1",
+      confidence: "HIGH",
+      needsManualReview: false,
+      outcome: "VALID",
+      retryCount: 0,
+      latencyMs: 1200,
+    }),
+    ...overrides,
+  };
+}
+
 describe("CrmLeadService", () => {
   it("create() defaults source to WEBSITE_FORM and captures the full payload in rawSubmission", async () => {
     const repository = createRepository();
@@ -146,6 +179,22 @@ describe("CrmLeadService", () => {
     );
   });
 
+  it("updateStatus() allows AI_ANALYZED -> DISQUALIFIED — a rep manually rejecting a reviewed AI qualification", async () => {
+    const repository = createRepository({
+      findById: vi.fn().mockResolvedValue(leadRow({ status: "AI_ANALYZED" })),
+      updateStatus: vi.fn().mockResolvedValue(leadRow({ status: "DISQUALIFIED" })),
+    });
+    const activityRepository = createActivityRepository();
+    const service = new CrmLeadService(repository as never, activityRepository as never);
+
+    await service.updateStatus("lead-1", { status: "DISQUALIFIED" }, "user-1");
+
+    expect(repository.updateStatus).toHaveBeenCalledWith(
+      "lead-1",
+      expect.objectContaining({ status: "DISQUALIFIED" })
+    );
+  });
+
   it("updateStatus() rejects any transition out of a terminal state (CONVERTED)", async () => {
     const repository = createRepository({
       findById: vi.fn().mockResolvedValue(leadRow({ status: "CONVERTED" })),
@@ -209,5 +258,75 @@ describe("CrmLeadService", () => {
       NotFoundError
     );
     expect(repository.updateFields).not.toHaveBeenCalled();
+  });
+
+  describe("rerunQualification", () => {
+    function buildService(overrides: {
+      repository?: ReturnType<typeof createRepository>;
+      capabilityService?: ReturnType<typeof createCapabilityService>;
+      automationIngestService?: ReturnType<typeof createAutomationIngestService>;
+    } = {}) {
+      return new CrmLeadService(
+        (overrides.repository ?? createRepository()) as never,
+        createActivityRepository() as never,
+        createWebhookService() as never,
+        (overrides.automationIngestService ?? createAutomationIngestService()) as never,
+        (overrides.capabilityService ?? createCapabilityService()) as never
+      );
+    }
+
+    it("invokes the lead-qualification Capability in-process with the lead's fields", async () => {
+      const repository = createRepository();
+      const capabilityService = createCapabilityService();
+      const service = buildService({ repository, capabilityService });
+
+      await service.rerunQualification("lead-1", "user-1");
+
+      expect(capabilityService.invoke).toHaveBeenCalledWith(
+        "lead-qualification",
+        expect.objectContaining({ contactName: "Jane Doe", email: "jane@example.com" }),
+        expect.objectContaining({ expectJson: true }),
+        "user-1"
+      );
+    });
+
+    it("delegates persistence to CrmAutomationIngestService.rerunQualification with the mapped AI Core result", async () => {
+      const automationIngestService = createAutomationIngestService();
+      const service = buildService({ automationIngestService });
+
+      await service.rerunQualification("lead-1", "user-1");
+
+      expect(automationIngestService.rerunQualification).toHaveBeenCalledWith(
+        "lead-1",
+        expect.objectContaining({
+          provider: "ollama",
+          model: "qwen2.5-coder:7b",
+          promptVersion: "v1",
+          leadScore: 88,
+          confidence: 0.82,
+          priority: "HIGH",
+          recommendedAction: "Schedule a demo",
+          confidenceTier: "HIGH",
+        })
+      );
+    });
+
+    it("throws when AI Core doesn't return a usable result", async () => {
+      const capabilityService = createCapabilityService({
+        invoke: vi.fn().mockResolvedValue({ outcome: "DEFINITIVE_FAILURE", outputJson: undefined }),
+      });
+      const service = buildService({ capabilityService });
+
+      await expect(service.rerunQualification("lead-1", "user-1")).rejects.toThrow(
+        "AI qualification did not return a usable result."
+      );
+    });
+
+    it("throws NotFoundError for a missing lead", async () => {
+      const repository = createRepository({ findById: vi.fn().mockResolvedValue(null) });
+      const service = buildService({ repository });
+
+      await expect(service.rerunQualification("missing", "user-1")).rejects.toThrow(NotFoundError);
+    });
   });
 });
