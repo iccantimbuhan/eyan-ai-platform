@@ -45,11 +45,15 @@ interface LeadQualificationOutput {
   industry?: string;
   companySizeEstimate?: string;
   budgetEstimate?: { min: number; max: number; currency: string } | null;
-  buyingIntent?: "LOW" | "MEDIUM" | "HIGH";
-  urgency?: "LOW" | "MEDIUM" | "HIGH";
+  // "UNKNOWN" is prompt-non-conformant (the live prompt only documents
+  // LOW/MEDIUM/HIGH for these three) but observed in real model output —
+  // accepted here and normalized to null downstream in
+  // CrmAutomationIngestService.persistAnalysisAndRoute (Sprint 5.2).
+  buyingIntent?: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
+  urgency?: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
   decisionMakerIdentified?: boolean;
   estimatedTimeline?: "IMMEDIATE" | "SHORT_TERM" | "MEDIUM_TERM" | "LONG_TERM" | "UNKNOWN";
-  riskLevel?: "LOW" | "MEDIUM" | "HIGH";
+  riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
   painPoints?: string[];
   recommendedAction: string;
   summary: string;

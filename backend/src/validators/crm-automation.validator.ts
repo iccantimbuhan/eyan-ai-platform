@@ -9,6 +9,14 @@ import {
 const VALIDATION_TARGET_STATUSES: string[] = ["VALIDATED", "DISQUALIFIED"];
 const LEAD_PRIORITIES = Object.values(LeadPriority);
 const QUALIFICATION_LEVELS = Object.values(QualificationLevel);
+// buyingIntent/urgency/riskLevel accept one additional value beyond the
+// QualificationLevel enum itself: a real model output legitimately returns
+// "UNKNOWN" when there's not enough signal to classify (the DB column can't
+// store it directly — see CrmAutomationIngestService, which normalizes it
+// to null before the Prisma write). confidenceTier below deliberately does
+// NOT get this — it's AI Core's own computed HIGH/MEDIUM/LOW tier, never
+// "UNKNOWN".
+const QUALIFICATION_LEVELS_OR_UNKNOWN = [...QUALIFICATION_LEVELS, "UNKNOWN"];
 const ESTIMATED_TIMELINES = Object.values(EstimatedTimeline);
 
 // Shared across every /crm/service/* mutation — ADR-0019 Decisions 5 & 6.
@@ -70,14 +78,14 @@ export const applyQualificationResultValidator = [
   body("budgetEstimateMax").optional().isFloat({ min: 0 }).toFloat(),
   body("budgetEstimateCurrency").optional().trim().isLength({ max: 10 }),
 
-  body("buyingIntent").optional().isIn(QUALIFICATION_LEVELS).withMessage("Invalid buyingIntent."),
-  body("urgency").optional().isIn(QUALIFICATION_LEVELS).withMessage("Invalid urgency."),
+  body("buyingIntent").optional().isIn(QUALIFICATION_LEVELS_OR_UNKNOWN).withMessage("Invalid buyingIntent."),
+  body("urgency").optional().isIn(QUALIFICATION_LEVELS_OR_UNKNOWN).withMessage("Invalid urgency."),
   body("decisionMakerIdentified").optional().isBoolean().toBoolean(),
   body("estimatedTimeline")
     .optional()
     .isIn(ESTIMATED_TIMELINES)
     .withMessage("Invalid estimatedTimeline."),
-  body("riskLevel").optional().isIn(QUALIFICATION_LEVELS).withMessage("Invalid riskLevel."),
+  body("riskLevel").optional().isIn(QUALIFICATION_LEVELS_OR_UNKNOWN).withMessage("Invalid riskLevel."),
 
   body("painPoints").optional().isArray().withMessage("painPoints must be an array."),
   body("painPoints.*").optional().isString().trim().isLength({ max: 500 }),

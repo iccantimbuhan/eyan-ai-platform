@@ -144,6 +144,35 @@ describe("applyQualificationResultValidator", () => {
     expect(result.isEmpty()).toBe(true);
   });
 
+  // Sprint 5.2 root cause: a real model output legitimately returns
+  // "UNKNOWN" for these three fields when it lacks enough signal to
+  // classify — previously rejected here with a 400 ("Invalid buyingIntent."),
+  // breaking the entire automated qualification pipeline.
+  it("accepts \"UNKNOWN\" for buyingIntent/urgency/riskLevel", async () => {
+    const result = await run(
+      applyQualificationResultValidator,
+      fakeRequest({
+        body: {
+          ...validPayload,
+          buyingIntent: "UNKNOWN",
+          urgency: "UNKNOWN",
+          riskLevel: "UNKNOWN",
+        },
+      })
+    );
+
+    expect(result.isEmpty()).toBe(true);
+  });
+
+  it("still rejects a genuinely invalid buyingIntent value", async () => {
+    const result = await run(
+      applyQualificationResultValidator,
+      fakeRequest({ body: { ...validPayload, buyingIntent: "MADE_UP" } })
+    );
+
+    expect(result.isEmpty()).toBe(false);
+  });
+
   it("rejects an invalid estimatedTimeline value", async () => {
     const result = await run(
       applyQualificationResultValidator,

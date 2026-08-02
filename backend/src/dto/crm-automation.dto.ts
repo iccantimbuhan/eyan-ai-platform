@@ -51,11 +51,16 @@ export interface ApplyQualificationResultDto extends AutomationExecutionMetaDto 
   budgetEstimateMin?: number;
   budgetEstimateMax?: number;
   budgetEstimateCurrency?: string;
-  buyingIntent?: QualificationLevel;
-  urgency?: QualificationLevel;
+  // "UNKNOWN" is not a QualificationLevel enum member (DB column only
+  // stores LOW/MEDIUM/HIGH) — a real model output legitimately returns it
+  // when there's not enough signal to classify (mirrors EstimatedTimeline's
+  // own UNKNOWN member). Accepted here, normalized to null before the
+  // Prisma write (see CrmAutomationIngestService.persistAnalysisAndRoute).
+  buyingIntent?: QualificationLevel | "UNKNOWN";
+  urgency?: QualificationLevel | "UNKNOWN";
   decisionMakerIdentified?: boolean;
   estimatedTimeline?: EstimatedTimeline;
-  riskLevel?: QualificationLevel;
+  riskLevel?: QualificationLevel | "UNKNOWN";
   painPoints?: string[];
   recommendedAction: string;
   summary: string;

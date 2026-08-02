@@ -28,8 +28,22 @@ import type {
   AssignLeadAutomatedDto,
   AutomationExecutionMetaDto,
 } from "../dto/crm-automation.dto.js";
-import type { EstimatedTimeline, LeadStatus } from "../generated/prisma/enums.js";
+import type { EstimatedTimeline, LeadStatus, QualificationLevel } from "../generated/prisma/enums.js";
 import { mapLeadToListItem } from "../dto/crm-lead.mapper.js";
+
+// buyingIntent/urgency/riskLevel's DB column is the 3-value QualificationLevel
+// enum (LOW/MEDIUM/HIGH) — it cannot store "UNKNOWN" directly. A real model
+// legitimately returns "UNKNOWN" when it lacks enough signal to classify
+// (Sprint 5.2 root cause: this previously reached Prisma unnormalized and
+// broke the whole write-back). Treated the same way the field's own
+// optionality already treats "not assessed" — as null, not a synthetic
+// fourth enum value requiring a migration.
+function normalizeQualificationLevel(
+  value: QualificationLevel | "UNKNOWN" | undefined
+): QualificationLevel | null {
+  if (!value || value === "UNKNOWN") return null;
+  return value;
+}
 
 // Phase 4 (Sprint 5) — confidence tier -> pipeline stage. Kept as a small
 // lookup, not an if/else chain, so the mapping reads as configuration; the
@@ -219,11 +233,11 @@ export class CrmAutomationIngestService {
       budgetEstimateMin: data.budgetEstimateMin ?? null,
       budgetEstimateMax: data.budgetEstimateMax ?? null,
       budgetEstimateCurrency: data.budgetEstimateCurrency ?? null,
-      buyingIntent: data.buyingIntent ?? null,
-      urgency: data.urgency ?? null,
+      buyingIntent: normalizeQualificationLevel(data.buyingIntent),
+      urgency: normalizeQualificationLevel(data.urgency),
       decisionMakerIdentified: data.decisionMakerIdentified ?? null,
       estimatedTimeline: data.estimatedTimeline ?? null,
-      riskLevel: data.riskLevel ?? null,
+      riskLevel: normalizeQualificationLevel(data.riskLevel),
       painPoints: data.painPoints ?? [],
       recommendedAction: data.recommendedAction,
       summary: data.summary,

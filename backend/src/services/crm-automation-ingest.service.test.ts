@@ -324,6 +324,48 @@ describe("CrmAutomationIngestService", () => {
       );
     });
 
+    // Sprint 5.2 root cause: a real model output legitimately returns
+    // "UNKNOWN" for buyingIntent/urgency/riskLevel (not a QualificationLevel
+    // enum member — the DB column only stores LOW/MEDIUM/HIGH), which broke
+    // the entire write-back and stranded every such lead at VALIDATED.
+    it("normalizes an \"UNKNOWN\" buyingIntent/urgency/riskLevel to null instead of passing it through to Prisma", async () => {
+      const leadRepository = createLeadRepository({
+        findById: vi.fn().mockResolvedValue(leadRow({ status: "VALIDATED" })),
+      });
+      const aiAnalysisRepository = createAiAnalysisRepository();
+      const service = buildService({ leadRepository, aiAnalysisRepository });
+
+      await service.applyQualificationResult("lead-1", {
+        ...BASE_QUALIFICATION_PAYLOAD,
+        buyingIntent: "UNKNOWN",
+        urgency: "UNKNOWN",
+        riskLevel: "UNKNOWN",
+      });
+
+      expect(aiAnalysisRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ buyingIntent: null, urgency: null, riskLevel: null })
+      );
+    });
+
+    it("still persists a real buyingIntent/urgency/riskLevel value unchanged", async () => {
+      const leadRepository = createLeadRepository({
+        findById: vi.fn().mockResolvedValue(leadRow({ status: "VALIDATED" })),
+      });
+      const aiAnalysisRepository = createAiAnalysisRepository();
+      const service = buildService({ leadRepository, aiAnalysisRepository });
+
+      await service.applyQualificationResult("lead-1", {
+        ...BASE_QUALIFICATION_PAYLOAD,
+        buyingIntent: "HIGH",
+        urgency: "LOW",
+        riskLevel: "MEDIUM",
+      });
+
+      expect(aiAnalysisRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ buyingIntent: "HIGH", urgency: "LOW", riskLevel: "MEDIUM" })
+      );
+    });
+
     it("dispatches the lead.qualified webhook with the final pipeline stage after a full write-back", async () => {
       const leadRepository = createLeadRepository({
         findById: vi.fn().mockResolvedValue(leadRow({ status: "VALIDATED" })),

@@ -95,6 +95,14 @@ if (configuredImageProvider === "huggingface") {
 
 const app: Express = express();
 
+// Sprint 5.2 — production runs behind nginx (eyan.fyi/automation.eyan.fyi),
+// which sets X-Forwarded-For on every request. Without this, express-rate-
+// limit logs ERR_ERL_UNEXPECTED_X_FORWARDED_FOR and can't reliably key rate
+// limits by real client IP. `1` trusts exactly one hop (nginx on this same
+// box), not an arbitrary proxy chain. Confirmed via investigation not to be
+// the cause of the Sprint 5.2 pipeline failure — fixed alongside it since
+// it's a real, if separate, correctness gap.
+app.set("trust proxy", 1);
 
 const allowedOrigins = new Set([
   "https://www.eyan.fyi",
