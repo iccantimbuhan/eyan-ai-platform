@@ -51,6 +51,12 @@ Separately, a sprint brief ("AI Sales Qualification & CRM Automation") asked for
 - **Known limitation**: the "follow-up after X days" requirement is satisfied by an `AUTOMATION` `LeadActivity` with a computed due-date in `metadata`, not an actual scheduled reminder-sender — no scheduling infrastructure exists in either repo, and building one is new scope.
 - eyan-automation-hub's Workflow 3 and the new Workflow 4 are covered separately in that repo's own `docs/development-log/sprint-4-sales-automation.md`.
 
+# Operational Notes (Sprint 5.1)
+
+Sprint 5 built this architecture but never turned it on end-to-end against real, live infrastructure — no public lead form existed, the live n8n instance still ran the pre-Sprint-5 Workflow 3, Workflow 4 had never been imported, and both webhook env vars connecting the chain (`AUTOMATION_HUB_WEBHOOK_URL`, `AUTOMATION_HUB_LEAD_QUALIFIED_WEBHOOK_URL`) were empty. Sprint 5.1 (`tasks/completed/sprint-5-1-website-lead-form-slack-verification.md`) closed those gaps: built the missing lead-capture page, imported/activated all four CRM workflows, wired the webhook URLs to `http://localhost:5678/...` (same box as n8n — no reason to round-trip through the public domain for internal traffic), set a real `DEFAULT_SALES_OWNER_ID` (the platform's own Owner account, resolved via `GET /api/v1/users` rather than guessed), and set a real `SLACK_WEBHOOK_URL`. None of this changed any code decided above — it only made the already-approved architecture reachable for the first time, and proved it live: a real lead flowed unattended through intake → validation → AI qualification → pipeline routing → salesperson assignment → a real Slack message, twice, confirmed against real database rows and real n8n execution records.
+
+One incidental discovery worth recording here: this host runs `eyan-backend` under **two** process managers — a systemd service (the one actually bound to port 3001, matching `deploy.sh`'s own restart command) and a stray, unrelated pm2-managed process that does nothing for real traffic. Restarting the pm2 process (as this session initially did, repeatedly) silently has no effect on production behavior. Not resolved this sprint — flagged as remaining technical debt, since removing one without understanding why both exist felt like the wrong call to make unilaterally.
+
 # Related Documents
 
 - `.claude/decisions/ADR-0021-ai-core-foundation.md` (the architecture this ADR executes Phase 3 of)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Loader2, LogIn, Play } from 'lucide-react'
+import { Loader2, LogIn, Mail, Play } from 'lucide-react'
 import { IconGithub } from '@/assets/brand-icons'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -88,6 +88,12 @@ export function PortfolioLanding() {
         <div className='flex items-center gap-2'>
           <ThemeSwitch />
           <Button asChild variant='ghost'>
+            <Link to='/contact'>
+              <Mail className='h-4 w-4' />
+              Contact
+            </Link>
+          </Button>
+          <Button asChild variant='ghost'>
             <Link to='/sign-in'>
               <LogIn className='h-4 w-4' />
               Login
@@ -120,6 +126,13 @@ export function PortfolioLanding() {
                   <IconGithub className='h-4 w-4' />
                   GitHub
                 </a>
+              </Button>
+
+              <Button asChild size='lg' variant='outline' className='gap-2 px-8'>
+                <Link to='/contact'>
+                  <Mail className='h-4 w-4' />
+                  Get in Touch
+                </Link>
               </Button>
             </div>
 

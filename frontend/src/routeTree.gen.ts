@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
@@ -74,6 +75,11 @@ const IndexRoute = IndexRouteImport.update({
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
   path: '/clerk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
@@ -386,6 +392,7 @@ const AppAuthenticatedFinanceExpensesIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clerk': typeof ClerkauthRouteRouteWithChildren
+  '/contact': typeof ContactRoute
   '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -442,6 +449,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clerk': typeof ClerkauthRouteRouteWithChildren
+  '/contact': typeof ContactRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -497,6 +505,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/clerk': typeof ClerkRouteRouteWithChildren
+  '/contact': typeof ContactRoute
   '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRoute
@@ -557,6 +566,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/clerk'
+    | '/contact'
     | '/app'
     | '/forgot-password'
     | '/otp'
@@ -613,6 +623,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/clerk'
+    | '/contact'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -667,6 +678,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/clerk'
+    | '/contact'
     | '/app/_authenticated'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
@@ -726,6 +738,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  ContactRoute: typeof ContactRoute
   AppAuthenticatedRouteRoute: typeof AppAuthenticatedRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       path: '/clerk'
       fullPath: '/clerk'
       preLoaderRoute: typeof ClerkRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/forgot-password': {
@@ -1290,6 +1310,7 @@ const AppAuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  ContactRoute: ContactRoute,
   AppAuthenticatedRouteRoute: AppAuthenticatedRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
