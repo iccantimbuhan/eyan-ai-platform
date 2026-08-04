@@ -31,7 +31,7 @@ Add a Finance Management module — a simple family expense/budget tracker for t
 
 ## Files Created / Modified
 
-Created: `backend/src/{routes/v1,controllers,services,repositories,validators,dto,errors,utils}/finance-*.ts` (25 files) and their `.test.ts` counterparts (4 files); `frontend/src/features/finance/**` (api, types, schemas, hooks, lib, pages/dashboard, pages/expenses — ~20 files); `frontend/src/routes/app/_authenticated/finance/{index,expenses/index}.tsx`; one Prisma migration (`20260729194102_add_finance_core`); this sprint log; `.claude/decisions/ADR-0013-finance-management-foundation.md`.
+Created: `backend/src/{routes/v1,controllers,services,repositories,validators,dto,errors,utils}/finance-*.ts` (25 files) and their `.test.ts` counterparts (4 files); `frontend/src/features/finance/**` (api, types, schemas, hooks, lib, pages/dashboard, pages/expenses — ~20 files); `frontend/src/routes/app/_authenticated/finance/{index,expenses/index}.tsx`; one Prisma migration (`20260729194102_add_finance_core`); this sprint log; `docs/architecture/decisions/ADR-0013-finance-management-foundation.md`.
 
 Modified (small, additive touches only): `backend/prisma/schema.prisma` (new models/enums + one `User` back-relation), `backend/prisma/seed.ts` (one new permission tuple), `backend/src/app.ts` (three new route mounts), `frontend/src/components/layout/data/sidebar-data.ts` (one new nav group), `CHANGELOG.md`, `PROJECT_STATE.md`.
 
@@ -60,7 +60,7 @@ New, all under `/api/v1/finance/...`, all gated by `authenticate` + `requirePerm
 
 ## Decisions Made
 
-See `.claude/decisions/ADR-0013-finance-management-foundation.md`: Decimal money end-to-end, the lazy on-access recurrence-generation algorithm (and why no scheduler was introduced), and the Recharts single-slice Pie chart bug/fix.
+See `docs/architecture/decisions/ADR-0013-finance-management-foundation.md`: Decimal money end-to-end, the lazy on-access recurrence-generation algorithm (and why no scheduler was introduced), and the Recharts single-slice Pie chart bug/fix.
 
 ## Follow-ups for Future Sprints
 

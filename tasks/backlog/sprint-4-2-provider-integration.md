@@ -146,6 +146,6 @@ Mirroring Sprint 4.1's gate-per-phase approach:
 ## Pointers
 
 - Prerequisite sprint: `tasks/completed/sprint-4-1-ai-image-studio-backend.md`
-- Ownership pattern this extends: `.claude/decisions/ADR-0007-content-project-ownership.md`
-- Single-provider precedent for text generation (contrast case): `.claude/decisions/ADR-0001-single-ai-provider-no-gateway.md`
-- Async generation, previously deferred, likely revisited in Phase 5 above: `.claude/decisions/ADR-0005-async-generation-deferred.md`
+- Ownership pattern this extends: `docs/architecture/decisions/ADR-0007-content-project-ownership.md`
+- Single-provider precedent for text generation (contrast case): `docs/architecture/decisions/ADR-0001-single-ai-provider-no-gateway.md`
+- Async generation, previously deferred, likely revisited in Phase 5 above: `docs/architecture/decisions/ADR-0005-async-generation-deferred.md`

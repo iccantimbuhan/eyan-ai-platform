@@ -31,7 +31,7 @@ A complete, working "fake provider" pipeline: register a connector type → crea
 
 **Frontend** — `features/automation/` (types, api client, 3 hook files, 2 zod schemas, shared status-badge helpers, 10 page/dialog/action components, 3 component test files); 5 new route files under `routes/_authenticated/automation/`; `sidebar-data.ts` (new "Automation" nav group).
 
-**Docs** — this file; `.claude/decisions/ADR-0012-mcp-foundation.md`; `docs/ARCHITECTURE.md`; `PROJECT_STATE.md`; `CHANGELOG.md`; `backend/.env.example`.
+**Docs** — this file; `docs/architecture/decisions/ADR-0012-mcp-foundation.md`; `docs/ARCHITECTURE.md`; `PROJECT_STATE.md`; `CHANGELOG.md`; `backend/.env.example`.
 
 ## Database Changes
 
@@ -61,11 +61,11 @@ All under `/api/v1/automation`, `authenticate`-gated, `automation`/`automationcr
 
 ## Decisions Made
 
-See `.claude/decisions/ADR-0012-mcp-foundation.md` for full rationale on: the registry pattern choice (mirrors `PlatformProviderFactory`, not `ImageProviderFactory` — no env-var default, since many MCP servers run simultaneously); why connectors never decrypt credentials (`CredentialManagerService` is the sole caller of the encryption util); why business logic stays in services (controllers/connectors both stay thin); why the frontend has no business logic (permission gates mirror the backend, never substitute for it); and how a future real provider (Canva, GitHub, ...) should integrate.
+See `docs/architecture/decisions/ADR-0012-mcp-foundation.md` for full rationale on: the registry pattern choice (mirrors `PlatformProviderFactory`, not `ImageProviderFactory` — no env-var default, since many MCP servers run simultaneously); why connectors never decrypt credentials (`CredentialManagerService` is the sole caller of the encryption util); why business logic stays in services (controllers/connectors both stay thin); why the frontend has no business logic (permission gates mirror the backend, never substitute for it); and how a future real provider (Canva, GitHub, ...) should integrate.
 
 Two small, additive, non-breaking extensions to already-approved milestones, both explicitly flagged to the user at the time: `AutomationConnectionRepository.findByIdForSystem()` (a non-owner-scoped lookup for system-initiated health checks) and `AutomationConnectionService.getById()` (exposing an existing private ownership-checked lookup publicly, for the detail-view controller). Neither changed any existing method's behavior.
 
-One necessary addition beyond the original Milestone 4 brief: `McpServerConfigService` — nothing else owned `McpServerConfig`'s CRUD lifecycle, and controllers must go through a service, never a repository, per `.claude/CLAUDE.md`.
+One necessary addition beyond the original Milestone 4 brief: `McpServerConfigService` — nothing else owned `McpServerConfig`'s CRUD lifecycle, and controllers must go through a service, never a repository, per `.context/backend.md`.
 
 ## Follow-ups for Future Sprints
 

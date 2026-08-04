@@ -50,7 +50,7 @@ interface ImageProviderResolver {
 // Text kinds call ChatService/OllamaProvider directly (mirrors
 // ContentService.generate() exactly) rather than through a provider
 // registry — this repo's hardware is deliberately single-text-provider
-// (see .claude/decisions/ADR-0001-single-ai-provider-no-gateway.md), so a
+// (see docs/architecture/decisions/ADR-0001-single-ai-provider-no-gateway.md), so a
 // registry here would hold exactly one entry. Image kinds
 // (STORYBOARD/THUMBNAIL) reuse ImageProviderFactory/StorageProvider,
 // mirroring ImageService.generate() exactly, since that registry serves a

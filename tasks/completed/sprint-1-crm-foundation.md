@@ -57,7 +57,7 @@ Build the CRM Foundation's Sprint 1 slice: the data model, server-enforced lead 
 
 **Frontend (modified)**: `components/layout/data/sidebar-data.ts` (+"Sales" group), `features/roles/config/permissions.ts` (+CRM category), `routeTree.gen.ts` (auto-generated).
 
-**Docs**: `.claude/decisions/ADR-0018-crm-foundation.md` (new), `docs/ARCHITECTURE.md` (+"CRM Foundation Architecture" section), `docs/product/04_DATABASE.md`/`05_API.md`/`06_UI.md` (+CRM sections), `docs/product/02_ROADMAP.md` (annotation on the "CRM" out-of-scope-for-V1.0 line), `.claude/context/repository-map.md` (+CRM entries), `PROJECT_STATE.md` (Current Sprint / Status / Next Task / Known Issues / Pointers updated), this file.
+**Docs**: `docs/architecture/decisions/ADR-0018-crm-foundation.md` (new), `docs/ARCHITECTURE.md` (+"CRM Foundation Architecture" section), `docs/product/04_DATABASE.md`/`05_API.md`/`06_UI.md` (+CRM sections), `docs/product/02_ROADMAP.md` (annotation on the "CRM" out-of-scope-for-V1.0 line), `.claude/context/repository-map.md` (+CRM entries), `PROJECT_STATE.md` (Current Sprint / Status / Next Task / Known Issues / Pointers updated), this file.
 
 ## Database Changes
 
@@ -91,7 +91,7 @@ New, all under `/api/v1/crm/leads`:
 
 ## Decisions Made
 
-See `.claude/decisions/ADR-0018-crm-foundation.md` for full rationale. Summary:
+See `docs/architecture/decisions/ADR-0018-crm-foundation.md` for full rationale. Summary:
 
 1. Shared workspace, single `crm` permission — no per-lead ownership.
 2. `LeadActivity` is one table for both Activity History and Automation History.

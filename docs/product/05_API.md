@@ -224,7 +224,7 @@ GET /health/ready
 
 # CRM (Sprint 1 — CRM Foundation)
 
-Added outside the original V1.0 scope, see `docs/ARCHITECTURE.md`'s "CRM Foundation Architecture" section and `.claude/decisions/ADR-0018-crm-foundation.md`.
+Added outside the original V1.0 scope, see `docs/ARCHITECTURE.md`'s "CRM Foundation Architecture" section and `docs/architecture/decisions/ADR-0018-crm-foundation.md`.
 
 POST /crm/leads — public, no auth, rate-limited (the Lead Form's submission target)
 
@@ -242,7 +242,7 @@ POST /crm/leads/:id/notes
 
 ## CRM Automation (Sprint 2 — Automation Integration Contract)
 
-Service-facing, `authenticateService`-gated routes under `/crm/service/*` — a static bearer token (`AUTOMATION_SERVICE_API_KEY`), never a user JWT. See `docs/ARCHITECTURE.md`'s "Sprint 2 — Automation Integration Contract" section and `.claude/decisions/ADR-0019-automation-integration-contract.md`. `eyan-automation-hub` (the actual n8n workflows that would call these) is not built yet — verified this sprint via curl.
+Service-facing, `authenticateService`-gated routes under `/crm/service/*` — a static bearer token (`AUTOMATION_SERVICE_API_KEY`), never a user JWT. See `docs/ARCHITECTURE.md`'s "Sprint 2 — Automation Integration Contract" section and `docs/architecture/decisions/ADR-0019-automation-integration-contract.md`. `eyan-automation-hub` (the actual n8n workflows that would call these) is not built yet — verified this sprint via curl.
 
 GET /crm/service/leads?email= — dedupe lookup; `data.lead` is `null` on no match (not a 404)
 

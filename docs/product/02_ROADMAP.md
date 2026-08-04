@@ -244,7 +244,7 @@ The following are intentionally excluded from Version 1.0
 - Organizations
 - Team Collaboration
 - AI Agent Marketplace
-- CRM (for Version 1.0 specifically — CRM Foundation began as a parallel initiative in Sprint 1, see `docs/ARCHITECTURE.md`'s "CRM Foundation Architecture" section and `.claude/decisions/ADR-0018-crm-foundation.md`; it does not change V1.0's own scope boundary)
+- CRM (for Version 1.0 specifically — CRM Foundation began as a parallel initiative in Sprint 1, see `docs/ARCHITECTURE.md`'s "CRM Foundation Architecture" section and `docs/architecture/decisions/ADR-0018-crm-foundation.md`; it does not change V1.0's own scope boundary)
 - Email Marketing
 - Accounting
 

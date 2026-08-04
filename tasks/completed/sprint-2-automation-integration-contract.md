@@ -4,13 +4,13 @@ Status: Completed
 
 ## Goal
 
-Build the EYAN AI Platform half of the cross-system contract between this backend and `eyan-automation-hub` (n8n) — service authentication, signed outbound webhook dispatch, the n8n-facing write-back endpoints, and idempotency — proving the hard part (auth, signing, replay-safety) before Sprint 3 adds real AI qualification. Per the approved TDD (`/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`) §23 Sprint 2 ("Cross-System Skeleton") and `.claude/decisions/ADR-0018-crm-foundation.md` Decision 6.
+Build the EYAN AI Platform half of the cross-system contract between this backend and `eyan-automation-hub` (n8n) — service authentication, signed outbound webhook dispatch, the n8n-facing write-back endpoints, and idempotency — proving the hard part (auth, signing, replay-safety) before Sprint 3 adds real AI qualification. Per the approved TDD (`/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`) §23 Sprint 2 ("Cross-System Skeleton") and `docs/architecture/decisions/ADR-0018-crm-foundation.md` Decision 6.
 
 ## Scope
 
 ### In Scope
 
-- `.claude/decisions/ADR-0019-automation-integration-contract.md`, written and reviewable before any code — the sprint brief's explicit precondition.
+- `docs/architecture/decisions/ADR-0019-automation-integration-contract.md`, written and reviewable before any code — the sprint brief's explicit precondition.
 - `authenticateService` middleware, `AUTOMATION_SERVICE_API_KEY`
 - `AUTOMATION_WEBHOOK_SIGNING_SECRET`, HMAC-signed outbound webhook dispatch on lead creation
 - `/api/v1/crm/service/*` endpoints: dedupe lookup, validation write-back, qualification write-back
@@ -46,7 +46,7 @@ Build the EYAN AI Platform half of the cross-system contract between this backen
 
 **Backend (modified)**: `config/env.ts` (+4 new fields), `.env.example` (+documented vars), `src/app.ts` (route mount), `services/crm-lead.service.ts` (exported `ALLOWED_TRANSITIONS`, added `webhookService` constructor dependency, `create()` now dispatches the lead-intake webhook), `services/crm-lead.service.test.ts` (+2 tests), `repositories/crm-lead.repository.ts` (+`updateQualification()`), `repositories/crm-lead.repository.test.ts` (+1 test).
 
-**Docs**: `.claude/decisions/ADR-0019-automation-integration-contract.md` (new), `docs/ARCHITECTURE.md` (+"Sprint 2 — Automation Integration Contract" subsection), `docs/product/04_DATABASE.md`/`05_API.md` (+Sprint 2 sections), `.claude/context/repository-map.md` (+Sprint 2 entries), `PROJECT_STATE.md` (Current Sprint/Status/Next Task/Known Issues/Pointers updated), this file.
+**Docs**: `docs/architecture/decisions/ADR-0019-automation-integration-contract.md` (new), `docs/ARCHITECTURE.md` (+"Sprint 2 — Automation Integration Contract" subsection), `docs/product/04_DATABASE.md`/`05_API.md` (+Sprint 2 sections), `.claude/context/repository-map.md` (+Sprint 2 entries), `PROJECT_STATE.md` (Current Sprint/Status/Next Task/Known Issues/Pointers updated), this file.
 
 ## Database Changes
 
@@ -71,7 +71,7 @@ New, all under `/api/v1/crm/service`, `authenticateService`-gated (static bearer
 
 ## Decisions Made
 
-See `.claude/decisions/ADR-0019-automation-integration-contract.md` for full rationale and rejected alternatives. Summary:
+See `docs/architecture/decisions/ADR-0019-automation-integration-contract.md` for full rationale and rejected alternatives. Summary:
 
 1. Webhook auth (EYAN→n8n): HMAC-SHA256 over `${timestamp}.${rawBody}`, fire-and-forget, zero retries on EYAN's side.
 2. Service auth (n8n→EYAN): static bearer token, `timingSafeEqual`, fails closed.

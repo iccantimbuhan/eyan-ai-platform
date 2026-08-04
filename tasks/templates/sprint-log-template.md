@@ -27,6 +27,6 @@ Status: <Active | Completed>
 
 ## Decisions Made
 
-_Link to `.claude/decisions/ADR-NNNN-*.md` entries where applicable._
+_Link to `docs/architecture/decisions/ADR-NNNN-*.md` entries where applicable._
 
 ## Follow-ups for Future Sprints

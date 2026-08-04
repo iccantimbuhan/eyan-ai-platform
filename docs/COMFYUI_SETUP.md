@@ -19,7 +19,7 @@ python main.py --listen 127.0.0.1 --port 8188
 
 `--listen 127.0.0.1` keeps ComfyUI reachable only from the same machine as the backend, which is the expected deployment shape (the backend calls ComfyUI's REST API server-to-server; nothing about this integration requires or expects ComfyUI to be reachable from the public internet).
 
-This platform's VPS has no GPU (see `.claude/decisions/ADR-0001-single-ai-provider-no-gateway.md`), so if you're running ComfyUI on the same production host, expect CPU-only generation to be slow — size `COMFYUI_TIMEOUT` accordingly (see below), or point `COMFYUI_URL` at a separate GPU-equipped machine instead.
+This platform's VPS has no GPU (see `docs/architecture/decisions/ADR-0001-single-ai-provider-no-gateway.md`), so if you're running ComfyUI on the same production host, expect CPU-only generation to be slow — size `COMFYUI_TIMEOUT` accordingly (see below), or point `COMFYUI_URL` at a separate GPU-equipped machine instead.
 
 ## 2. Install the models your workflow needs
 

@@ -1057,7 +1057,7 @@ model FinanceAuditEvent {
 // exist now only so the schema doesn't need a second migration once Sprint
 // 2/3 wire up n8n; nothing writes to them yet. See
 // /home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md
-// (TDD §8/§9/§14/§16) and .claude/decisions/ADR-0018-crm-foundation.md.
+// (TDD §8/§9/§14/§16) and docs/architecture/decisions/ADR-0018-crm-foundation.md.
 
 enum LeadSource {
   WEBSITE_FORM
@@ -1262,7 +1262,7 @@ model WorkflowExecutionLog {
 // calling a provider directly — see /home/eyancantimbuhan/.claude/plans/
 // project-ai-sales-clever-dijkstra.md (Technical Design Document, revised
 // after the Phase 0.5 Architecture Review and frozen) and
-// .claude/decisions/ADR-0021-ai-core-foundation.md.
+// docs/architecture/decisions/ADR-0021-ai-core-foundation.md.
 //
 // Architecture (frozen): Business Module -> AiCapability -> AiBrain ->
 // AiRoutingPolicy -> AiProvider/AiModel -> AiPrompt -> (Memory) -> (MCP

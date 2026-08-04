@@ -43,7 +43,7 @@ Fourth phase of Sprint 6 ("Enterprise Creative Production Suite"): add a Publish
 
 **Frontend — modified:** `types/asset.ts` (+`publishing` on `AssetSummary`, +`publishingStatus` on `ListAssetsParams`), `types/review-workspace.ts` (+4 `ReviewEventType` values), `components/review-workspace/ReviewTimeline.tsx` (+4 event icons/descriptions), `components/assets/AssetDetailSheet.tsx` (+Publishing tab), `pages/project-workspace/ProjectWorkspace.tsx` (+Publishing tab), `components/assets/AssetCard.test.tsx`/`AssetDetailSheet.test.tsx`/`AssetLibrary.test.tsx`/`ReviewQueue.test.tsx` (fixture updates for the new `AssetSummary.publishing` field).
 
-**Docs:** `.claude/decisions/ADR-0010-publishing-pipeline.md` (new), `docs/ASSET_LIBRARY.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated; this sprint log added.
+**Docs:** `docs/architecture/decisions/ADR-0010-publishing-pipeline.md` (new), `docs/ASSET_LIBRARY.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated; this sprint log added.
 
 ## Database Changes
 

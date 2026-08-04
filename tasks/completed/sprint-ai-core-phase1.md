@@ -4,7 +4,7 @@ Status: Completed
 
 ## Goal
 
-Implement the AI Core Foundation exactly as approved through Phase 0 (Technical Design Document) → Phase 0.5 (Architecture Review) → Architecture Freeze, per `.claude/decisions/ADR-0021-ai-core-foundation.md`. Zero changes to any existing AI call site (`ChatService`, `ContentService`, `VideoWorkflowPlannerService`, `VideoAssetService`, `eyan-automation-hub` Workflow 3) — this phase is purely additive infrastructure. `eyan-automation-hub` is untouched entirely (out of scope until Phase 3).
+Implement the AI Core Foundation exactly as approved through Phase 0 (Technical Design Document) → Phase 0.5 (Architecture Review) → Architecture Freeze, per `docs/architecture/decisions/ADR-0021-ai-core-foundation.md`. Zero changes to any existing AI call site (`ChatService`, `ContentService`, `VideoWorkflowPlannerService`, `VideoAssetService`, `eyan-automation-hub` Workflow 3) — this phase is purely additive infrastructure. `eyan-automation-hub` is untouched entirely (out of scope until Phase 3).
 
 ## Scope
 
@@ -27,7 +27,7 @@ Implement the AI Core Foundation exactly as approved through Phase 0 (Technical 
 
 ## What Shipped
 
-See `.claude/decisions/ADR-0021-ai-core-foundation.md` and `docs/ARCHITECTURE.md`'s "AI Core Foundation Architecture" section for the full design rationale. Summary:
+See `docs/architecture/decisions/ADR-0021-ai-core-foundation.md` and `docs/ARCHITECTURE.md`'s "AI Core Foundation Architecture" section for the full design rationale. Summary:
 
 - **Database**: 11 new models, 5 new enums (`AiProviderKind`, `AiMemoryStrategy`, `AiRoutingStrategy`, `AiCallOutcome`, `AiAuditAction`), 2 migrations (`20260731210717_add_ai_core_foundation`, `20260731211218_add_ai_model_audit_actions` — the second adding `MODEL_CREATED`/`MODEL_UPDATED`/`MODEL_DELETED` audit actions discovered while wiring the Model service). Zero changes to any pre-existing model; one additive back-relation on `User` (`aiAuditEvents`) and `McpServerConfig` (`aiBrainAllowances`).
 - **`AiRoutingService`** is the real engine: Capability→Brain resolution, in-memory caching invalidated via a `AiAuditEvent`-driven `EventEmitter` (`ai-cache-invalidation.events.ts`), `{{placeholder}}` prompt templating, corrective-retry loop, per-Brain fallback, HTTP-status-based failure classification (4xx except 429 = definitive, everything else = transient — mirrors `eyan-automation-hub`'s Classify Ollama Result node), and confidence-tier classification against a parsed JSON response's `confidence` field. Fully unit-tested with dependency-injected fakes (no live provider or database needed).
@@ -59,13 +59,13 @@ Frontend — created: `features/ai-core/` (types, api, hooks × 8, lib/status-ba
 
 Frontend — modified: `src/components/layout/data/sidebar-data.ts` (new "AI Core" group + icon imports), `src/features/roles/config/permissions.ts` (new "AI Core" category + the `automation`/`automationcredentials`/`finance` gap fix).
 
-Docs — created: `.claude/decisions/ADR-0021-ai-core-foundation.md`, this file.
+Docs — created: `docs/architecture/decisions/ADR-0021-ai-core-foundation.md`, this file.
 
 Docs — modified: `docs/ARCHITECTURE.md` (new "AI Core Foundation Architecture" section), `PROJECT_STATE.md`, `CHANGELOG.md`.
 
 ## Database Changes
 
-11 new tables, 5 new enums — see `.claude/decisions/ADR-0021-ai-core-foundation.md`'s Decision section for the full model list and `docs/ARCHITECTURE.md` for the architecture-level summary. Full field-by-field detail lives in `prisma/schema.prisma`'s "AI Core Foundation (Phase 1)" section, which is the source of truth.
+11 new tables, 5 new enums — see `docs/architecture/decisions/ADR-0021-ai-core-foundation.md`'s Decision section for the full model list and `docs/ARCHITECTURE.md` for the architecture-level summary. Full field-by-field detail lives in `prisma/schema.prisma`'s "AI Core Foundation (Phase 1)" section, which is the source of truth.
 
 ## API Endpoints
 

@@ -23,14 +23,14 @@ Any Stage 2 automation — scripts, CLI tools, Git hooks, or AI-driven generatio
 **Implementation (5 phases)**:
 - Phase 1 — `PROJECT_STATE.md` and `CHANGELOG.md` created, current-state only, no backfill.
 - Phase 2 — `tasks/` backfilled with Sprint 1, 1.1, and 2 sprint logs; `CHANGELOG.md`'s `[Unreleased]` section populated. Discovered `tasks/` already had `active/`/`completed/`/`backlog/`/`templates/` subfolders (empty, unused) and adapted to that structure instead of the flat layout originally sketched.
-- Phase 3 — `.claude/decisions/` backfilled with 5 ADRs, resolving all forward-references left in the Phase 2 sprint logs; one numbering collision caught and fixed before writing (two different decisions had both been provisionally labeled "ADR-0001" in separate sprint logs).
+- Phase 3 — `docs/architecture/decisions/` backfilled with 5 ADRs, resolving all forward-references left in the Phase 2 sprint logs; one numbering collision caught and fixed before writing (two different decisions had both been provisionally labeled "ADR-0001" in separate sprint logs).
 - Phase 4 — `.claude/context/repository-map.md` refreshed (AI Providers, Deployment, current domains); `PROJECT_STATE.md` added as the first "Read First" entry in `AGENTS.md`/`PROJECT_CONTEXT.md`; `FRAMEWORK_VERSION.md` bumped to 1.1.0; the ACF checklist added to all six DoD-bearing documents; `PORTFOLIO.md` created.
 - Phase 5 — dry-run onboarding test performed; found and fixed one real scalability flaw (see Decisions Made).
 
 ## Files Created / Modified
 
 **Created**: `PROJECT_STATE.md`, `CHANGELOG.md`, `PORTFOLIO.md`, `tasks/templates/sprint-log-template.md`, 3 sprint logs (`sprint-01-content-generation-mvp.md`, `sprint-1-1-ai-infra-optimization.md`, `sprint-2-templates-and-picker.md`), 5 ADRs (`ADR-0001` through `ADR-0005`), this sprint log.
-**Modified**: `.claude/context/repository-map.md`, `AGENTS.md`, `PROJECT_CONTEXT.md`, `FRAMEWORK_VERSION.md`, `.claude/engineering/03_DEFINITION_OF_DONE.md`, `.claude/CLAUDE.md`, `.claude/AI_RULES.md`, `.claude/workflows/engineering-lifecycle.md`, `.claude/skills/engineering-standards.md`.
+**Modified**: `.claude/context/repository-map.md`, `AGENTS.md`, `PROJECT_CONTEXT.md`, `FRAMEWORK_VERSION.md`, `docs/engineering/03_DEFINITION_OF_DONE.md`, `.claude/CLAUDE.md`, `.claude/AI_RULES.md`, `.claude/workflows/engineering-lifecycle.md`, `docs/skills/engineering-standards.md`.
 
 ## Database Changes
 

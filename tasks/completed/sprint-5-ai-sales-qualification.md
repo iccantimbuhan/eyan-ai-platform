@@ -2,7 +2,7 @@
 
 Status: Completed (2026-08-02)
 
-Full design rationale: `.claude/decisions/ADR-0022-sales-qualification-automation.md`. Companion repo changes: `eyan-automation-hub`'s `docs/development-log/sprint-4-sales-automation.md`.
+Full design rationale: `docs/architecture/decisions/ADR-0022-sales-qualification-automation.md`. Companion repo changes: `eyan-automation-hub`'s `docs/development-log/sprint-4-sales-automation.md`.
 
 ---
 
@@ -90,7 +90,7 @@ One gap noted, not silently fixed: `AiUsageLog` has no `confidence`/`promptVersi
 **eyan-ai-platform**:
 - `backend/src/routes/v1/ai-core-service.routes.ts`
 - `backend/src/services/crm-lead-transitions.ts`
-- `.claude/decisions/ADR-0022-sales-qualification-automation.md`
+- `docs/architecture/decisions/ADR-0022-sales-qualification-automation.md`
 - `tasks/completed/sprint-5-ai-sales-qualification.md` (this file)
 
 **eyan-automation-hub**:

@@ -262,7 +262,7 @@ Future multi-tenancy.
 
 # CRM Foundation (Sprint 1, extended Sprint 2)
 
-Added outside the original Version 1.0 scope (`02_ROADMAP.md` lists CRM as out of scope for V1.0) — a parallel initiative, see `.claude/decisions/ADR-0018-crm-foundation.md` and `ADR-0019-automation-integration-contract.md`. Shared workspace, no per-row ownership — same posture as Finance below. **No schema changes in Sprint 2** — every field Sprint 2's service endpoints write to already existed from Sprint 1's schema-ahead-of-use design (ADR-0018 Decision 4).
+Added outside the original Version 1.0 scope (`02_ROADMAP.md` lists CRM as out of scope for V1.0) — a parallel initiative, see `docs/architecture/decisions/ADR-0018-crm-foundation.md` and `ADR-0019-automation-integration-contract.md`. Shared workspace, no per-row ownership — same posture as Finance below. **No schema changes in Sprint 2** — every field Sprint 2's service endpoints write to already existed from Sprint 1's schema-ahead-of-use design (ADR-0018 Decision 4).
 
 ## Lead
 
@@ -312,11 +312,11 @@ Relationships
 
 ## Finance Management
 
-Family expense/budget tracker (`Expense`/`RecurringExpenseTemplate`/`Budget`/`FinanceAuditEvent`) — shared workspace, `finance` permission. See `.claude/decisions/ADR-0013-finance-management-foundation.md`.
+Family expense/budget tracker (`Expense`/`RecurringExpenseTemplate`/`Budget`/`FinanceAuditEvent`) — shared workspace, `finance` permission. See `docs/architecture/decisions/ADR-0013-finance-management-foundation.md`.
 
 ## MCP Foundation
 
-Pluggable integration credential/connector layer (`AutomationConnection`/`McpServerConfig`/`AutomationAuditEvent`) — `automation`/`automationcredentials` permissions. See `.claude/decisions/ADR-0012-mcp-foundation.md`.
+Pluggable integration credential/connector layer (`AutomationConnection`/`McpServerConfig`/`AutomationAuditEvent`) — `automation`/`automationcredentials` permissions. See `docs/architecture/decisions/ADR-0012-mcp-foundation.md`.
 
 ---
 

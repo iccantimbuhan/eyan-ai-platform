@@ -44,7 +44,7 @@ Fifth phase of Sprint 6 ("Enterprise Creative Production Suite"): add the data a
 
 **Backend — modified:** `prisma/schema.prisma` (+`AnalyticsEventType` enum, +`AnalyticsEvent` model, +relation fields on `User`/`ContentProject`), `app.ts` (+route registration), `services/content.service.ts`/`image.service.ts`/`video-asset.service.ts` (+`analyticsEventRepository` dependency, +fire-and-forget write, +tests proving generation still succeeds when the write rejects), `repositories/asset-review-event.repository.ts`/`asset-review.repository.ts`/`publishing-record.repository.ts` (+`findManyByProject`, +tests).
 
-**Docs:** `.claude/decisions/ADR-0011-analytics-foundation.md` (new), `docs/ASSET_LIBRARY.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated; this sprint log added.
+**Docs:** `docs/architecture/decisions/ADR-0011-analytics-foundation.md` (new), `docs/ASSET_LIBRARY.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated; this sprint log added.
 
 ## Database Changes
 

@@ -42,7 +42,7 @@ Third phase of Sprint 6 ("Enterprise Creative Production Suite"): extend the QA 
 
 **Frontend — modified:** `types/asset.ts` (+`REVISION_REQUESTED`, +`commentCount`/`openCommentCount`/`assignee` on `AssetSummary`), `components/assets/AssetDetailSheet.tsx` (Tabs reorganization + new panels, `.test.tsx` updated), `components/assets/ReviewQueue.tsx` (+status tab, badges, "My assignments" filter), `components/assets/AssetStatusBadge.tsx` (+`REVISION_REQUESTED` case), `components/assets/AssetCard.test.tsx`/`AssetLibrary.test.tsx`/`ReviewQueue.test.tsx` (fixture updates for the 3 new `AssetSummary` fields).
 
-**Docs:** `.claude/decisions/ADR-0009-creative-review-workspace.md` (new), `docs/ASSET_LIBRARY.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated; this sprint log added.
+**Docs:** `docs/architecture/decisions/ADR-0009-creative-review-workspace.md` (new), `docs/ASSET_LIBRARY.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated; this sprint log added.
 
 ## Database Changes
 

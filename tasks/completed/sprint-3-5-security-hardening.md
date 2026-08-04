@@ -44,7 +44,7 @@ Close the platform's highest-severity known technical debt — `ContentProject`/
 - `backend/src/dto/project.dto.ts`
 - `backend/src/repositories/project.repository.test.ts`, `backend/src/repositories/content.repository.test.ts` (new)
 - `backend/src/services/projects.service.test.ts`, `backend/src/services/content.service.test.ts` (new)
-- `.claude/decisions/ADR-0007-content-project-ownership.md` (new)
+- `docs/architecture/decisions/ADR-0007-content-project-ownership.md` (new)
 
 ## Database Changes
 
@@ -78,7 +78,7 @@ Close the platform's highest-severity known technical debt — `ContentProject`/
 
 ## Decisions Made
 
-- `.claude/decisions/ADR-0007-content-project-ownership.md` — ownership model for `ContentProject`, and the decision to derive `GeneratedContent` ownership transitively rather than duplicating a `userId` column.
+- `docs/architecture/decisions/ADR-0007-content-project-ownership.md` — ownership model for `ContentProject`, and the decision to derive `GeneratedContent` ownership transitively rather than duplicating a `userId` column.
 
 ## Follow-ups for Future Sprints
 

@@ -1,0 +1,29 @@
+# Architecture Decision Records — Index
+
+One line per ADR. Open the file itself for full context, alternatives considered, and consequences.
+
+| ADR | Title | Description |
+|---|---|---|
+| 0001 | Single AI Provider, No Gateway or Multi-Provider Routing | Content generation reuses the existing `ChatService`/`ProviderFactory`/`OllamaProvider` chain; no AI Gateway or multi-provider routing layer exists for text generation. |
+| 0002 | Configurable Generation Limits via the Config Layer | Max generated tokens is a config value (`OLLAMA_MAX_TOKENS`) threaded through `ChatOptions`, not hardcoded in the provider. |
+| 0003 | Prefer Plain Config/Data Over Premature CRUD Infrastructure | Three separate "should this be a DB-backed CRUD entity or plain config" decisions, all resolved in favor of plain config/data. |
+| 0004 | Client-Side Prompt Variable Substitution | `{{variable}}` substitution for Prompt Templates happens client-side before calling `POST /content/generate`; the endpoint's contract is unchanged. |
+| 0005 | Async/Background Generation Deferred | Assessed as low-risk to add later (the seams already exist) but deliberately not implemented — generation stayed fully synchronous. |
+| 0006 | SavedPrompt Ownership Is Enforced Per-User | `SavedPrompt.userId` is required; every read/update/delete is scoped to the requesting user, returning not-found rather than forbidden. |
+| 0007 | ContentProject/GeneratedContent Ownership (Security Hardening) | Closed a real gap — neither model had enforced per-user ownership. Applies the same pattern ADR-0006 established. |
+| 0008 | Asset Library: Polymorphic Review/Version Tables, Not a Unified Asset Table | `AssetReview`/`AssetVersion` are polymorphic (discriminator + source row id), applying uniformly across content/image/prompt without a unified asset table. |
+| 0009 | Creative Review Workspace: Unified Comments/Annotations, Informational-Only Assignment | Extends ADR-0008's review system with annotations, a timeline, and assignments — deliberately not a second review system. |
+| 0010 | Publishing Pipeline: Independent Lifecycle, Provider Registry, No Background Execution | Publishing has its own lifecycle and provider registry; explicitly must not overload `ReviewStatus`/`AssetReview`. |
+| 0011 | Analytics Foundation: Separate Event Table, Genuine Fire-and-Forget, No New RBAC Gate | A dedicated analytics event table, reusing existing events where possible; failures never interrupt normal workflows. |
+| 0012 | MCP Foundation: Registry Pattern, Credential Isolation, Service-Owned Business Logic | The reusable connector-integration layer (registry, credentials, health checks) that future providers (Canva, GitHub, Slack, etc.) register into. No real provider shipped in this ADR's sprint — proven against one `FakeMcpConnector`. |
+| 0013 | Finance Management Foundation: Decimal Money, Lazy Recurrence Generation, and the Recharts Single-Slice Pie Bug | Money uses `Prisma.Decimal`; recurring expenses generate lazily on read (no scheduler infrastructure exists). |
+| 0014 | Presentation Engine Foundation: CSS-Only Motion, Attribute-Based Targeting, and Data-Driven Pacing | The guided product-tour engine's frozen Core — presents the real running app via a `data-presentation-target` convention, no new animation dependency. |
+| 0015 | Presentation Engine Phase 2A: Homepage CTA Replacement, Least-Privilege Demo Role, and Tour Pack Curation | Restores the public homepage flow and adds the Presentation Library UI on top of the frozen Phase 1 Core; introduces a least-privilege demo role. |
+| 0016 | Presentation Engine Phase 2B: AI Content Studio as a Cinematic Product Story | Rewrites the AI Content Studio tour from a shallow 6-scene demo into an 18-scene walkthrough; the engine Core itself is untouched. |
+| 0017 | Scope Session Restoration to `/app/_authenticated`, Not the Whole App | Fixed a real bug — a global auth-restoration gate wrapped every route, public and protected, causing false redirects on stale cookies. |
+| 0018 | CRM Foundation: Shared-Workspace Leads, Server-Enforced Lifecycle, Platform-Wide Execution Log | The first CRM module — manual lead management with a server-enforced lifecycle transition map, positioned as a Sales Workspace foundation. |
+| 0019 | Automation Integration Contract | Fixes the CRM ↔ `eyan-automation-hub` (n8n) contract into concrete rules — service auth, webhook signing, retry/timeout/idempotency — before implementation began. |
+| 0020 | AI Provider Contract | Fixes the contract real AI qualification (replacing a dummy stub) must follow — provider abstraction, prompt versioning, JSON schema, fallback policy. |
+| 0021 | AI Core Foundation | The shared AI orchestration platform (Capability → Brain → Routing → Provider → Model) every business module routes AI calls through instead of calling a provider directly. |
+| 0022 | Sales Qualification Automation (AI Core Phase 3 + CRM Pipeline Automation) | Re-points the CRM automation pipeline's AI qualification step at AI Core instead of calling Ollama directly; adds confidence-based pipeline auto-routing. |
+| 0023 | Project Structure | **Superseded.** Proposed a feature-module backend layout (`backend/src/modules/<feature>/`) the codebase never adopted — the real structure is layer-first (`controllers/services/repositories`). Renumbered from its original filename (`ADR-0001-project-structure.md`) to resolve a numbering collision with ADR-0001 above. Kept for historical record. |

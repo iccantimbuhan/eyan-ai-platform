@@ -16,7 +16,7 @@ import type { McpServerConfig } from "../generated/prisma/client.js";
 // connections, and health evaluation respectively, but nothing yet owns
 // registering/updating/removing an MCP server config itself. Controllers
 // must go through a service, never a repository, directly (Routes ->
-// Controllers -> Services -> Repositories -> Prisma, per .claude/CLAUDE.md)
+// Controllers -> Services -> Repositories -> Prisma, per .context/backend.md)
 // — this is the service that gap requires. It's a thin CRUD orchestrator,
 // the same shape as ConnectionManager minus the encryption concern (an
 // McpServerConfig has no secret of its own; it only ever references one via

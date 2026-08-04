@@ -1,6 +1,6 @@
 # 🚀 Eyan AI Platform
 
-> An open-source, self-hosted AI platform for building, deploying, and managing modern conversational AI applications.
+> A self-hosted, production-development enterprise platform: AI Core orchestration, Content Studio, CRM, Finance, and Automation (MCP), behind one Express/Prisma/PostgreSQL backend and one React/TanStack frontend.
 
 ![Status](https://img.shields.io/badge/status-active%20development-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -12,111 +12,81 @@
 
 ## 🌟 Vision
 
-Eyan AI Platform aims to provide developers with a production-ready, self-hosted alternative for building AI-powered applications.
-
-The platform is designed with scalability, security, and extensibility in mind, allowing developers to integrate local or cloud-based Large Language Models (LLMs) while maintaining full control over their infrastructure.
+A production-ready, self-hosted alternative for building AI-powered business applications — full control over infrastructure, multiple AI providers, no vendor lock-in.
 
 ---
 
-## ✨ Planned Features
+## ✨ What's Built
 
-### 🤖 AI
+### 🤖 AI Core
 
-- ChatGPT-style interface
-- Ollama integration
-- Multiple AI providers
-- Streaming responses
-- Conversation history
-- Prompt templates
+Centralized AI orchestration (Capability → Brain → Routing → Provider → Model → Prompt → Memory → MCP). Business modules invoke Capabilities only, never providers directly. Ollama, OpenAI, Anthropic, and Gemini are registered providers.
 
-### 🗂 Content Production & QA
+### 🗂 Content Studio
 
-- Asset Library — every generated content item, image, and project-scoped prompt template in one searchable, filterable, batch-actionable view (see [docs/ASSET_LIBRARY.md](docs/ASSET_LIBRARY.md))
-- QA review workflow — Draft → Needs Review → Approved/Rejected → Published, with a reusable checklist, reviewer notes, and a QA score
-- Per-project Review Queue
-- Version history on regeneration, with side-by-side compare
+Content, image, and video generation with a QA review workflow (Draft → Needs Review → Approved/Rejected → Published), Asset Library, Brand Kits, version history, and a publishing pipeline.
 
-### 🔐 Authentication
+### 📈 CRM
 
-- User registration
-- Login / Logout
-- JWT Authentication
-- Refresh Tokens
-- Protected Routes
-- Role-Based Access Control (RBAC)
+Lead management with a server-enforced lifecycle, AI-driven sales qualification (via AI Core), and a signed webhook integration with an external automation hub (n8n).
 
-### 📚 Knowledge Base
+### 💰 Finance
 
-- File uploads
-- Document indexing
-- Retrieval-Augmented Generation (RAG)
-- Vector database integration
+Household expense and budget tracking with recurring expenses and a spending dashboard.
 
-### ⚙️ Administration
+### 🔌 Automation (MCP)
 
-- Admin dashboard
-- User management
-- API key management
-- Usage analytics
-- System monitoring
+A registry-based connector layer for external integrations, proven end-to-end and ready for real providers (Canva, GitHub, Slack, and others) to register into.
 
-### 🛠 Developer Experience
+### 🔐 Authentication & Access
 
-- REST API
-- OpenAPI / Swagger
-- Docker deployment
-- GitHub Actions
-- Automated testing
-- CI/CD pipeline
+JWT auth, refresh tokens, and full role-based access control (RBAC).
+
+### 🎬 Presentation Engine
+
+A guided, narrated product-tour overlay that presents the real running application rather than a mockup.
 
 ---
 
 # 🏗 Architecture
 
 ```text
-                ┌─────────────────────────────┐
-                │        React Frontend       │
-                └──────────────┬──────────────┘
-                               │
-                        REST / Streaming
-                               │
-                ┌──────────────▼──────────────┐
-                │      Express Backend        │
-                └──────────────┬──────────────┘
-                               │
-        ┌──────────────────────┼──────────────────────┐
-        │                      │                      │
-     Ollama               Future Providers        Database
+        ┌─────────────────────────────┐
+        │        React Frontend       │
+        └──────────────┬──────────────┘
+                        │
+                REST / Streaming
+                        │
+        ┌───────────────▼──────────────┐
+        │        Express Backend        │
+        │  Controller → Service → Repo  │
+        └───────────────┬───────────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+       Prisma        AI Core       MCP Connectors
+          │              │              │
+      PostgreSQL   Ollama/OpenAI/   (Canva, GitHub,
+                   Anthropic/Gemini   Slack, ...)
 ```
+
+Full architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
 # 🧰 Tech Stack
 
 ## Frontend
-
-- React
-- TypeScript
-- Vite
+React, TypeScript, Vite, TanStack Router, TanStack Query, shadcn/ui
 
 ## Backend
-
-- Node.js
-- Express
-- TypeScript
+Node.js, Express, TypeScript, Prisma, PostgreSQL
 
 ## AI
-
-- Ollama (text generation)
-- Google Gemini (image generation)
-- ComfyUI, self-hosted (image generation) — see [docs/COMFYUI_PROVIDER.md](docs/COMFYUI_PROVIDER.md) and [docs/COMFYUI_SETUP.md](docs/COMFYUI_SETUP.md)
-- Hugging Face Inference Providers (image generation) — see [docs/HUGGINGFACE_PROVIDER.md](docs/HUGGINGFACE_PROVIDER.md) and [docs/HUGGINGFACE_SETUP.md](docs/HUGGINGFACE_SETUP.md)
+Ollama, OpenAI, Anthropic, Gemini (text) · Gemini, ComfyUI (self-hosted), Hugging Face Inference Providers (images) — see [docs/COMFYUI_PROVIDER.md](docs/COMFYUI_PROVIDER.md), [docs/COMFYUI_SETUP.md](docs/COMFYUI_SETUP.md), [docs/HUGGINGFACE_PROVIDER.md](docs/HUGGINGFACE_PROVIDER.md), [docs/HUGGINGFACE_SETUP.md](docs/HUGGINGFACE_SETUP.md)
 
 ## Infrastructure
-
-- Docker
-- Ubuntu Linux
-- pnpm
+systemd, Nginx, Ubuntu Linux VPS, pnpm
 
 ---
 
@@ -124,10 +94,11 @@ The platform is designed with scalability, security, and extensibility in mind, 
 
 ```text
 eyan-ai-platform/
-├── backend/
-├── frontend/
-├── .github/
-├── docker-compose.yml
+├── backend/       Express API — controllers/services/repositories/providers
+├── frontend/      React app — feature-based
+├── docs/          Deep-reference documentation (architecture, product, engineering)
+├── tasks/         Sprint history
+├── .context/      AI assistant entry point — see AGENTS.md
 ├── README.md
 └── LICENSE
 ```
@@ -135,8 +106,6 @@ eyan-ai-platform/
 ---
 
 # 🚀 Getting Started
-
-## Clone the repository
 
 ```bash
 git clone https://github.com/iccantimbuhan/eyan-ai-platform.git
@@ -161,71 +130,27 @@ pnpm dev
 
 ---
 
-# 🗺 Roadmap
+# 🤖 Working on this repo with an AI assistant?
 
-## ✅ Phase 1 — Repository Foundation
-
-- Repository structure
-- TypeScript setup
-- Express backend
-- React frontend
-- Community health files
-
-## 🚧 Phase 2 — Engineering Excellence
-
-- GitHub Actions
-- ESLint
-- Prettier
-- Husky
-- lint-staged
-- Automated testing
-
-## 📅 Phase 3 — Core Platform
-
-- Authentication
-- Database
-- User Management
-- Sessions
-
-## 📅 Phase 4 — AI Features
-
-- Chat
-- Multi-provider support
-- Conversation history
-- Knowledge base
-
-## 📅 Phase 5 — Production
-
-- Monitoring
-- Scaling
-- High availability
-- Deployment automation
+Start at [AGENTS.md](AGENTS.md) — it routes to `.context/`, the single source of truth for AI-assisted engineering in this repository.
 
 ---
 
 # 🤝 Contributing
 
-Contributions are welcome!
-
-Please read:
-
-- `.github/CONTRIBUTING.md`
-
-before submitting issues or pull requests.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting issues or pull requests.
 
 ---
 
 # 🔒 Security
 
-If you discover a security vulnerability, please follow the instructions in:
-
-- `.github/SECURITY.md`
+If you discover a security vulnerability, please follow the instructions in [.github/SECURITY.md](.github/SECURITY.md).
 
 ---
 
 # 📄 License
 
-This project is licensed under the MIT License.
+MIT License.
 
 ---
 

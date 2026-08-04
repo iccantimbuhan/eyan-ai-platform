@@ -2,7 +2,7 @@
 
 A running log of portfolio-worthy milestones from this project — for the portfolio website, GitHub README highlights, resume bullets, and LinkedIn updates.
 
-This file is **appended to, not overwritten**, and updated **only when a completed sprint provides genuine portfolio value** — not every sprint qualifies, and that's by design. See `.claude/prompts/09_PORTFOLIO_MODE.md` for the process used to evaluate and draft an entry.
+This file is **appended to, not overwritten**, and updated **only when a completed sprint provides genuine portfolio value** — not every sprint qualifies, and that's by design. See `docs/prompts/09_PORTFOLIO_MODE.md` for the process used to evaluate and draft an entry.
 
 Entry format:
 
@@ -38,7 +38,7 @@ Talking point: "Before integrating any real, billable AI image provider, I built
 
 **What was built**
 
-A repository-first engineering workflow so any AI tool (Claude Code, ChatGPT, Codex, Gemini) or human developer can pick up work with zero chat history: a single current-state file (`PROJECT_STATE.md`), immutable sprint logs (`tasks/`), Architecture Decision Records (`.claude/decisions/ADR-NNNN`), a standard changelog, and Definition-of-Done integration across all six of the repo's existing DoD-bearing documents — designed to extend the project's existing engineering framework rather than replace it.
+A repository-first engineering workflow so any AI tool (Claude Code, ChatGPT, Codex, Gemini) or human developer can pick up work with zero chat history: a single current-state file (`PROJECT_STATE.md`), immutable sprint logs (`tasks/`), Architecture Decision Records (`docs/architecture/decisions/ADR-NNNN`), a standard changelog, and Definition-of-Done integration across all six of the repo's existing DoD-bearing documents — designed to extend the project's existing engineering framework rather than replace it.
 
 **Why it's a strong signal**
 
@@ -46,7 +46,7 @@ This isn't a feature — it's process engineering, and it demonstrates judgment 
 
 **Suggested talking point / screenshot**
 
-Talking point: "I designed and shipped a documentation framework that lets multiple AI coding tools and human developers collaborate on the same codebase without shared memory — then used a dry-run test to catch and fix a scalability bug in the framework's own design before considering it done." Screenshot: `PROJECT_STATE.md` alongside the `tasks/` and `.claude/decisions/` folder structure in a file tree view.
+Talking point: "I designed and shipped a documentation framework that lets multiple AI coding tools and human developers collaborate on the same codebase without shared memory — then used a dry-run test to catch and fix a scalability bug in the framework's own design before considering it done." Screenshot: `PROJECT_STATE.md` alongside the `tasks/` and `docs/architecture/decisions/` folder structure in a file tree view.
 
 ---
 

@@ -481,7 +481,7 @@ ContentRepository  ImageRepository   SavedPromptRepository
 
 Generation itself is completely untouched: `AssetService.regenerate()`/`.duplicate()` call `ContentService.generate()`/`ImageService.generate()` unchanged, then link the resulting row into `AssetVersion` (regenerate) or don't (duplicate — an independent asset, not a new version). The one exception is `generationTimeMs`, a new nullable column on both `GeneratedContent` and `GeneratedImage`, captured by timing the existing provider call — needed because Asset Details displays generation time and it can't be reconstructed after the fact.
 
-Full design rationale, the "why not a unified Asset table" reasoning, and the exact recipe for adding a future asset type: `docs/ASSET_LIBRARY.md` and `.claude/decisions/ADR-0008-asset-library-polymorphic-review-versioning.md`.
+Full design rationale, the "why not a unified Asset table" reasoning, and the exact recipe for adding a future asset type: `docs/ASSET_LIBRARY.md` and `docs/architecture/decisions/ADR-0008-asset-library-polymorphic-review-versioning.md`.
 
 ---
 
@@ -513,7 +513,7 @@ McpConnector Interface (connect / listTools / callTool / disconnect / healthChec
 
 **Frontend**: `features/automation/` — Providers (read-only registry listing), Connections, MCP Servers, Health (reuses the MCP Servers query, since health fields already live on that same row), and Audit Logs pages, under a new "Automation" sidebar group. Contains no business logic — credentials are entered as generic JSON and sent to the backend as plaintext over HTTPS for server-side encryption; permission checks (`useCan`) mirror the backend's actual route gates and are a UI convenience, never a security boundary.
 
-Full design rationale — why the registry mirrors `PlatformProviderFactory` rather than `ImageProviderFactory`, why connectors never decrypt credentials, why business logic stays in services, and how a future real provider should integrate: `.claude/decisions/ADR-0012-mcp-foundation.md`. (A real Canva provider was the next step assumed when Sprint 7.1 closed — Sprint 7.2 was since redirected to the AI Video Editing Pipeline below; Canva/GitHub/Docker/etc. remain valid, un-started future work.)
+Full design rationale — why the registry mirrors `PlatformProviderFactory` rather than `ImageProviderFactory`, why connectors never decrypt credentials, why business logic stays in services, and how a future real provider should integrate: `docs/architecture/decisions/ADR-0012-mcp-foundation.md`. (A real Canva provider was the next step assumed when Sprint 7.1 closed — Sprint 7.2 was since redirected to the AI Video Editing Pipeline below; Canva/GitHub/Docker/etc. remain valid, un-started future work.)
 
 ---
 
@@ -545,7 +545,7 @@ NEW → VALIDATED → AI_ANALYZED → QUALIFIED → CONTACTED → NEGOTIATION �
 
 **Frontend**: `features/crm/` — a Dashboard (pipeline stat cards + status breakdown chart), Leads (searchable/filterable table), and Lead Detail (AI Analysis empty-state card, Timeline with inline note entry, Status/Assign dialogs, Edit dialog) under a new "Sales" sidebar group. Built entirely from existing `components/ui/*` and `components/data-table/*` — no new design-system components. Unchanged by Sprint 2 — nothing here is a frontend sprint.
 
-Full design rationale — why `LeadActivity` is one table not two, why the AI-analysis models exist unused, why the lifecycle map lives where it does, and why the service-facing routes were deferred out of Sprint 1: `.claude/decisions/ADR-0018-crm-foundation.md`. Full architecture/business-requirements context: `/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`.
+Full design rationale — why `LeadActivity` is one table not two, why the AI-analysis models exist unused, why the lifecycle map lives where it does, and why the service-facing routes were deferred out of Sprint 1: `docs/architecture/decisions/ADR-0018-crm-foundation.md`. Full architecture/business-requirements context: `/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`.
 
 ## Sprint 2 — Automation Integration Contract (EYAN side only)
 
@@ -575,7 +575,7 @@ Lead created (POST /api/v1/crm/leads)
 - **Idempotency**: every service mutation carries a `workflowExecutionId` + `workflowName`; a repeated call whose execution already succeeded (checked against `WorkflowExecutionLog`) is treated as a safe replay and returns the current state unchanged rather than re-applying the mutation.
 - **The "dummy qualification response"**: `PATCH /crm/service/leads/:id/qualification` is the real Workflow 3/4 write-back contract, exercised this sprint with a stub payload instead of a real AI call — proving the contract (auth, signing, idempotency) before Sprint 3 adds actual AI orchestration.
 
-Full contract decisions (webhook auth, service auth, retry/timeout/idempotency/versioning policy, and rejected alternatives): `.claude/decisions/ADR-0019-automation-integration-contract.md`.
+Full contract decisions (webhook auth, service auth, retry/timeout/idempotency/versioning policy, and rejected alternatives): `docs/architecture/decisions/ADR-0019-automation-integration-contract.md`.
 
 **Explicitly not built this sprint** (deferred to a later, dedicated Automation Hub sprint): the actual n8n Workflow 1/2 JSON definitions in `eyan-automation-hub`, real AI qualification (Workflow 3), notifications (Workflow 5), execution telemetry (Workflow 6), the Human Review Queue UI, and the Automation module's future "Automation Runs" page.
 
@@ -626,7 +626,7 @@ AiRoutingService  (resolves + caches Policy → Provider/Model → Prompt, execu
 AiCoreProviderFactory → AiCoreProvider plugin (Ollama / OpenAI / Anthropic / Gemini — thin, translates request/response only)
 ```
 
-- `AiCapability` / `AiBrain` — the two-level indirection the architecture is frozen on (`.claude/decisions/ADR-0021-ai-core-foundation.md`): a Capability is a business task, always resolving to exactly one Brain; a Brain is a reusable AI configuration, never referenced by a business-module caller directly (Brain-direct invoke is `aicoreadmin`-gated, administrative/Playground-only). `AiCapability.brainId` uses Prisma's default `Restrict` delete behavior on purpose — deleting a Brain that still backs an enabled Capability fails loudly rather than orphaning it silently, since this schema has no soft-delete anywhere to paper over a dangling reference.
+- `AiCapability` / `AiBrain` — the two-level indirection the architecture is frozen on (`docs/architecture/decisions/ADR-0021-ai-core-foundation.md`): a Capability is a business task, always resolving to exactly one Brain; a Brain is a reusable AI configuration, never referenced by a business-module caller directly (Brain-direct invoke is `aicoreadmin`-gated, administrative/Playground-only). `AiCapability.brainId` uses Prisma's default `Restrict` delete behavior on purpose — deleting a Brain that still backs an enabled Capability fails loudly rather than orphaning it silently, since this schema has no soft-delete anywhere to paper over a dangling reference.
 - `AiCoreProviderFactory` (`backend/src/providers/ai-core-provider.factory.ts`) — mirrors `McpConnectorFactory`'s registry shape exactly (`register()`/`create()`/`listRegistered()`/`reset()`, **no env-var default**), not `ImageProviderFactory`'s — every real caller (`AiRoutingService`) always resolves an explicit `AiProvider.key` from a Brain's active `AiRoutingPolicy` before calling `create()`, so there's never a scenario needing a global default the way `IMAGE_PROVIDER` exists for image generation. Four plugins are registered: `OllamaAiProvider` (LOCAL, no credential — relocated/generalized from the existing `OllamaProvider`, unchanged wire contract), `OpenAiAiProvider`, `AnthropicAiProvider`, `GeminiAiProvider` (all HOSTED, REST-only via `axios`, no new SDK dependency). Each implements `chat()` and a cheap `healthCheck()` (mirrors `McpConnector.healthCheck()`, applied to a text-generation provider instead of an MCP server).
 - `AiRoutingService` — the only component that talks to `AiCoreProviderFactory`. Resolves Capability → Brain → active `AiRoutingPolicy` → active `AiPrompt`, builds messages via `{{placeholder}}` substitution against the caller's input, and executes a corrective-retry loop (feeding the model its own bad output + the parse error back on a `SCHEMA_INVALID` classification) up to the policy's `maxRetries`, then one attempt against a configured fallback provider/model if the preferred path is exhausted or definitively failed. Never throws an unhandled error back to the caller — an exhausted call returns `needsManualReview: true` instead ("never strand a caller," generalizing CRM's own Workflow 3 principle). Failure classification (`SCHEMA_INVALID` / `TRANSIENT_FAILURE` / `DEFINITIVE_FAILURE`) mirrors `eyan-automation-hub`'s Classify Ollama Result node: a 4xx status (except 429) is definitive (no retry), everything else (network failure, 429, 5xx) is transient.
 - **Caching**: an in-process, in-memory `Map`-based cache (no Redis) holds the resolved Capability→Brain→Policy→Prompt chain, invalidated wholesale on a `CACHE_INVALIDATING_ACTIONS` `AiAuditEvent` (`ai-cache-invalidation.events.ts`, a plain Node `EventEmitter` — decouples `AiAuditService`, which knows *when* something changed, from `AiRoutingService`, which knows *what* to do about it). A Playground call always bypasses this cache — an override must never be served or pollute cached resolution state.
@@ -642,7 +642,7 @@ AiCoreProviderFactory → AiCoreProvider plugin (Ollama / OpenAI / Anthropic / G
 
 **Phase 1 is purely additive**: zero changes to `ChatService`, `ContentService`, `VideoWorkflowPlannerService`, `VideoAssetService`, or `eyan-automation-hub` Workflow 3 — all continue exactly as built. Phase 2 (migrating those call sites to Capabilities, one at a time) and Phase 3 (re-pointing Workflow 3 at AI Core over HTTP) are named, sequenced, and explicitly not started.
 
-Full design rationale — the Capability/Brain two-level indirection, the ADR-0001 supersession, the Playground isolation guarantee, and the full Phase 0/0.5/Freeze history: `.claude/decisions/ADR-0021-ai-core-foundation.md`. Full TDD: `/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`.
+Full design rationale — the Capability/Brain two-level indirection, the ADR-0001 supersession, the Playground isolation guarantee, and the full Phase 0/0.5/Freeze history: `docs/architecture/decisions/ADR-0021-ai-core-foundation.md`. Full TDD: `/home/eyancantimbuhan/.claude/plans/project-ai-sales-clever-dijkstra.md`.
 
 ---
 

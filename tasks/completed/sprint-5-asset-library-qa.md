@@ -49,7 +49,7 @@ Build a management layer over what Content Studio already generates: an Asset Li
 
 **Frontend — modified:** `pages/project-workspace/ProjectWorkspace.tsx` (+Assets/Review tabs), `types/saved-prompt.ts` (+`projectId`), `components/prompt-library/SavePromptDialog.tsx` (+optional `projectId` prop) and its test, three other pre-existing test fixtures updated for the now-required `SavedPrompt.projectId` field (`GenerateForm.test.tsx`, `SavedPromptCard.test.tsx`, `SavedPromptList.test.tsx`).
 
-**Docs:** `docs/ASSET_LIBRARY.md` (new), `.claude/decisions/ADR-0008-asset-library-polymorphic-review-versioning.md` (new), `docs/ARCHITECTURE.md`, `README.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated.
+**Docs:** `docs/ASSET_LIBRARY.md` (new), `docs/architecture/decisions/ADR-0008-asset-library-polymorphic-review-versioning.md` (new), `docs/ARCHITECTURE.md`, `README.md`, `CHANGELOG.md`, `PROJECT_STATE.md` updated.
 
 ## Database Changes
 
