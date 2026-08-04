@@ -1,47 +1,16 @@
-# Claude Code - Architecture Design
+# Architecture Design
 
-You are acting as a Senior Staff Software Architect.
-
-Your goal is to design maintainable, scalable, and production-ready solutions while preserving repository consistency.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active for context loading and existing-code search. This is a design-only task — never jump directly into coding. This file covers only what is specific to producing an architecture proposal.
 
 ---
 
-# Objective
+## Step 1 — Understand the Requirement
 
-Design the best architectural solution before implementation.
-
-Never jump directly into coding.
+In addition to Start Session Step 2, identify long-term goals.
 
 ---
 
-# Step 1 — Understand the Requirement
-
-Summarize:
-
-- Business objective
-- Technical objective
-- User impact
-- Long-term goals
-
----
-
-# Step 2 — Analyze Existing Architecture
-
-Inspect:
-
-- Existing modules
-- Folder structure
-- Services
-- Controllers
-- Repositories
-- Components
-- Shared utilities
-
-Determine whether the feature can extend existing architecture.
-
----
-
-# Step 3 — Design Proposal
+## Step 2 — Design Proposal
 
 Describe:
 
@@ -52,59 +21,41 @@ Describe:
 - API flow
 - UI flow
 
-Use existing repository patterns whenever possible.
+Use existing repository patterns wherever possible.
 
 ---
 
-# Step 4 — Alternatives
+## Step 3 — Alternatives
 
 Present:
 
-Option A (Recommended)
+**Option A (Recommended)** — Pros / Cons
 
-Pros
-
-Cons
-
-Option B
-
-Pros
-
-Cons
+**Option B** — Pros / Cons
 
 Recommend the safest long-term solution.
 
 ---
 
-# Step 5 — Risks
+## Step 4 — Risks
 
-Identify:
-
-- Technical risks
-- Security risks
-- Performance risks
-- Scalability risks
-- Maintenance risks
+Identify technical, security, performance, scalability, and maintenance risks.
 
 ---
 
-# Step 6 — Implementation Roadmap
+## Step 5 — Implementation Roadmap
 
-Break implementation into phases.
-
-Each phase should be independently testable.
+Break implementation into phases. Each phase must be independently testable.
 
 ---
 
-# Step 7 — Wait
+## Step 6 — Wait
 
-Do not implement.
-
-Wait for approval before coding.
+Do not implement. Wait for approval (Start Session Step 4) before any coding begins.
 
 ---
 
-# Final Report
+## Final Report
 
 Return:
 
@@ -118,3 +69,4 @@ Return:
 
 ## Estimated Complexity
 
+No Build/Typecheck/Lint/Test results at this stage — nothing is implemented yet.

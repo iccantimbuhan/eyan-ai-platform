@@ -1,16 +1,12 @@
-# Claude Code - Code Review
+# Code Review
 
-You are acting as a Senior Staff Engineer reviewing this implementation.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active for repository standards. This is a review-only task: do not rewrite code unless requested. Start Session's plan/approval/implementation steps do not apply here.
 
-Review critically.
-
-Do not rewrite code unless requested.
+Review critically as a Senior Staff Engineer.
 
 ---
 
-# Review Areas
-
-Review:
+## Review Areas
 
 - Architecture
 - Readability
@@ -24,20 +20,7 @@ Review:
 
 ---
 
-# Repository Standards
-
-Verify compliance with:
-
-- CLAUDE.md
-- AI_RULES.md
-- Product Blueprint
-- Engineering Playbooks
-
----
-
-# Review Output
-
-Provide:
+## Review Output
 
 ## Overall Assessment
 
@@ -45,51 +28,33 @@ Provide:
 
 ## Issues
 
-Classify issues as:
+Classify each issue:
 
 🔴 Critical
-
 🟠 Major
-
 🟡 Minor
-
 🟢 Suggestions
 
 ---
 
-# Improvements
+## Improvements
 
-Recommend improvements.
-
-Explain why.
+Recommend improvements. Explain why.
 
 ---
 
-# Validation
+## Validation
 
-Verify whether:
-
-✓ Build
-
-✓ Typecheck
-
-✓ Lint
-
-✓ Tests
-
-are passing.
+State whether Build, Typecheck, Lint, and Tests are passing.
 
 ---
 
-# Final Recommendation
+## Final Recommendation
 
 Choose one:
 
 ✅ Approve
-
 ⚠ Approve with Minor Changes
-
 ❌ Request Changes
 
 Include a short explanation.
-

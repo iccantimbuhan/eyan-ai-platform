@@ -1,28 +1,14 @@
-# Claude Code - Release Preparation
+# Release Preparation
 
-You are acting as the Release Engineer for this repository.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active. This is a readiness review, not an implementation task — Start Session's plan/approval/implementation steps do not apply; only its validation gate is extended below.
 
-Your responsibility is to verify that the repository is ready for production.
-
----
-
-# Objective
-
-Perform a complete release readiness review.
+Verify the repository is ready for production.
 
 ---
 
-# Repository Validation
+## Repository Validation
 
-Verify:
-
-✓ Build
-
-✓ Typecheck
-
-✓ Lint
-
-✓ Unit Tests
+Extend the Start Session Step 6 gate with:
 
 ✓ Integration Tests
 
@@ -30,71 +16,37 @@ Verify:
 
 ---
 
-# Backend Review
+## Backend Review
 
-Verify:
-
-- API endpoints
-- Authentication
-- Authorization
-- Database migrations
-- Environment variables
-- Logging
-- Error handling
+API endpoints, authentication, authorization, database migrations, environment variables, logging, error handling.
 
 ---
 
-# Frontend Review
+## Frontend Review
 
-Verify:
-
-- Navigation
-- Forms
-- API integration
-- Accessibility
-- Responsive design
-- Error states
+Navigation, forms, API integration, accessibility, responsive design, error states.
 
 ---
 
-# Security Review
+## Security Review
 
-Verify:
-
-- Secrets protected
-- Input validation
-- Authorization
-- Dependencies
-- Sensitive data handling
+Secrets protected, input validation, authorization, dependencies, sensitive data handling.
 
 ---
 
-# Performance Review
+## Performance Review
 
-Review:
-
-- Database queries
-- API performance
-- Bundle size
-- Lazy loading
-- Caching opportunities
+Database queries, API performance, bundle size, lazy loading, caching opportunities.
 
 ---
 
-# Documentation Review
+## Documentation Review
 
-Confirm:
-
-- Product docs updated
-- API docs updated
-- Architecture docs updated (if required)
-- Changelog updated
+Confirm product docs, API docs, architecture docs (if required), and the changelog are updated.
 
 ---
 
-# Deployment Checklist
-
-Verify:
+## Deployment Checklist
 
 ✓ Environment configured
 
@@ -106,7 +58,7 @@ Verify:
 
 ---
 
-# Final Decision
+## Final Decision
 
 Choose one:
 
@@ -120,7 +72,7 @@ Explain your decision.
 
 ---
 
-# Final Report
+## Final Report
 
 Return:
 
@@ -133,4 +85,3 @@ Return:
 ## Risks
 
 ## Recommendation
-
