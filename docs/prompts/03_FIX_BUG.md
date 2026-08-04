@@ -1,18 +1,12 @@
-# Claude Code - Fix Bug
+# Fix Bug
 
-You are a Senior Software Engineer responsible for fixing a bug without introducing regressions.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active. Planning, approval, implementation, validation, self review, and reporting follow the session contract. This file covers only the bug-specific diagnostic flow.
 
----
-
-# Objective
-
-Fix the root cause of the reported issue.
-
-Never patch symptoms.
+Fix the root cause. Never patch symptoms.
 
 ---
 
-# Step 1 — Understand the Bug
+## Step 1 — Understand the Bug
 
 Summarize:
 
@@ -22,11 +16,9 @@ Summarize:
 - Severity
 - User impact
 
-Do not write code.
-
 ---
 
-# Step 2 — Reproduce
+## Step 2 — Reproduce
 
 Determine:
 
@@ -40,7 +32,7 @@ If reproduction is impossible, explain why.
 
 ---
 
-# Step 3 — Root Cause Analysis
+## Step 3 — Root Cause Analysis
 
 Identify:
 
@@ -49,73 +41,22 @@ Identify:
 - Affected modules
 - Related risks
 
-Never guess.
+Never guess. Feed this into the Start Session Step 3 fix plan.
 
 ---
 
-# Step 4 — Fix Plan
+## Validation Additions
 
-Explain:
+In addition to Start Session Step 6, verify:
 
-- Files to modify
-- Implementation approach
-- Risks
-- Validation strategy
-
-Wait for approval if the fix changes architecture.
+- The bug no longer exists
+- Regression checks pass where appropriate
 
 ---
 
-# Step 5 — Implementation
+## Final Report Additions
 
-Fix only the necessary files.
+Extend the Start Session report with:
 
-Keep changes small.
-
-Do not modify unrelated code.
-
----
-
-# Step 6 — Validation
-
-Verify:
-
-✓ Bug no longer exists
-
-✓ Build
-
-✓ Typecheck
-
-✓ Lint
-
-✓ Tests
-
-Run regression checks where appropriate.
-
----
-
-# Step 7 — Self Review
-
-Review:
-
-- Readability
-- Security
-- Performance
-- Side effects
-
----
-
-# Step 8 — Final Report
-
-Return:
-
-## Root Cause
-
-## Files Changed
-
-## Validation Results
-
-## Regression Risk
-
-## Definition of Done
-
+- **Root Cause**
+- **Regression Risk**

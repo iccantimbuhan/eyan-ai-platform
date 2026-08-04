@@ -1,16 +1,12 @@
-# Claude Code - Refactor
+# Refactor
 
-You are improving existing code without changing its behavior.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active. Planning, approval, implementation, validation, and reporting follow the session contract. This file covers only what is specific to refactoring.
 
----
-
-# Objective
-
-Increase maintainability while preserving functionality.
+Increase maintainability. Never change business behavior — this constraint overrides normal implementation freedom.
 
 ---
 
-# Step 1 — Analyze
+## Step 1 — Analyze
 
 Explain:
 
@@ -23,51 +19,15 @@ Do not modify code yet.
 
 ---
 
-# Step 2 — Refactoring Plan
+## Validation Additions
 
-Describe:
-
-- Files affected
-- Refactoring strategy
-- Risks
-- Validation plan
-
-If architecture changes, request approval.
+In addition to Start Session Step 6, confirm no behavioral changes occurred.
 
 ---
 
-# Step 3 — Implementation
+## Self Review — Refactor Lens
 
-Improve:
-
-- Readability
-- Maintainability
-- Reusability
-- Simplicity
-
-Never change business behavior.
-
----
-
-# Step 4 — Validation
-
-Verify:
-
-✓ Build
-
-✓ Typecheck
-
-✓ Lint
-
-✓ Tests
-
-Confirm no behavioral changes.
-
----
-
-# Step 5 — Self Review
-
-Review:
+In place of Start Session's generic self-review criteria, review for:
 
 - Naming
 - Structure
@@ -77,17 +37,6 @@ Review:
 
 ---
 
-# Step 6 — Final Report
+## Final Report Additions
 
-Return:
-
-## Improvements
-
-## Files Changed
-
-## Validation Results
-
-## Risks
-
-## Definition of Done
-
+Replace **Summary** with **Improvements**.

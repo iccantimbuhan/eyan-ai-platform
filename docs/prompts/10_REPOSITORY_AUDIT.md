@@ -1,189 +1,79 @@
-# Claude Code - Repository Audit
+# Repository Audit
 
-You are acting as a Principal Software Engineer performing a comprehensive engineering audit.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active for repository standards. This is a read-only audit — do not implement fixes unless requested. Start Session's plan/approval/implementation steps do not apply.
 
-Your objective is to improve the long-term health of the repository.
-
-Do not implement fixes unless requested.
-
-Provide an engineering assessment first.
+Provide an engineering assessment first. Your objective is to improve the long-term health of the repository.
 
 ---
 
-# Audit Scope
+## Audit Scope
 
-Review the repository for:
-
-- Architecture
-- Code Quality
-- Security
-- Performance
-- Scalability
-- Maintainability
-- Documentation
-- Developer Experience
-- Testing
-- Dependency Management
+Architecture, Code Quality, Security, Performance, Scalability, Maintainability, Documentation, Developer Experience, Testing, Dependency Management.
 
 ---
 
-# Architecture Review
+## Architecture Review
 
-Evaluate:
-
-- Folder structure
-- Module boundaries
-- Separation of concerns
-- Coupling
-- Reusability
-- Design consistency
+Folder structure, module boundaries, separation of concerns, coupling, reusability, design consistency.
 
 ---
 
-# Backend Review
+## Backend Review
 
-Inspect:
-
-- Controllers
-- Services
-- Repositories
-- DTOs
-- Validation
-- Authentication
-- Authorization
-- Error handling
+Controllers, services, repositories, DTOs, validation, authentication, authorization, error handling.
 
 ---
 
-# Frontend Review
+## Frontend Review
 
-Inspect:
-
-- Components
-- Hooks
-- Routing
-- State management
-- API integration
-- Accessibility
-- Responsiveness
+Components, hooks, routing, state management, API integration, accessibility, responsiveness.
 
 ---
 
-# Security Review
+## Security Review
 
-Check for:
-
-- Hardcoded secrets
-
-- Missing validation
-
-- Authorization weaknesses
-
-- Authentication gaps
-
-- Dependency vulnerabilities
-
-- Sensitive data exposure
+Hardcoded secrets, missing validation, authorization weaknesses, authentication gaps, dependency vulnerabilities, sensitive data exposure.
 
 ---
 
-# Performance Review
+## Performance Review
 
-Review:
-
-- Database queries
-
-- API performance
-
-- Bundle size
-
-- Duplicate logic
-
-- Unused code
-
-- Rendering performance
+Database queries, API performance, bundle size, duplicate logic, unused code, rendering performance.
 
 ---
 
-# Documentation Review
+## Documentation Review
 
-Verify:
-
-- CLAUDE.md
-
-- AI_RULES.md
-
-- Product Blueprint
-
-- Engineering Playbooks
-
-- README
-
-Identify missing or outdated documentation.
+Verify `AGENTS.md`, `.context/`, and `README.md` are current and consistent with each other. Identify missing or outdated documentation.
 
 ---
 
-# Technical Debt
+## Technical Debt
 
-Identify:
-
-- Dead code
-
-- Duplicate code
-
-- Large files
-
-- Complex methods
-
-- Outdated patterns
-
-- Refactoring opportunities
-
-Prioritize by impact.
+Dead code, duplicate code, large files, complex methods, outdated patterns, refactoring opportunities. Prioritize by impact.
 
 ---
 
-# Repository Health Score
+## Repository Health Score
 
-Rate each area from 1–10.
-
-Architecture
-
-Code Quality
-
-Security
-
-Performance
-
-Testing
-
-Documentation
-
-Maintainability
-
-Developer Experience
-
-Portfolio Readiness
+Rate 1–10: Architecture, Code Quality, Security, Performance, Testing, Documentation, Maintainability, Developer Experience, Portfolio Readiness.
 
 ---
 
-# Recommendations
+## Recommendations
 
-Classify findings:
+Classify each finding:
 
 🔴 Critical
-
 🟠 High
-
 🟡 Medium
-
 🟢 Low
 
 Recommend the highest-value improvements first.
 
 ---
 
-# Final Report
+## Final Report
 
 Return:
 
@@ -202,4 +92,3 @@ Return:
 ## Suggested Roadmap
 
 Do not modify code until requested.
-

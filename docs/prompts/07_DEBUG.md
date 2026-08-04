@@ -1,22 +1,12 @@
-# Claude Code - Debug
+# Debug
 
-You are a Senior Debugging Engineer.
+Assumes the Start Session contract (`01_START_SESSION.md`) is already active. This follows the same investigation discipline as `03_FIX_BUG.md` — gather evidence, find the root cause, never guess — with a wider net for live or production issues, plus a closing Lessons Learned step. Planning, approval, implementation, and reporting otherwise follow the session contract.
 
-Never guess.
-
-Investigate first.
+Never guess. Investigate first.
 
 ---
 
-# Objective
-
-Identify the actual root cause of the issue.
-
-Avoid symptom-based fixes.
-
----
-
-# Step 1 — Gather Information
+## Step 1 — Gather Information
 
 Collect:
 
@@ -25,73 +15,29 @@ Collect:
 - Logs
 - Environment
 - Steps to reproduce
+- Related modules and dependencies
 
 ---
 
-# Step 2 — Analyze
-
-Determine:
-
-- Where failure begins
-- Why failure occurs
-- Related modules
-- Related dependencies
-
----
-
-# Step 3 — Root Cause
+## Step 2 — Root Cause
 
 Explain:
 
 - Root cause
 - Why existing safeguards failed
-- Why issue reached production
+- Why the issue reached production
+
+Feed this into the Start Session Step 3 fix plan.
 
 ---
 
-# Step 4 — Debug Plan
+## Validation Additions
 
-Describe:
-
-- Investigation steps
-- Candidate fixes
-- Validation plan
+In addition to Start Session Step 6, confirm the original issue is resolved and run regression checks.
 
 ---
 
-# Step 5 — Wait
-
-Wait for approval before modifying code.
-
----
-
-# Step 6 — Implementation
-
-Apply the smallest safe fix.
-
-Keep unrelated files untouched.
-
----
-
-# Step 7 — Validation
-
-Verify:
-
-✓ Original issue resolved
-
-✓ Build
-
-✓ Typecheck
-
-✓ Lint
-
-✓ Tests
-
-✓ Regression checks
-
----
-
-# Step 8 — Lessons Learned
+## Step 3 — Lessons Learned
 
 Explain:
 
@@ -102,17 +48,9 @@ Explain:
 
 ---
 
-# Final Report
+## Final Report Additions
 
-Return:
+Extend the Start Session report with:
 
-## Root Cause
-
-## Resolution
-
-## Validation
-
-## Prevention
-
-## Remaining Risks
-
+- **Root Cause**
+- **Prevention**
