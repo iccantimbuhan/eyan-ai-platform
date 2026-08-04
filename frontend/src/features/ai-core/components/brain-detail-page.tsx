@@ -1,66 +1,107 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
-import { ForbiddenError } from '@/features/errors/forbidden'
 import { useMcpServers } from '@/features/automation/hooks/use-mcp-servers'
+import { ForbiddenError } from '@/features/errors/forbidden'
+import {
+  useBrainMcpTools,
+  useRevokeBrainMcpTool,
+} from '../hooks/use-brain-mcp-tools'
 import { useBrains, useDeleteBrain } from '../hooks/use-brains'
 import { useCapabilities } from '../hooks/use-capabilities'
-import { useProviders } from '../hooks/use-providers'
+import { useEvaluations } from '../hooks/use-evaluations'
 import { useModels } from '../hooks/use-models'
 import { useActivatePrompt, usePrompts } from '../hooks/use-prompts'
-import { useActivateRoutingPolicy, useRoutingPolicies } from '../hooks/use-routing-policy'
-import { useBrainMcpTools, useRevokeBrainMcpTool } from '../hooks/use-brain-mcp-tools'
-import { useEvaluations } from '../hooks/use-evaluations'
+import { useProviders } from '../hooks/use-providers'
+import {
+  useActivateRoutingPolicy,
+  useRoutingPolicies,
+} from '../hooks/use-routing-policy'
 import { BrainDialog } from './brain-dialog'
-import { RoutingPolicyDialog } from './routing-policy-dialog'
-import { PromptVersionDialog } from './prompt-version-dialog'
-import { McpToolDialog } from './mcp-tool-dialog'
 import { EvaluationRunDialog } from './evaluation-run-dialog'
+import { McpToolDialog } from './mcp-tool-dialog'
+import { PromptVersionDialog } from './prompt-version-dialog'
+import { RoutingPolicyDialog } from './routing-policy-dialog'
 
 export function BrainDetailPage() {
-  const { brainId } = useParams({ from: '/app/_authenticated/ai-core/brains/$brainId' })
+  const { brainId } = useParams({
+    from: '/app/_authenticated/ai-core/brains/$brainId',
+  })
   const can = useCan()
 
   const { data: brains = [], isLoading: brainsLoading } = useBrains()
-  const brain = useMemo(() => brains.find((b) => b.id === brainId) ?? null, [brains, brainId])
+  const brain = useMemo(
+    () => brains.find((b) => b.id === brainId) ?? null,
+    [brains, brainId]
+  )
 
   const { data: capabilities = [] } = useCapabilities()
   const { data: providers = [] } = useProviders()
   const { data: models = [] } = useModels()
   const { data: servers = [] } = useMcpServers()
 
-  const { data: policies = [], isLoading: policiesLoading } = useRoutingPolicies(brainId)
+  const { data: policies = [], isLoading: policiesLoading } =
+    useRoutingPolicies(brainId)
   const activatePolicy = useActivateRoutingPolicy(brainId)
   const [policyDialogOpen, setPolicyDialogOpen] = useState(false)
 
   const { data: prompts = [], isLoading: promptsLoading } = usePrompts(brainId)
   const activatePrompt = useActivatePrompt(brainId)
   const [promptDialogOpen, setPromptDialogOpen] = useState(false)
-  const [evaluatingPromptId, setEvaluatingPromptId] = useState<string | null>(null)
+  const [evaluatingPromptId, setEvaluatingPromptId] = useState<string | null>(
+    null
+  )
 
-  const { data: mcpTools = [], isLoading: mcpToolsLoading } = useBrainMcpTools(brainId)
+  const { data: mcpTools = [], isLoading: mcpToolsLoading } =
+    useBrainMcpTools(brainId)
   const revokeMcpTool = useRevokeBrainMcpTool(brainId)
   const [mcpDialogOpen, setMcpDialogOpen] = useState(false)
 
   const [evaluationsPromptId, setEvaluationsPromptId] = useState<string>('')
-  const { data: evaluations = [] } = useEvaluations(brainId, evaluationsPromptId || null)
+  const { data: evaluations = [] } = useEvaluations(
+    brainId,
+    evaluationsPromptId || null
+  )
 
   const [editOpen, setEditOpen] = useState(false)
   const deleteBrain = useDeleteBrain()
 
-  const providerName = (id: string) => providers.find((p) => p.id === id)?.displayName ?? id
-  const modelName = (id: string) => models.find((m) => m.id === id)?.displayName ?? id
-  const serverName = (id: string) => servers.find((s) => s.id === id)?.name ?? id
+  const providerName = (id: string) =>
+    providers.find((p) => p.id === id)?.displayName ?? id
+  const modelName = (id: string) =>
+    models.find((m) => m.id === id)?.displayName ?? id
+  const serverName = (id: string) =>
+    servers.find((s) => s.id === id)?.name ?? id
 
   if (!can('aicore')) return <ForbiddenError />
-  if (brainsLoading) return <Main><div className='flex h-40 items-center justify-center text-muted-foreground'>Loading...</div></Main>
+  if (brainsLoading)
+    return (
+      <Main>
+        <div className='flex h-40 items-center justify-center text-muted-foreground'>
+          Loading...
+        </div>
+      </Main>
+    )
   if (!brain) {
     return (
       <Main>
@@ -76,20 +117,19 @@ export function BrainDetailPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <Link
-          to='/app/ai-core/brains'
-          className='mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'
-        >
-          <ArrowLeft className='size-4' /> Back to Brains
-        </Link>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>{brain.name}</h1>
-            <p className='font-mono text-sm text-muted-foreground'>{brain.key}</p>
-          </div>
-          {can('aicoreadmin') && (
-            <div className='flex gap-2'>
+      <PageHeader
+        title={brain.name}
+        description={<span className='font-mono'>{brain.key}</span>}
+        backTo='/app/ai-core/brains'
+        backLabel='Back to Brains'
+        breadcrumbs={[
+          { label: 'AI Core', to: '/app/ai-core' },
+          { label: 'Brains', to: '/app/ai-core/brains' },
+          { label: brain.name },
+        ]}
+        actions={
+          can('aicoreadmin') && (
+            <>
               <Button variant='outline' onClick={() => setEditOpen(true)}>
                 Edit
               </Button>
@@ -100,10 +140,10 @@ export function BrainDetailPage() {
               >
                 Delete
               </Button>
-            </div>
-          )}
-        </div>
-      </div>
+            </>
+          )
+        }
+      />
 
       <Tabs defaultValue='overview'>
         <TabsList>
@@ -119,10 +159,14 @@ export function BrainDetailPage() {
           <div className='flex flex-wrap gap-2'>
             <Badge variant='outline'>{brain.category}</Badge>
             <Badge variant='outline'>{brain.memoryStrategy}</Badge>
-            <Badge variant={brain.isEnabled ? 'default' : 'secondary'}>{brain.isEnabled ? 'Enabled' : 'Disabled'}</Badge>
+            <Badge variant={brain.isEnabled ? 'default' : 'secondary'}>
+              {brain.isEnabled ? 'Enabled' : 'Disabled'}
+            </Badge>
           </div>
           <div>
-            <h3 className='mb-2 text-sm font-medium'>Capabilities using this Brain</h3>
+            <h3 className='mb-2 text-sm font-medium'>
+              Capabilities using this Brain
+            </h3>
             {capabilities.filter((c) => c.brainId === brain.id).length === 0 ? (
               <p className='text-sm text-muted-foreground'>None yet.</p>
             ) : (
@@ -141,7 +185,11 @@ export function BrainDetailPage() {
 
         <TabsContent value='routing-policy' className='space-y-4'>
           <div className='flex justify-end'>
-            {can('aicoreadmin') && <Button onClick={() => setPolicyDialogOpen(true)}>New Version</Button>}
+            {can('aicoreadmin') && (
+              <Button onClick={() => setPolicyDialogOpen(true)}>
+                New Version
+              </Button>
+            )}
           </div>
           {!policiesLoading && (
             <div className='rounded-lg border'>
@@ -161,8 +209,12 @@ export function BrainDetailPage() {
                 <TableBody>
                   {policies.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className='h-24 text-center text-muted-foreground'>
-                        No routing policy yet — this Brain cannot be invoked until one is active.
+                      <TableCell
+                        colSpan={8}
+                        className='h-24 text-center text-muted-foreground'
+                      >
+                        No routing policy yet — this Brain cannot be invoked
+                        until one is active.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -172,7 +224,8 @@ export function BrainDetailPage() {
                           <Badge variant='outline'>{policy.strategy}</Badge>
                         </TableCell>
                         <TableCell className='text-sm'>
-                          {providerName(policy.preferredProviderId)} / {modelName(policy.preferredModelId)}
+                          {providerName(policy.preferredProviderId)} /{' '}
+                          {modelName(policy.preferredModelId)}
                         </TableCell>
                         <TableCell className='text-sm text-muted-foreground'>
                           {policy.fallbackProviderId
@@ -182,10 +235,13 @@ export function BrainDetailPage() {
                         <TableCell>{policy.maxRetries}</TableCell>
                         <TableCell>{policy.timeoutMs}ms</TableCell>
                         <TableCell>
-                          {policy.confidenceHighThreshold} / {policy.confidenceMediumThreshold}
+                          {policy.confidenceHighThreshold} /{' '}
+                          {policy.confidenceMediumThreshold}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={policy.isActive ? 'default' : 'secondary'}>
+                          <Badge
+                            variant={policy.isActive ? 'default' : 'secondary'}
+                          >
                             {policy.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
@@ -212,7 +268,11 @@ export function BrainDetailPage() {
 
         <TabsContent value='prompts' className='space-y-4'>
           <div className='flex justify-end'>
-            {can('aicoreadmin') && <Button onClick={() => setPromptDialogOpen(true)}>New Version</Button>}
+            {can('aicoreadmin') && (
+              <Button onClick={() => setPromptDialogOpen(true)}>
+                New Version
+              </Button>
+            )}
           </div>
           {!promptsLoading && (
             <div className='rounded-lg border'>
@@ -228,17 +288,27 @@ export function BrainDetailPage() {
                 <TableBody>
                   {prompts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className='h-24 text-center text-muted-foreground'>
-                        No prompt version yet — this Brain cannot be invoked until one is active.
+                      <TableCell
+                        colSpan={4}
+                        className='h-24 text-center text-muted-foreground'
+                      >
+                        No prompt version yet — this Brain cannot be invoked
+                        until one is active.
                       </TableCell>
                     </TableRow>
                   ) : (
                     prompts.map((prompt) => (
                       <TableRow key={prompt.id}>
-                        <TableCell className='font-mono text-sm'>{prompt.version}</TableCell>
-                        <TableCell className='max-w-md truncate text-sm text-muted-foreground'>{prompt.body}</TableCell>
+                        <TableCell className='font-mono text-sm'>
+                          {prompt.version}
+                        </TableCell>
+                        <TableCell className='max-w-md truncate text-sm text-muted-foreground'>
+                          {prompt.body}
+                        </TableCell>
                         <TableCell>
-                          <Badge variant={prompt.isActive ? 'default' : 'secondary'}>
+                          <Badge
+                            variant={prompt.isActive ? 'default' : 'secondary'}
+                          >
                             {prompt.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
@@ -254,7 +324,11 @@ export function BrainDetailPage() {
                             </Button>
                           )}
                           {can('aicoreadmin') && (
-                            <Button size='sm' variant='outline' onClick={() => setEvaluatingPromptId(prompt.id)}>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              onClick={() => setEvaluatingPromptId(prompt.id)}
+                            >
                               Evaluate
                             </Button>
                           )}
@@ -270,7 +344,11 @@ export function BrainDetailPage() {
 
         <TabsContent value='mcp-tools' className='space-y-4'>
           <div className='flex justify-end'>
-            {can('aicoreadmin') && <Button onClick={() => setMcpDialogOpen(true)}>Allow Server</Button>}
+            {can('aicoreadmin') && (
+              <Button onClick={() => setMcpDialogOpen(true)}>
+                Allow Server
+              </Button>
+            )}
           </div>
           {!mcpToolsLoading && (
             <div className='rounded-lg border'>
@@ -285,16 +363,23 @@ export function BrainDetailPage() {
                 <TableBody>
                   {mcpTools.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className='h-24 text-center text-muted-foreground'>
+                      <TableCell
+                        colSpan={3}
+                        className='h-24 text-center text-muted-foreground'
+                      >
                         No MCP servers allowed for this Brain yet.
                       </TableCell>
                     </TableRow>
                   ) : (
                     mcpTools.map((tool) => (
                       <TableRow key={tool.id}>
-                        <TableCell className='font-medium'>{serverName(tool.mcpServerConfigId)}</TableCell>
+                        <TableCell className='font-medium'>
+                          {serverName(tool.mcpServerConfigId)}
+                        </TableCell>
                         <TableCell className='text-sm text-muted-foreground'>
-                          {tool.allowedTools.length > 0 ? tool.allowedTools.join(', ') : 'All tools'}
+                          {tool.allowedTools.length > 0
+                            ? tool.allowedTools.join(', ')
+                            : 'All tools'}
                         </TableCell>
                         <TableCell>
                           {can('aicoreadmin') && (
@@ -320,7 +405,10 @@ export function BrainDetailPage() {
         <TabsContent value='evaluations' className='space-y-4'>
           <div className='flex items-center justify-between gap-4'>
             <div className='w-64'>
-              <Select value={evaluationsPromptId} onValueChange={setEvaluationsPromptId}>
+              <Select
+                value={evaluationsPromptId}
+                onValueChange={setEvaluationsPromptId}
+              >
                 <SelectTrigger className='w-full'>
                   <SelectValue placeholder='Select a prompt version' />
                 </SelectTrigger>
@@ -335,7 +423,10 @@ export function BrainDetailPage() {
               </Select>
             </div>
             {can('aicoreadmin') && (
-              <Button disabled={!evaluationsPromptId} onClick={() => setEvaluatingPromptId(evaluationsPromptId)}>
+              <Button
+                disabled={!evaluationsPromptId}
+                onClick={() => setEvaluatingPromptId(evaluationsPromptId)}
+              >
                 Run Evaluation
               </Button>
             )}
@@ -353,22 +444,34 @@ export function BrainDetailPage() {
               <TableBody>
                 {!evaluationsPromptId ? (
                   <TableRow>
-                    <TableCell colSpan={4} className='h-24 text-center text-muted-foreground'>
+                    <TableCell
+                      colSpan={4}
+                      className='h-24 text-center text-muted-foreground'
+                    >
                       Select a prompt version to view its evaluations.
                     </TableCell>
                   </TableRow>
                 ) : evaluations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className='h-24 text-center text-muted-foreground'>
+                    <TableCell
+                      colSpan={4}
+                      className='h-24 text-center text-muted-foreground'
+                    >
                       No evaluations run against this version yet.
                     </TableCell>
                   </TableRow>
                 ) : (
                   evaluations.map((evaluation) => (
                     <TableRow key={evaluation.id}>
-                      <TableCell className='font-medium'>{evaluation.testCaseName}</TableCell>
+                      <TableCell className='font-medium'>
+                        {evaluation.testCaseName}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant={evaluation.passed ? 'default' : 'destructive'}>
+                        <Badge
+                          variant={
+                            evaluation.passed ? 'default' : 'destructive'
+                          }
+                        >
                           {evaluation.passed ? 'Passed' : 'Failed'}
                         </Badge>
                       </TableCell>
@@ -386,9 +489,21 @@ export function BrainDetailPage() {
       </Tabs>
 
       <BrainDialog open={editOpen} onOpenChange={setEditOpen} brain={brain} />
-      <RoutingPolicyDialog brainId={brain.id} open={policyDialogOpen} onOpenChange={setPolicyDialogOpen} />
-      <PromptVersionDialog brainId={brain.id} open={promptDialogOpen} onOpenChange={setPromptDialogOpen} />
-      <McpToolDialog brainId={brain.id} open={mcpDialogOpen} onOpenChange={setMcpDialogOpen} />
+      <RoutingPolicyDialog
+        brainId={brain.id}
+        open={policyDialogOpen}
+        onOpenChange={setPolicyDialogOpen}
+      />
+      <PromptVersionDialog
+        brainId={brain.id}
+        open={promptDialogOpen}
+        onOpenChange={setPromptDialogOpen}
+      />
+      <McpToolDialog
+        brainId={brain.id}
+        open={mcpDialogOpen}
+        onOpenChange={setMcpDialogOpen}
+      />
       <EvaluationRunDialog
         brainId={brain.id}
         promptId={evaluatingPromptId}

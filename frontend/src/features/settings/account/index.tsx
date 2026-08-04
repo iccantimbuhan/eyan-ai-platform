@@ -7,6 +7,10 @@ export function SettingsAccount() {
       title='Account'
       desc='Update your account settings. Set your preferred language and
           timezone.'
+      breadcrumbs={[
+        { label: 'Settings', to: '/app/settings' },
+        { label: 'Account' },
+      ]}
     >
       <AccountForm />
     </ContentSection>

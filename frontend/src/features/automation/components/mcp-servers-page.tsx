@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useMcpServers } from '../hooks/use-mcp-servers'
@@ -26,17 +27,18 @@ export function McpServersPage() {
   return (
     <>
       <Main className='space-y-6'>
-        <div className='flex items-center justify-between gap-4'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>MCP Servers</h1>
-            <p className='text-muted-foreground'>
-              Registered MCP server instances and their configuration.
-            </p>
-          </div>
-          {can('automationcredentials') && (
-            <Button onClick={() => setCreateOpen(true)}>Register Server</Button>
-          )}
-        </div>
+        <PageHeader
+          title='MCP Servers'
+          description='Registered MCP server instances and their configuration.'
+          breadcrumbs={[{ label: 'Automation' }, { label: 'MCP Servers' }]}
+          actions={
+            can('automationcredentials') && (
+              <Button onClick={() => setCreateOpen(true)}>
+                Register Server
+              </Button>
+            )
+          }
+        />
 
         {isLoading && (
           <div className='flex h-40 items-center justify-center text-muted-foreground'>
@@ -66,15 +68,22 @@ export function McpServersPage() {
               <TableBody>
                 {servers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className='h-24 text-center text-muted-foreground'>
+                    <TableCell
+                      colSpan={6}
+                      className='h-24 text-center text-muted-foreground'
+                    >
                       No MCP servers registered yet.
                     </TableCell>
                   </TableRow>
                 ) : (
                   servers.map((server) => (
                     <TableRow key={server.id}>
-                      <TableCell className='font-medium'>{server.name}</TableCell>
-                      <TableCell className='capitalize'>{server.provider}</TableCell>
+                      <TableCell className='font-medium'>
+                        {server.name}
+                      </TableCell>
+                      <TableCell className='capitalize'>
+                        {server.provider}
+                      </TableCell>
                       <TableCell>{server.transport}</TableCell>
                       <TableCell>{server.isEnabled ? 'Yes' : 'No'}</TableCell>
                       <TableCell>
@@ -91,7 +100,11 @@ export function McpServersPage() {
           </div>
         )}
       </Main>
-      <McpServerDialog mode='create' open={createOpen} onOpenChange={setCreateOpen} />
+      <McpServerDialog
+        mode='create'
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
     </>
   )
 }

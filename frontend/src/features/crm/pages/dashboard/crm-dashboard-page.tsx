@@ -1,12 +1,13 @@
-import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
+import { Link } from '@tanstack/react-router'
 import { CheckCircle2, TrendingUp, Users, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Main } from '@/components/layout/main'
-import { StatCard } from '@/features/dashboard/components/stat-card'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
+import { StatCard } from '@/features/dashboard/components/stat-card'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useLeads } from '../../hooks/use-leads'
 import { statusBadgeVariant, statusLabel } from '../../lib/lead-lifecycle'
@@ -25,7 +26,12 @@ const ALL_STATUSES: LeadStatus[] = [
   'LOST',
 ]
 
-const QUALIFIED_PLUS: LeadStatus[] = ['QUALIFIED', 'CONTACTED', 'NEGOTIATION', 'CONVERTED']
+const QUALIFIED_PLUS: LeadStatus[] = [
+  'QUALIFIED',
+  'CONTACTED',
+  'NEGOTIATION',
+  'CONVERTED',
+]
 
 export function CrmDashboardPage() {
   const can = useCan()
@@ -36,7 +42,9 @@ export function CrmDashboardPage() {
   if (isLoading) {
     return (
       <Main>
-        <div className='flex h-64 items-center justify-center'>Loading pipeline...</div>
+        <div className='flex h-64 items-center justify-center'>
+          Loading pipeline...
+        </div>
       </Main>
     )
   }
@@ -54,8 +62,12 @@ export function CrmDashboardPage() {
   const leads = data.data
   const totalLeads = leads.length
   const newCount = leads.filter((lead) => lead.status === 'NEW').length
-  const qualifiedPlusCount = leads.filter((lead) => QUALIFIED_PLUS.includes(lead.status)).length
-  const convertedCount = leads.filter((lead) => lead.status === 'CONVERTED').length
+  const qualifiedPlusCount = leads.filter((lead) =>
+    QUALIFIED_PLUS.includes(lead.status)
+  ).length
+  const convertedCount = leads.filter(
+    (lead) => lead.status === 'CONVERTED'
+  ).length
 
   const statusCounts = ALL_STATUSES.map((status) => ({
     status,
@@ -63,26 +75,39 @@ export function CrmDashboardPage() {
   }))
 
   const recentLeads = [...leads]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
     .slice(0, 5)
 
   return (
     <Main className='space-y-6'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>CRM</h1>
-          <p className='text-muted-foreground'>Lead pipeline overview.</p>
-        </div>
-
-        <Button asChild>
-          <Link to='/app/crm/leads'>View All Leads</Link>
-        </Button>
-      </div>
+      <PageHeader
+        title='CRM'
+        description='Lead pipeline overview.'
+        breadcrumbs={[{ label: 'CRM' }]}
+        actions={
+          <Button asChild>
+            <Link to='/app/crm/leads'>View All Leads</Link>
+          </Button>
+        }
+      />
 
       <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-        <StatCard title='Total Leads' value={totalLeads} description='All time' icon={<Users />} />
+        <StatCard
+          title='Total Leads'
+          value={totalLeads}
+          description='All time'
+          icon={<Users />}
+        />
 
-        <StatCard title='New' value={newCount} description='Awaiting triage' icon={<Sparkles />} />
+        <StatCard
+          title='New'
+          value={newCount}
+          description='Awaiting triage'
+          icon={<Sparkles />}
+        />
 
         <StatCard
           title='Qualified+'

@@ -8,9 +8,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
-import { useCheckMcpServerHealth, useMcpServers } from '../hooks/use-mcp-servers'
+import {
+  useCheckMcpServerHealth,
+  useMcpServers,
+} from '../hooks/use-mcp-servers'
 import { HealthStatusBadge } from '../lib/status-badges'
 
 // Deliberately reuses useMcpServers() rather than a separate fetch — health
@@ -26,12 +30,11 @@ export function HealthPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Health</h1>
-        <p className='text-muted-foreground'>
-          Connectivity status for every registered MCP server.
-        </p>
-      </div>
+      <PageHeader
+        title='Health'
+        description='Connectivity status for every registered MCP server.'
+        breadcrumbs={[{ label: 'Automation' }, { label: 'Health' }]}
+      />
 
       {isLoading && (
         <div className='flex h-40 items-center justify-center text-muted-foreground'>
@@ -60,8 +63,12 @@ export function HealthPage() {
             <TableBody>
               {servers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className='h-24 text-center text-muted-foreground'>
-                    No MCP servers registered yet — register one on the MCP Servers page.
+                  <TableCell
+                    colSpan={5}
+                    className='h-24 text-center text-muted-foreground'
+                  >
+                    No MCP servers registered yet — register one on the MCP
+                    Servers page.
                   </TableCell>
                 </TableRow>
               ) : (

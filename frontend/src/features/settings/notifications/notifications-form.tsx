@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
 import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useNavigationBlocker } from '@/hooks/use-navigation-blocker'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Switch } from '@/components/ui/switch'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes-dialog'
 
 const notificationsFormSchema = z.object({
   type: z.enum(['all', 'mentions', 'none'], {
@@ -46,6 +48,10 @@ export function NotificationsForm() {
     resolver: zodResolver(notificationsFormSchema),
     defaultValues,
   })
+
+  const { unsavedChangesDialogProps } = useNavigationBlocker(
+    form.formState.isDirty
+  )
 
   return (
     <Form {...form}>
@@ -215,6 +221,7 @@ export function NotificationsForm() {
         />
         <Button type='submit'>Update notifications</Button>
       </form>
+      <UnsavedChangesDialog {...unsavedChangesDialogProps} />
     </Form>
   )
 }

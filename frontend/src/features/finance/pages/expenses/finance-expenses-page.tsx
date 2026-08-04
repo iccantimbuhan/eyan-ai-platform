@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useExpenseDialog } from '../../hooks/use-expense-dialog'
@@ -17,7 +18,9 @@ export function FinanceExpensesPage() {
   if (isLoading) {
     return (
       <Main>
-        <div className='flex h-64 items-center justify-center'>Loading expenses...</div>
+        <div className='flex h-64 items-center justify-center'>
+          Loading expenses...
+        </div>
       </Main>
     )
   }
@@ -35,20 +38,25 @@ export function FinanceExpensesPage() {
   return (
     <>
       <Main className='space-y-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>Expenses</h1>
-
-            <p className='text-muted-foreground'>Track where your money goes.</p>
-          </div>
-
-          <Button onClick={createDialog.openDialog}>Add Expense</Button>
-        </div>
+        <PageHeader
+          title='Expenses'
+          description='Track where your money goes.'
+          breadcrumbs={[
+            { label: 'Finance', to: '/app/finance' },
+            { label: 'Expenses' },
+          ]}
+          actions={
+            <Button onClick={createDialog.openDialog}>Add Expense</Button>
+          }
+        />
 
         <ExpenseTable expenses={data?.data ?? []} />
       </Main>
 
-      <ExpenseDialog open={createDialog.open} onOpenChange={createDialog.setOpen} />
+      <ExpenseDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+      />
     </>
   )
 }

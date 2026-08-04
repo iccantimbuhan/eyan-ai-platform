@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,16 +11,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { useProviders } from '../hooks/use-providers'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes-dialog'
 import { useCreateModel, useUpdateModel } from '../hooks/use-models'
-import { defaultModelValues, modelSchema, parseTagsText, type ModelFormValues } from '../schemas/provider-schema'
+import { useProviders } from '../hooks/use-providers'
+import {
+  defaultModelValues,
+  modelSchema,
+  parseTagsText,
+  type ModelFormValues,
+} from '../schemas/provider-schema'
 import type { AiModel } from '../types/ai-core'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void; model?: AiModel | null }
+type Props = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  model?: AiModel | null
+}
 
 export function ModelDialog({ open, onOpenChange, model = null }: Props) {
   const isEdit = model !== null
@@ -70,101 +94,129 @@ export function ModelDialog({ open, onOpenChange, model = null }: Props) {
     onOpenChange(false)
   }
 
+  const { guardedOnOpenChange, unsavedChangesDialogProps } =
+    useUnsavedChangesGuard({
+      isDirty: form.formState.isDirty,
+      onOpenChange,
+    })
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-lg'>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Model' : 'New Model'}</DialogTitle>
-          <DialogDescription>Tags are technical abilities (e.g. "reasoning"), never a business Capability.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(submit)} className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='providerId'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Provider</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
-                      <SelectTrigger className='w-full'>
-                        <SelectValue placeholder='Select a provider' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {providers.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {provider.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='modelKey'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Model Key</FormLabel>
-                  <FormControl>
-                    <Input placeholder='e.g. qwen2.5-coder:7b' {...field} disabled={isEdit} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='displayName'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Display Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder='e.g. Qwen 2.5 Coder 7B' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='tagsText'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags (comma-separated)</FormLabel>
-                  <FormControl>
-                    <Input placeholder='chat, coding, reasoning' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='isEnabled'
-              render={({ field }) => (
-                <FormItem className='flex items-center justify-between rounded-md border px-4 py-3'>
-                  <FormLabel>Enabled</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
-                Cancel
-              </Button>
-              <Button type='submit' disabled={isPending}>
-                {isPending ? 'Saving...' : 'Save'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={guardedOnOpenChange}>
+        <DialogContent className='sm:max-w-lg'>
+          <DialogHeader>
+            <DialogTitle>{isEdit ? 'Edit Model' : 'New Model'}</DialogTitle>
+            <DialogDescription>
+              Tags are technical abilities (e.g. "reasoning"), never a business
+              Capability.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(submit)} className='space-y-4'>
+              <FormField
+                control={form.control}
+                name='providerId'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Provider</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isEdit}
+                      >
+                        <SelectTrigger className='w-full'>
+                          <SelectValue placeholder='Select a provider' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {providers.map((provider) => (
+                            <SelectItem key={provider.id} value={provider.id}>
+                              {provider.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='modelKey'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model Key</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='e.g. qwen2.5-coder:7b'
+                        {...field}
+                        disabled={isEdit}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='displayName'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Display Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder='e.g. Qwen 2.5 Coder 7B' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='tagsText'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags (comma-separated)</FormLabel>
+                    <FormControl>
+                      <Input placeholder='chat, coding, reasoning' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='isEnabled'
+                render={({ field }) => (
+                  <FormItem className='flex items-center justify-between rounded-md border px-4 py-3'>
+                    <FormLabel>Enabled</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => guardedOnOpenChange(false)}
+                  disabled={isPending}
+                >
+                  Cancel
+                </Button>
+                <Button type='submit' disabled={isPending}>
+                  {isPending ? 'Saving...' : 'Save'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <UnsavedChangesDialog {...unsavedChangesDialogProps} />
+    </>
   )
 }

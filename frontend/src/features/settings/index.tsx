@@ -1,6 +1,7 @@
 import { Outlet } from '@tanstack/react-router'
 import { Monitor, Bell, Palette, Wrench, UserCog } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { BackButton } from '@/components/back-button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -49,13 +50,16 @@ export function Settings() {
       </Header>
 
       <Main fixed>
-        <div className='space-y-0.5'>
-          <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-            Settings
-          </h1>
-          <p className='text-muted-foreground'>
-            Manage your account settings and set e-mail preferences.
-          </p>
+        <div className='space-y-2'>
+          <BackButton to='/app' label='Back to Dashboard' />
+          <div className='space-y-0.5'>
+            <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+              Settings
+            </h1>
+            <p className='text-muted-foreground'>
+              Manage your account settings and set e-mail preferences.
+            </p>
+          </div>
         </div>
         <Separator className='my-4 lg:my-6' />
         <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>

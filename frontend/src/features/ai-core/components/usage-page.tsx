@@ -1,7 +1,15 @@
 import { useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useUsage } from '../hooks/use-usage'
@@ -18,14 +26,24 @@ export function UsagePage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Usage</h1>
-        <p className='text-muted-foreground'>Every production AI Core call, real telemetry, fire-and-forget written.</p>
-      </div>
+      <PageHeader
+        title='Usage'
+        description='Every production AI Core call, real telemetry, fire-and-forget written.'
+        breadcrumbs={[
+          { label: 'AI Core', to: '/app/ai-core' },
+          { label: 'Usage' },
+        ]}
+      />
 
-      {isLoading && <div className='flex h-40 items-center justify-center text-muted-foreground'>Loading...</div>}
+      {isLoading && (
+        <div className='flex h-40 items-center justify-center text-muted-foreground'>
+          Loading...
+        </div>
+      )}
       {!isLoading && error && (
-        <div className='flex h-40 items-center justify-center text-destructive'>Failed to load usage.</div>
+        <div className='flex h-40 items-center justify-center text-destructive'>
+          Failed to load usage.
+        </div>
       )}
 
       {!isLoading && !error && data && (
@@ -46,7 +64,10 @@ export function UsagePage() {
               <TableBody>
                 {data.items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className='h-24 text-center text-muted-foreground'>
+                    <TableCell
+                      colSpan={7}
+                      className='h-24 text-center text-muted-foreground'
+                    >
                       No usage recorded yet.
                     </TableCell>
                   </TableRow>
@@ -61,9 +82,15 @@ export function UsagePage() {
                         {entry.tokensIn ?? '—'} / {entry.tokensOut ?? '—'}
                       </TableCell>
                       <TableCell>{entry.costUsd ?? '—'}</TableCell>
-                      <TableCell>{entry.latencyMs ? `${entry.latencyMs}ms` : '—'}</TableCell>
-                      <TableCell>{entry.needsManualReview ? 'Yes' : 'No'}</TableCell>
-                      <TableCell className='text-muted-foreground'>{new Date(entry.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>
+                        {entry.latencyMs ? `${entry.latencyMs}ms` : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {entry.needsManualReview ? 'Yes' : 'No'}
+                      </TableCell>
+                      <TableCell className='text-muted-foreground'>
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -72,10 +99,16 @@ export function UsagePage() {
           </div>
           <div className='flex items-center justify-between'>
             <span className='text-sm text-muted-foreground'>
-              Page {data.pagination.page} of {Math.max(data.pagination.totalPages, 1)}
+              Page {data.pagination.page} of{' '}
+              {Math.max(data.pagination.totalPages, 1)}
             </span>
             <div className='space-x-2'>
-              <Button size='sm' variant='outline' disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              <Button
+                size='sm'
+                variant='outline'
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
                 Previous
               </Button>
               <Button

@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useAuditLogs } from '../hooks/use-audit-logs'
@@ -31,12 +32,11 @@ export function AuditLogsPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Audit Logs</h1>
-        <p className='text-muted-foreground'>
-          Every connection, MCP server, and credential-access event across the platform.
-        </p>
-      </div>
+      <PageHeader
+        title='Audit Logs'
+        description='Every connection, MCP server, and credential-access event across the platform.'
+        breadcrumbs={[{ label: 'Automation' }, { label: 'Audit Logs' }]}
+      />
 
       {isLoading && (
         <div className='flex h-40 items-center justify-center text-muted-foreground'>
@@ -65,7 +65,10 @@ export function AuditLogsPage() {
               <TableBody>
                 {events.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className='h-24 text-center text-muted-foreground'>
+                    <TableCell
+                      colSpan={4}
+                      className='h-24 text-center text-muted-foreground'
+                    >
                       No audit events yet.
                     </TableCell>
                   </TableRow>
@@ -78,7 +81,9 @@ export function AuditLogsPage() {
                       <TableCell className='text-muted-foreground'>
                         {event.targetType} · {event.targetId}
                       </TableCell>
-                      <TableCell className='text-muted-foreground'>{event.actorId}</TableCell>
+                      <TableCell className='text-muted-foreground'>
+                        {event.actorId}
+                      </TableCell>
                       <TableCell className='text-muted-foreground'>
                         {new Date(event.createdAt).toLocaleString()}
                       </TableCell>
@@ -106,7 +111,9 @@ export function AuditLogsPage() {
                 size='sm'
                 variant='outline'
                 disabled={page >= totalPages}
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
               >
                 Next
               </Button>

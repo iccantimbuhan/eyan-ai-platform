@@ -1,21 +1,29 @@
 import { useState } from 'react'
 import { FolderOpen, Image, Sparkles, Video } from 'lucide-react'
-
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Skeleton } from '@/components/ui/skeleton'
 import { StatCard } from '@/features/dashboard/components/stat-card'
-
-import { useProjects } from '../../hooks/use-projects'
-import { usePlatformActivity, usePlatformAnalyticsSummary } from '../../hooks/use-analytics'
 import { ActivityFeed } from '../../components/analytics/ActivityFeed'
 import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary'
+import {
+  usePlatformActivity,
+  usePlatformAnalyticsSummary,
+} from '../../hooks/use-analytics'
+import { useProjects } from '../../hooks/use-projects'
 
-const CONTENT_ASSET_TYPES = ['BLOG', 'EMAIL', 'SOCIAL_MEDIA', 'MARKETING_COPY', 'DOCUMENTATION']
+const CONTENT_ASSET_TYPES = [
+  'BLOG',
+  'EMAIL',
+  'SOCIAL_MEDIA',
+  'MARKETING_COPY',
+  'DOCUMENTATION',
+]
 const ACTIVITY_PAGE_SIZE = 10
 
 function countByType(
@@ -53,10 +61,14 @@ export function ProductionDashboard() {
 
       <Main>
         <div className='mb-8'>
-          <h1 className='text-3xl font-bold tracking-tight'>Production Dashboard</h1>
-          <p className='mt-2 text-muted-foreground'>
-            Creative operations across every project — assets, review, publishing, and activity.
-          </p>
+          <PageHeader
+            title='Production Dashboard'
+            description='Creative operations across every project — assets, review, publishing, and activity.'
+            breadcrumbs={[
+              { label: 'Content Studio', to: '/app/content-studio' },
+              { label: 'Production Dashboard' },
+            ]}
+          />
         </div>
 
         <div className='space-y-6'>
@@ -66,12 +78,24 @@ export function ProductionDashboard() {
           >
             <StatCard
               title='Projects'
-              value={projects.isLoading ? <Skeleton className='h-8 w-12' /> : (projects.data?.pagination.total ?? 0)}
+              value={
+                projects.isLoading ? (
+                  <Skeleton className='h-8 w-12' />
+                ) : (
+                  (projects.data?.pagination.total ?? 0)
+                )
+              }
               icon={<FolderOpen className='size-4' />}
             />
             <StatCard
               title='Total Assets'
-              value={summary.isLoading ? <Skeleton className='h-8 w-12' /> : (summary.data?.totalAssets ?? 0)}
+              value={
+                summary.isLoading ? (
+                  <Skeleton className='h-8 w-12' />
+                ) : (
+                  (summary.data?.totalAssets ?? 0)
+                )
+              }
               icon={<Sparkles className='size-4' />}
             />
             <StatCard
@@ -88,36 +112,52 @@ export function ProductionDashboard() {
             <StatCard
               title='AI Images'
               value={
-                summary.isLoading ? <Skeleton className='h-8 w-12' /> : countByType(assetCounts, ['IMAGE'])
+                summary.isLoading ? (
+                  <Skeleton className='h-8 w-12' />
+                ) : (
+                  countByType(assetCounts, ['IMAGE'])
+                )
               }
               icon={<Image className='size-4' />}
             />
             <StatCard
               title='AI Video'
               value={
-                summary.isLoading ? <Skeleton className='h-8 w-12' /> : countByType(assetCounts, ['VIDEO'])
+                summary.isLoading ? (
+                  <Skeleton className='h-8 w-12' />
+                ) : (
+                  countByType(assetCounts, ['VIDEO'])
+                )
               }
               icon={<Video className='size-4' />}
             />
             <StatCard
               title='Brand Kits'
               value={
-                summary.isLoading
-                  ? <Skeleton className='h-8 w-12' />
-                  : countByType(assetCounts, ['BRAND_KIT'])
+                summary.isLoading ? (
+                  <Skeleton className='h-8 w-12' />
+                ) : (
+                  countByType(assetCounts, ['BRAND_KIT'])
+                )
               }
             />
           </div>
 
           {summary.isLoading && (
-            <div role='status' aria-label='Loading dashboard' className='space-y-4'>
+            <div
+              role='status'
+              aria-label='Loading dashboard'
+              className='space-y-4'
+            >
               <Skeleton className='h-64 w-full' />
               <Skeleton className='h-64 w-full' />
             </div>
           )}
 
           {summary.isError && (
-            <p className='text-sm text-destructive'>Failed to load platform analytics.</p>
+            <p className='text-sm text-destructive'>
+              Failed to load platform analytics.
+            </p>
           )}
 
           {!summary.isLoading && !summary.isError && summary.data && (

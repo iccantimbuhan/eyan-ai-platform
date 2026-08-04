@@ -1,15 +1,27 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
-import { ProviderDialog } from './provider-dialog'
-import { ProviderCredentialDialog } from './provider-credential-dialog'
-import { useCheckProviderHealth, useDeleteProvider, useProviders } from '../hooks/use-providers'
+import {
+  useCheckProviderHealth,
+  useDeleteProvider,
+  useProviders,
+} from '../hooks/use-providers'
 import { AiHealthStatusBadge } from '../lib/status-badges'
 import type { AiProvider } from '../types/ai-core'
+import { ProviderCredentialDialog } from './provider-credential-dialog'
+import { ProviderDialog } from './provider-dialog'
 
 export function ProvidersPage() {
   const can = useCan()
@@ -17,24 +29,40 @@ export function ProvidersPage() {
   const deleteProvider = useDeleteProvider()
   const checkHealth = useCheckProviderHealth()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [credentialProviderId, setCredentialProviderId] = useState<string | null>(null)
-  const [editingProvider, setEditingProvider] = useState<AiProvider | null>(null)
+  const [credentialProviderId, setCredentialProviderId] = useState<
+    string | null
+  >(null)
+  const [editingProvider, setEditingProvider] = useState<AiProvider | null>(
+    null
+  )
 
   if (!can('aicore')) return <ForbiddenError />
 
   return (
     <Main className='space-y-6'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>Providers</h1>
-          <p className='text-muted-foreground'>Registered AI provider plugins — Ollama, OpenAI, Anthropic, Gemini.</p>
-        </div>
-        {can('aicoreadmin') && <Button onClick={() => setDialogOpen(true)}>New Provider</Button>}
-      </div>
+      <PageHeader
+        title='Providers'
+        description='Registered AI provider plugins — Ollama, OpenAI, Anthropic, Gemini.'
+        breadcrumbs={[
+          { label: 'AI Core', to: '/app/ai-core' },
+          { label: 'Providers' },
+        ]}
+        actions={
+          can('aicoreadmin') && (
+            <Button onClick={() => setDialogOpen(true)}>New Provider</Button>
+          )
+        }
+      />
 
-      {isLoading && <div className='flex h-40 items-center justify-center text-muted-foreground'>Loading...</div>}
+      {isLoading && (
+        <div className='flex h-40 items-center justify-center text-muted-foreground'>
+          Loading...
+        </div>
+      )}
       {!isLoading && error && (
-        <div className='flex h-40 items-center justify-center text-destructive'>Failed to load providers.</div>
+        <div className='flex h-40 items-center justify-center text-destructive'>
+          Failed to load providers.
+        </div>
       )}
 
       {!isLoading && !error && (
@@ -52,15 +80,22 @@ export function ProvidersPage() {
             <TableBody>
               {providers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className='h-24 text-center text-muted-foreground'>
+                  <TableCell
+                    colSpan={5}
+                    className='h-24 text-center text-muted-foreground'
+                  >
                     No providers registered yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 providers.map((provider) => (
                   <TableRow key={provider.id}>
-                    <TableCell className='font-mono text-sm'>{provider.key}</TableCell>
-                    <TableCell className='font-medium'>{provider.displayName}</TableCell>
+                    <TableCell className='font-mono text-sm'>
+                      {provider.key}
+                    </TableCell>
+                    <TableCell className='font-medium'>
+                      {provider.displayName}
+                    </TableCell>
                     <TableCell>
                       <Badge variant='outline'>{provider.kind}</Badge>
                     </TableCell>
@@ -77,13 +112,21 @@ export function ProvidersPage() {
                         Check Health
                       </Button>
                       {can('aicoreadmin') && provider.kind === 'HOSTED' && (
-                        <Button size='sm' variant='outline' onClick={() => setCredentialProviderId(provider.id)}>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          onClick={() => setCredentialProviderId(provider.id)}
+                        >
                           Add Credential
                         </Button>
                       )}
                       {can('aicoreadmin') && (
                         <>
-                          <Button size='sm' variant='outline' onClick={() => setEditingProvider(provider)}>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => setEditingProvider(provider)}
+                          >
                             Edit
                           </Button>
                           <Button

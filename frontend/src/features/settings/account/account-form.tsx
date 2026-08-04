@@ -2,8 +2,10 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useAuthStore } from '@/stores/auth-store'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
+import { useNavigationBlocker } from '@/hooks/use-navigation-blocker'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -29,6 +31,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { DatePicker } from '@/components/date-picker'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes-dialog'
 
 const languages = [
   { label: 'English', value: 'en' },
@@ -54,20 +57,23 @@ const accountFormSchema = z.object({
 
 type AccountFormValues = z.infer<typeof accountFormSchema>
 
-// This can come from your database or API.
-const defaultValues: Partial<AccountFormValues> = {
-  name: '',
-}
-
 export function AccountForm() {
+  const user = useAuthStore((state) => state.auth.user)
+
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
-    defaultValues,
+    defaultValues: {
+      name: user?.name ?? '',
+    },
   })
 
   function onSubmit(data: AccountFormValues) {
     showSubmittedData(data)
   }
+
+  const { unsavedChangesDialogProps } = useNavigationBlocker(
+    form.formState.isDirty
+  )
 
   return (
     <Form {...form}>
@@ -168,6 +174,7 @@ export function AccountForm() {
         />
         <Button type='submit'>Update account</Button>
       </form>
+      <UnsavedChangesDialog {...unsavedChangesDialogProps} />
     </Form>
   )
 }

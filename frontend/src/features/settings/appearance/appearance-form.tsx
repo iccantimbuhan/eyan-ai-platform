@@ -7,6 +7,7 @@ import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
 import { useTheme } from '@/context/theme-provider'
+import { useNavigationBlocker } from '@/hooks/use-navigation-blocker'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Form,
@@ -18,6 +19,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes-dialog'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
@@ -47,6 +49,10 @@ export function AppearanceForm() {
 
     showSubmittedData(data)
   }
+
+  const { unsavedChangesDialogProps } = useNavigationBlocker(
+    form.formState.isDirty
+  )
 
   return (
     <Form {...form}>
@@ -157,6 +163,7 @@ export function AppearanceForm() {
 
         <Button type='submit'>Update preferences</Button>
       </form>
+      <UnsavedChangesDialog {...unsavedChangesDialogProps} />
     </Form>
   )
 }

@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
+import { Link } from '@tanstack/react-router'
 import { PiggyBank, Receipt, Wallet, WalletCards } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Main } from '@/components/layout/main'
-import { StatCard } from '@/features/dashboard/components/stat-card'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
+import { StatCard } from '@/features/dashboard/components/stat-card'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useFinanceDashboard } from '../../hooks/use-finance-dashboard'
 import { categoryLabel } from '../../lib/category-labels'
@@ -26,7 +27,9 @@ export function FinanceDashboardPage() {
   if (isLoading) {
     return (
       <Main>
-        <div className='flex h-64 items-center justify-center'>Loading dashboard...</div>
+        <div className='flex h-64 items-center justify-center'>
+          Loading dashboard...
+        </div>
       </Main>
     )
   }
@@ -44,18 +47,16 @@ export function FinanceDashboardPage() {
   return (
     <>
       <Main className='space-y-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>Finance</h1>
-            <p className='text-muted-foreground'>
-              {format(new Date(`${data.period}-01T00:00:00`), 'MMMM yyyy')} overview.
-            </p>
-          </div>
-
-          <Button asChild>
-            <Link to='/app/finance/expenses'>Add Expense</Link>
-          </Button>
-        </div>
+        <PageHeader
+          title='Finance'
+          description={`${format(new Date(`${data.period}-01T00:00:00`), 'MMMM yyyy')} overview.`}
+          breadcrumbs={[{ label: 'Finance' }]}
+          actions={
+            <Button asChild>
+              <Link to='/app/finance/expenses'>Add Expense</Link>
+            </Button>
+          }
+        />
 
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
           <button
@@ -65,8 +66,14 @@ export function FinanceDashboardPage() {
           >
             <StatCard
               title='Monthly Budget'
-              value={data.budget ? formatCurrency(data.budget.monthlyLimit) : 'Not set'}
-              description={data.budget ? 'Tap to edit' : 'Tap to set your budget'}
+              value={
+                data.budget
+                  ? formatCurrency(data.budget.monthlyLimit)
+                  : 'Not set'
+              }
+              description={
+                data.budget ? 'Tap to edit' : 'Tap to set your budget'
+              }
               icon={<Wallet />}
             />
           </button>
@@ -80,7 +87,9 @@ export function FinanceDashboardPage() {
 
           <StatCard
             title='Remaining Budget'
-            value={data.remainingBudget ? formatCurrency(data.remainingBudget) : '—'}
+            value={
+              data.remainingBudget ? formatCurrency(data.remainingBudget) : '—'
+            }
             description={
               data.remainingBudget && Number(data.remainingBudget) < 0
                 ? 'Over budget'
@@ -117,17 +126,22 @@ export function FinanceDashboardPage() {
                     className='flex items-center justify-between py-3 first:pt-0 last:pb-0'
                   >
                     <div className='flex items-center gap-3'>
-                      <Badge variant='secondary'>{categoryLabel(expense.category)}</Badge>
+                      <Badge variant='secondary'>
+                        {categoryLabel(expense.category)}
+                      </Badge>
                       <div>
                         <p className='text-sm font-medium'>
-                          {expense.description || categoryLabel(expense.category)}
+                          {expense.description ||
+                            categoryLabel(expense.category)}
                         </p>
                         <p className='text-xs text-muted-foreground'>
                           {format(new Date(expense.date), 'MMM dd, yyyy')}
                         </p>
                       </div>
                     </div>
-                    <div className='font-medium'>{formatCurrency(expense.amount)}</div>
+                    <div className='font-medium'>
+                      {formatCurrency(expense.amount)}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -6,6 +6,10 @@ export function SettingsProfile() {
     <ContentSection
       title='Profile'
       desc='This is how others will see you on the site.'
+      breadcrumbs={[
+        { label: 'Settings', to: '/app/settings' },
+        { label: 'Profile' },
+      ]}
     >
       <ProfileForm />
     </ContentSection>

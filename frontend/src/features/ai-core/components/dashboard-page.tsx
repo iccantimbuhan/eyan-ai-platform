@@ -1,8 +1,9 @@
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
-import { useCapabilities } from '../hooks/use-capabilities'
 import { useBrains } from '../hooks/use-brains'
+import { useCapabilities } from '../hooks/use-capabilities'
 import { useProviders } from '../hooks/use-providers'
 import { useCostSummary } from '../hooks/use-usage'
 
@@ -26,19 +27,20 @@ export function AiCoreDashboardPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>AI Core</h1>
-        <p className='text-muted-foreground'>
-          The shared AI platform every business module routes AI calls through. Business modules invoke Capabilities
-          only — never a Provider, Model, or Prompt directly.
-        </p>
-      </div>
+      <PageHeader
+        title='AI Core'
+        description='The shared AI platform every business module routes AI calls through. Business modules invoke Capabilities only — never a Provider, Model, or Prompt directly.'
+        breadcrumbs={[{ label: 'AI Core' }]}
+      />
 
       <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
         <StatCard label='Capabilities' value={String(capabilities.length)} />
         <StatCard label='Brains' value={String(brains.length)} />
         <StatCard label='Providers' value={String(providers.length)} />
-        <StatCard label='Total Calls' value={costs ? String(costs.totalCalls) : '—'} />
+        <StatCard
+          label='Total Calls'
+          value={costs ? String(costs.totalCalls) : '—'}
+        />
       </div>
     </Main>
   )

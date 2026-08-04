@@ -1,8 +1,8 @@
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-
-import { ProductionDashboard } from './ProductionDashboard'
 import type { ProjectAnalyticsSummary } from '../../types/analytics'
+import { ProductionDashboard } from './ProductionDashboard'
 
 // The app chrome (Header/Search/ThemeSwitch/ConfigDrawer/ProfileDropdown)
 // requires a SidebarProvider and other app-shell context this test isn't
@@ -11,6 +11,25 @@ import type { ProjectAnalyticsSummary } from '../../types/analytics'
 // unrelated chrome/sub-components.
 vi.mock('@/components/layout/header', () => ({
   Header: () => <div>Header Stub</div>,
+}))
+
+// PageHeader's breadcrumbs render a real <Link>, which needs a
+// <RouterProvider> this isolated component test doesn't set up (same
+// reasoning as the Header stub above) — stubbed to just the title/description
+// text this test actually asserts on.
+vi.mock('@/components/page-header', () => ({
+  PageHeader: ({
+    title,
+    description,
+  }: {
+    title: ReactNode
+    description?: ReactNode
+  }) => (
+    <div>
+      <h1>{title}</h1>
+      {description && <p>{description}</p>}
+    </div>
+  ),
 }))
 
 const summary: ProjectAnalyticsSummary = {
@@ -37,7 +56,8 @@ vi.mock('../../hooks/use-projects', () => ({
   useProjects: (...args: unknown[]) => useProjectsMock(...args),
 }))
 vi.mock('../../hooks/use-analytics', () => ({
-  usePlatformAnalyticsSummary: (...args: unknown[]) => usePlatformAnalyticsSummaryMock(...args),
+  usePlatformAnalyticsSummary: (...args: unknown[]) =>
+    usePlatformAnalyticsSummaryMock(...args),
   usePlatformActivity: (...args: unknown[]) => usePlatformActivityMock(...args),
 }))
 
@@ -48,11 +68,17 @@ describe('ProductionDashboard', () => {
     usePlatformActivityMock.mockReset()
 
     useProjectsMock.mockReturnValue({
-      data: { items: [], pagination: { page: 1, pageSize: 20, total: 3, totalPages: 1 } },
+      data: {
+        items: [],
+        pagination: { page: 1, pageSize: 20, total: 3, totalPages: 1 },
+      },
       isLoading: false,
     })
     usePlatformActivityMock.mockReturnValue({
-      data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } },
+      data: {
+        items: [],
+        pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+      },
       isLoading: false,
       isError: false,
     })
@@ -67,7 +93,9 @@ describe('ProductionDashboard', () => {
 
     const screen = await render(<ProductionDashboard />)
 
-    await expect.element(screen.getByText('Production Dashboard')).toBeInTheDocument()
+    await expect
+      .element(screen.getByText('Production Dashboard'))
+      .toBeInTheDocument()
     await expect.element(screen.getByText('Projects')).toBeInTheDocument()
     await expect.element(screen.getByText('3')).toBeInTheDocument()
     await expect.element(screen.getByText('Total Assets')).toBeInTheDocument()

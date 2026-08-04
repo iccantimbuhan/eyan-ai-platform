@@ -1,4 +1,5 @@
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useLeads } from '../../hooks/use-leads'
@@ -13,7 +14,9 @@ export function CrmLeadsPage() {
   if (isLoading) {
     return (
       <Main>
-        <div className='flex h-64 items-center justify-center'>Loading leads...</div>
+        <div className='flex h-64 items-center justify-center'>
+          Loading leads...
+        </div>
       </Main>
     )
   }
@@ -30,10 +33,11 @@ export function CrmLeadsPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Leads</h1>
-        <p className='text-muted-foreground'>Every lead that has come through the pipeline.</p>
-      </div>
+      <PageHeader
+        title='Leads'
+        description='Every lead that has come through the pipeline.'
+        breadcrumbs={[{ label: 'CRM', to: '/app/crm' }, { label: 'Leads' }]}
+      />
 
       <LeadTable leads={data?.data ?? []} />
     </Main>

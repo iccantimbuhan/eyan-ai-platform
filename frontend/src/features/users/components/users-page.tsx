@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCreateUserDialog } from '../hooks/use-create-user-dialog'
 import { useUsers } from '../hooks/use-users'
 import { CreateUserDialog } from './create-user-dialog'
@@ -33,17 +34,12 @@ export function UsersPage() {
   return (
     <>
       <Main className='space-y-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>Users</h1>
-
-            <p className='text-muted-foreground'>
-              Manage your application users.
-            </p>
-          </div>
-
-          <Button onClick={createDialog.openDialog}>New User</Button>
-        </div>
+        <PageHeader
+          title='Users'
+          description='Manage your application users.'
+          breadcrumbs={[{ label: 'Administration' }, { label: 'Users' }]}
+          actions={<Button onClick={createDialog.openDialog}>New User</Button>}
+        />
 
         <UsersTable users={users} />
       </Main>

@@ -1,6 +1,13 @@
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useMcpProviders } from '../hooks/use-mcp-servers'
@@ -13,14 +20,11 @@ export function ProvidersPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Providers</h1>
-        <p className='text-muted-foreground'>
-          MCP connector types registered on this server. Real providers
-          (GitHub, Canva, Slack, ...) are added in later sprints — only the
-          "fake" development connector exists today.
-        </p>
-      </div>
+      <PageHeader
+        title='Providers'
+        description='MCP connector types registered on this server. Real providers (GitHub, Canva, Slack, ...) are added in later sprints — only the "fake" development connector exists today.'
+        breadcrumbs={[{ label: 'Automation' }, { label: 'Providers' }]}
+      />
 
       {isLoading && (
         <div className='flex h-40 items-center justify-center text-muted-foreground'>
@@ -37,7 +41,9 @@ export function ProvidersPage() {
       {!isLoading && !error && providers.length === 0 && (
         <div className='flex h-40 flex-col items-center justify-center gap-1 text-center text-muted-foreground'>
           <p>No MCP providers are registered.</p>
-          <p className='text-sm'>Providers are registered at server startup, not created here.</p>
+          <p className='text-sm'>
+            Providers are registered at server startup, not created here.
+          </p>
         </div>
       )}
 

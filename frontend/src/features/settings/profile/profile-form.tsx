@@ -1,9 +1,10 @@
 import { z } from 'zod'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
+import { useNavigationBlocker } from '@/hooks/use-navigation-blocker'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -15,14 +16,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes-dialog'
 
 const profileFormSchema = z.object({
   username: z
@@ -47,19 +42,17 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-// This can come from your database or API.
-const defaultValues: Partial<ProfileFormValues> = {
-  bio: 'I own a computer.',
-  urls: [
-    { value: 'https://shadcn.com' },
-    { value: 'http://twitter.com/shadcn' },
-  ],
-}
-
 export function ProfileForm() {
+  const user = useAuthStore((state) => state.auth.user)
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    defaultValues: {
+      username: user?.name ?? '',
+      email: user?.email ?? '',
+      bio: '',
+      urls: [],
+    },
     mode: 'onChange',
   })
 
@@ -67,6 +60,10 @@ export function ProfileForm() {
     name: 'urls',
     control: form.control,
   })
+
+  const { unsavedChangesDialogProps } = useNavigationBlocker(
+    form.formState.isDirty
+  )
 
   return (
     <Form {...form}>
@@ -97,21 +94,11 @@ export function ProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder='Select a verified email to display' />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value='m@example.com'>m@example.com</SelectItem>
-                  <SelectItem value='m@google.com'>m@google.com</SelectItem>
-                  <SelectItem value='m@support.com'>m@support.com</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input {...field} disabled />
+              </FormControl>
               <FormDescription>
-                You can manage verified email addresses in your{' '}
-                <Link to='/app/settings'>email settings</Link>.
+                Your sign-in email. Contact an administrator to change it.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -172,6 +159,7 @@ export function ProfileForm() {
         </div>
         <Button type='submit'>Update profile</Button>
       </form>
+      <UnsavedChangesDialog {...unsavedChangesDialogProps} />
     </Form>
   )
 }

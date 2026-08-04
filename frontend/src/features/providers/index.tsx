@@ -1,6 +1,7 @@
 import { Bot, Cloud, Key, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Breadcrumbs } from '@/components/breadcrumbs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -94,7 +95,13 @@ export function Providers() {
       </Header>
 
       <Main>
-        <div className='mb-6 flex items-center justify-between space-y-2'>
+        <Breadcrumbs
+          items={[
+            { label: 'Settings', to: '/app/settings' },
+            { label: 'AI Providers' },
+          ]}
+        />
+        <div className='mt-2 mb-6 flex items-center justify-between space-y-2'>
           <div>
             <h1 className='text-2xl font-bold tracking-tight'>AI Providers</h1>
             <p className='text-sm text-muted-foreground'>

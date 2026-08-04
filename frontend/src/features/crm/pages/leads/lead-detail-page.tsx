@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useUsers } from '@/features/users/hooks/use-users'
@@ -23,7 +24,9 @@ import { LeadTimeline } from './components/lead-timeline'
 
 export function LeadDetailPage() {
   const can = useCan()
-  const { leadId } = useParams({ from: '/app/_authenticated/crm/leads/$leadId' })
+  const { leadId } = useParams({
+    from: '/app/_authenticated/crm/leads/$leadId',
+  })
   const { data: lead, isLoading, error } = useLead(leadId)
   const { data: users } = useUsers()
 
@@ -36,7 +39,9 @@ export function LeadDetailPage() {
   if (isLoading) {
     return (
       <Main>
-        <div className='flex h-64 items-center justify-center'>Loading lead...</div>
+        <div className='flex h-64 items-center justify-center'>
+          Loading lead...
+        </div>
       </Main>
     )
   }
@@ -56,32 +61,43 @@ export function LeadDetailPage() {
   return (
     <>
       <Main className='space-y-6'>
-        <div className='flex items-start justify-between'>
-          <div>
-            <div className='flex items-center gap-3'>
-              <h1 className='text-3xl font-bold tracking-tight'>{lead.contactName}</h1>
-              <Badge variant={statusBadgeVariant(lead.status)}>{statusLabel(lead.status)}</Badge>
+        <PageHeader
+          title={
+            <span className='flex items-center gap-3'>
+              {lead.contactName}
+              <Badge variant={statusBadgeVariant(lead.status)}>
+                {statusLabel(lead.status)}
+              </Badge>
               {lead.priority && (
                 <Badge variant={priorityBadgeVariant(lead.priority)}>
                   {priorityLabel(lead.priority)}
                 </Badge>
               )}
-            </div>
-            <p className='text-muted-foreground'>
-              {lead.email}
-              {lead.company ? ` · ${lead.company}` : ''}
-            </p>
-          </div>
-
-          <Button variant='outline' onClick={() => setEditOpen(true)}>
-            <Pencil className='mr-2 h-4 w-4' />
-            Edit
-          </Button>
-        </div>
+            </span>
+          }
+          description={`${lead.email}${lead.company ? ` · ${lead.company}` : ''}`}
+          backTo='/app/crm/leads'
+          backLabel='Back to Leads'
+          breadcrumbs={[
+            { label: 'CRM', to: '/app/crm' },
+            { label: 'Leads', to: '/app/crm/leads' },
+            { label: lead.contactName },
+          ]}
+          actions={
+            <Button variant='outline' onClick={() => setEditOpen(true)}>
+              <Pencil className='mr-2 h-4 w-4' />
+              Edit
+            </Button>
+          }
+        />
 
         <div className='grid gap-6 lg:grid-cols-3'>
           <div className='space-y-6 lg:col-span-2'>
-            <AiAnalysisCard leadId={lead.id} leadStatus={lead.status} aiAnalyses={lead.aiAnalyses} />
+            <AiAnalysisCard
+              leadId={lead.id}
+              leadStatus={lead.status}
+              aiAnalyses={lead.aiAnalyses}
+            />
             <LeadTimeline leadId={lead.id} activities={lead.activities} />
           </div>
 
@@ -125,7 +141,9 @@ export function LeadDetailPage() {
                 <CardTitle>Status</CardTitle>
               </CardHeader>
               <CardContent className='space-y-3'>
-                <Badge variant={statusBadgeVariant(lead.status)}>{statusLabel(lead.status)}</Badge>
+                <Badge variant={statusBadgeVariant(lead.status)}>
+                  {statusLabel(lead.status)}
+                </Badge>
                 <Button
                   variant='outline'
                   size='sm'
@@ -158,8 +176,16 @@ export function LeadDetailPage() {
       </Main>
 
       <EditLeadDialog lead={lead} open={editOpen} onOpenChange={setEditOpen} />
-      <LeadStatusDialog lead={lead} open={statusOpen} onOpenChange={setStatusOpen} />
-      <AssignLeadDialog lead={lead} open={assignOpen} onOpenChange={setAssignOpen} />
+      <LeadStatusDialog
+        lead={lead}
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+      />
+      <AssignLeadDialog
+        lead={lead}
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+      />
     </>
   )
 }

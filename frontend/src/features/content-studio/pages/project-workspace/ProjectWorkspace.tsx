@@ -1,40 +1,42 @@
-import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, FolderOpen } from 'lucide-react'
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { FolderOpen } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BackButton } from '@/components/back-button'
+import { Breadcrumbs } from '@/components/breadcrumbs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { TourOverlay } from '@/features/portfolio/components/TourOverlay'
+import { VideoComparisonPlayer } from '@/features/portfolio/components/VideoComparisonPlayer'
+import { useTourRunner } from '@/features/portfolio/hooks/use-tour-runner'
+import { ProjectAnalytics } from '../../components/analytics/ProjectAnalytics'
+import { AssetLibrary } from '../../components/assets/AssetLibrary'
+import { ReviewQueue } from '../../components/assets/ReviewQueue'
+import { BrandKitList } from '../../components/brand-kits/BrandKitList'
 import { GenerateForm } from '../../components/generator/GenerateForm'
 import { GenerationHistory } from '../../components/generator/GenerationHistory'
 import { OutputViewer } from '../../components/generator/OutputViewer'
 import { ImageGenerateForm } from '../../components/image-generator/ImageGenerateForm'
 import { ImageOutputViewer } from '../../components/image-generator/ImageOutputViewer'
-import { AssetLibrary } from '../../components/assets/AssetLibrary'
-import { ReviewQueue } from '../../components/assets/ReviewQueue'
 import { PublishingQueue } from '../../components/publishing/PublishingQueue'
-import { ProjectAnalytics } from '../../components/analytics/ProjectAnalytics'
-import { BrandKitList } from '../../components/brand-kits/BrandKitList'
+import { VideoAssetList } from '../../components/video-studio/VideoAssetList'
 import { VideoGenerateForm } from '../../components/video-studio/VideoGenerateForm'
 import { VideoSourceUpload } from '../../components/video-studio/VideoSourceUpload'
-import { VideoWorkflowPlanner } from '../../components/video-studio/VideoWorkflowPlanner'
 import { VideoWorkflowExecutor } from '../../components/video-studio/VideoWorkflowExecutor'
-import { VideoAssetList } from '../../components/video-studio/VideoAssetList'
+import { VideoWorkflowPlanner } from '../../components/video-studio/VideoWorkflowPlanner'
+import { useExecuteWorkflow } from '../../hooks/use-execute-workflow'
 import { useGenerateContent } from '../../hooks/use-generate-content'
 import { useGenerateImage } from '../../hooks/use-generate-image'
 import { useGenerateVideoAsset } from '../../hooks/use-generate-video-asset'
-import { useUploadVideoSource } from '../../hooks/use-upload-video-source'
-import { usePlanVideoWorkflow } from '../../hooks/use-plan-video-workflow'
-import { useExecuteWorkflow } from '../../hooks/use-execute-workflow'
-import { useReviewAsset } from '../../hooks/use-review-asset'
 import { useImageProviderPreference } from '../../hooks/use-image-provider-preference'
+import { usePlanVideoWorkflow } from '../../hooks/use-plan-video-workflow'
 import { useProject } from '../../hooks/use-project'
-import { TourOverlay } from '@/features/portfolio/components/TourOverlay'
-import { VideoComparisonPlayer } from '@/features/portfolio/components/VideoComparisonPlayer'
-import { useTourRunner } from '@/features/portfolio/hooks/use-tour-runner'
+import { useReviewAsset } from '../../hooks/use-review-asset'
+import { useUploadVideoSource } from '../../hooks/use-upload-video-source'
 
 function ProjectWorkspaceShell({ children }: { children: React.ReactNode }) {
   return (
@@ -110,13 +112,15 @@ export function ProjectWorkspace() {
   return (
     <ProjectWorkspaceShell>
       <div className='space-y-6'>
-        <Link
-          to='/app/content-studio'
-          className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground'
-        >
-          <ArrowLeft className='h-4 w-4' />
-          Back to Projects
-        </Link>
+        <div className='space-y-2'>
+          <Breadcrumbs
+            items={[
+              { label: 'Content Studio', to: '/app/content-studio' },
+              { label: project.title },
+            ]}
+          />
+          <BackButton to='/app/content-studio' label='Back to Projects' />
+        </div>
 
         <Card data-presentation-target='content-studio.workspace.header'>
           <CardContent className='py-8'>

@@ -1,4 +1,5 @@
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useCostSummary } from '../hooks/use-usage'
@@ -20,14 +21,20 @@ export function CostsPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Costs</h1>
-        <p className='text-muted-foreground'>
-          Aggregated from AiUsageLog (domain="ai-core" only — Playground spend never counted here).
-        </p>
-      </div>
+      <PageHeader
+        title='Costs'
+        description='Aggregated from AiUsageLog (domain="ai-core" only — Playground spend never counted here).'
+        breadcrumbs={[
+          { label: 'AI Core', to: '/app/ai-core' },
+          { label: 'Costs' },
+        ]}
+      />
 
-      {isLoading && <div className='flex h-40 items-center justify-center text-muted-foreground'>Loading...</div>}
+      {isLoading && (
+        <div className='flex h-40 items-center justify-center text-muted-foreground'>
+          Loading...
+        </div>
+      )}
 
       {!isLoading && data && (
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>

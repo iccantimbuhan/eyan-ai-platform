@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useNavigationBlocker } from '@/hooks/use-navigation-blocker'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -13,6 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes-dialog'
 
 const items = [
   {
@@ -59,6 +61,10 @@ export function DisplayForm() {
     resolver: zodResolver(displayFormSchema),
     defaultValues,
   })
+
+  const { unsavedChangesDialogProps } = useNavigationBlocker(
+    form.formState.isDirty
+  )
 
   return (
     <Form {...form}>
@@ -116,6 +122,7 @@ export function DisplayForm() {
         />
         <Button type='submit'>Update display</Button>
       </form>
+      <UnsavedChangesDialog {...unsavedChangesDialogProps} />
     </Form>
   )
 }

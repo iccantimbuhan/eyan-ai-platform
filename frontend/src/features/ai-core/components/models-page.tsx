@@ -1,14 +1,22 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
-import { ModelDialog } from './model-dialog'
 import { useDeleteModel, useModels } from '../hooks/use-models'
 import { useProviders } from '../hooks/use-providers'
 import type { AiModel } from '../types/ai-core'
+import { ModelDialog } from './model-dialog'
 
 export function ModelsPage() {
   const can = useCan()
@@ -20,21 +28,35 @@ export function ModelsPage() {
 
   if (!can('aicore')) return <ForbiddenError />
 
-  const providerName = (providerId: string) => providers.find((provider) => provider.id === providerId)?.displayName ?? providerId
+  const providerName = (providerId: string) =>
+    providers.find((provider) => provider.id === providerId)?.displayName ??
+    providerId
 
   return (
     <Main className='space-y-6'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>Models</h1>
-          <p className='text-muted-foreground'>Models exposed by each provider — never referenced by business modules directly.</p>
-        </div>
-        {can('aicoreadmin') && <Button onClick={() => setDialogOpen(true)}>New Model</Button>}
-      </div>
+      <PageHeader
+        title='Models'
+        description='Models exposed by each provider — never referenced by business modules directly.'
+        breadcrumbs={[
+          { label: 'AI Core', to: '/app/ai-core' },
+          { label: 'Models' },
+        ]}
+        actions={
+          can('aicoreadmin') && (
+            <Button onClick={() => setDialogOpen(true)}>New Model</Button>
+          )
+        }
+      />
 
-      {isLoading && <div className='flex h-40 items-center justify-center text-muted-foreground'>Loading...</div>}
+      {isLoading && (
+        <div className='flex h-40 items-center justify-center text-muted-foreground'>
+          Loading...
+        </div>
+      )}
       {!isLoading && error && (
-        <div className='flex h-40 items-center justify-center text-destructive'>Failed to load models.</div>
+        <div className='flex h-40 items-center justify-center text-destructive'>
+          Failed to load models.
+        </div>
       )}
 
       {!isLoading && !error && (
@@ -51,14 +73,19 @@ export function ModelsPage() {
             <TableBody>
               {models.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className='h-24 text-center text-muted-foreground'>
+                  <TableCell
+                    colSpan={4}
+                    className='h-24 text-center text-muted-foreground'
+                  >
                     No models registered yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 models.map((model) => (
                   <TableRow key={model.id}>
-                    <TableCell className='font-mono text-sm'>{model.modelKey}</TableCell>
+                    <TableCell className='font-mono text-sm'>
+                      {model.modelKey}
+                    </TableCell>
                     <TableCell>{providerName(model.providerId)}</TableCell>
                     <TableCell className='space-x-1'>
                       {model.tags.map((tag) => (
@@ -70,7 +97,11 @@ export function ModelsPage() {
                     <TableCell className='flex flex-wrap gap-2'>
                       {can('aicoreadmin') && (
                         <>
-                          <Button size='sm' variant='outline' onClick={() => setEditingModel(model)}>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => setEditingModel(model)}
+                          >
                             Edit
                           </Button>
                           <Button
@@ -93,7 +124,11 @@ export function ModelsPage() {
       )}
 
       <ModelDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-      <ModelDialog open={editingModel !== null} onOpenChange={(open) => !open && setEditingModel(null)} model={editingModel} />
+      <ModelDialog
+        open={editingModel !== null}
+        onOpenChange={(open) => !open && setEditingModel(null)}
+        model={editingModel}
+      />
     </Main>
   )
 }

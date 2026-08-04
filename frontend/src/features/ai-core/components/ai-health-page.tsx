@@ -1,6 +1,14 @@
-import { Main } from '@/components/layout/main'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useAiCoreHealth } from '../hooks/use-health'
@@ -18,14 +26,24 @@ export function AiHealthPage() {
 
   return (
     <Main className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Health</h1>
-        <p className='text-muted-foreground'>Connectivity status for every registered AI Core provider.</p>
-      </div>
+      <PageHeader
+        title='Health'
+        description='Connectivity status for every registered AI Core provider.'
+        breadcrumbs={[
+          { label: 'AI Core', to: '/app/ai-core' },
+          { label: 'Health' },
+        ]}
+      />
 
-      {isLoading && <div className='flex h-40 items-center justify-center text-muted-foreground'>Loading...</div>}
+      {isLoading && (
+        <div className='flex h-40 items-center justify-center text-muted-foreground'>
+          Loading...
+        </div>
+      )}
       {!isLoading && error && (
-        <div className='flex h-40 items-center justify-center text-destructive'>Failed to load health status.</div>
+        <div className='flex h-40 items-center justify-center text-destructive'>
+          Failed to load health status.
+        </div>
       )}
 
       {!isLoading && !error && (
@@ -43,21 +61,31 @@ export function AiHealthPage() {
             <TableBody>
               {providers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className='h-24 text-center text-muted-foreground'>
-                    No providers registered yet — register one on the Providers page.
+                  <TableCell
+                    colSpan={5}
+                    className='h-24 text-center text-muted-foreground'
+                  >
+                    No providers registered yet — register one on the Providers
+                    page.
                   </TableCell>
                 </TableRow>
               ) : (
                 providers.map((provider) => (
                   <TableRow key={provider.id}>
-                    <TableCell className='font-medium'>{provider.displayName}</TableCell>
+                    <TableCell className='font-medium'>
+                      {provider.displayName}
+                    </TableCell>
                     <TableCell>
                       <AiHealthStatusBadge status={provider.healthStatus} />
                     </TableCell>
                     <TableCell className='text-muted-foreground'>
-                      {provider.lastHealthCheckAt ? new Date(provider.lastHealthCheckAt).toLocaleString() : 'Never checked'}
+                      {provider.lastHealthCheckAt
+                        ? new Date(provider.lastHealthCheckAt).toLocaleString()
+                        : 'Never checked'}
                     </TableCell>
-                    <TableCell className='max-w-72 truncate text-muted-foreground'>{provider.lastHealthMessage ?? '—'}</TableCell>
+                    <TableCell className='max-w-72 truncate text-muted-foreground'>
+                      {provider.lastHealthMessage ?? '—'}
+                    </TableCell>
                     <TableCell>
                       <Button
                         size='sm'

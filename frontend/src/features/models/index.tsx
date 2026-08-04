@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -69,26 +70,29 @@ export function Models() {
       </Header>
 
       <Main>
-        <div className='mb-6 flex items-center justify-between space-y-2'>
-          <div>
-            <h1 className='text-2xl font-bold tracking-tight'>Models</h1>
-            <p className='text-sm text-muted-foreground'>
-              {isLoading
+        <div className='mb-6'>
+          <PageHeader
+            title='Models'
+            description={
+              isLoading
                 ? 'Loading installed models...'
                 : error
                   ? 'Unable to connect to backend'
-                  : `${totalCount} model${totalCount !== 1 ? 's' : ''} installed`}
-            </p>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Button variant='outline' disabled>
-              <Download className='me-2 h-4 w-4' />
-              Download Model
-            </Button>
-            <Button variant='outline' size='icon' onClick={refetch}>
-              <RefreshCw className='h-4 w-4' />
-            </Button>
-          </div>
+                  : `${totalCount} model${totalCount !== 1 ? 's' : ''} installed`
+            }
+            breadcrumbs={[{ label: 'AI Studio' }, { label: 'Models' }]}
+            actions={
+              <div className='flex items-center gap-2'>
+                <Button variant='outline' disabled>
+                  <Download className='me-2 h-4 w-4' />
+                  Download Model
+                </Button>
+                <Button variant='outline' size='icon' onClick={refetch}>
+                  <RefreshCw className='h-4 w-4' />
+                </Button>
+              </div>
+            }
+          />
         </div>
 
         {/* Toolbar */}

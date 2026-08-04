@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-
+import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
-
-import { SavedPromptList } from '../../components/prompt-library/SavedPromptList'
 import { SavePromptDialog } from '../../components/prompt-library/SavePromptDialog'
+import { SavedPromptList } from '../../components/prompt-library/SavedPromptList'
 import { useDeleteSavedPrompt } from '../../hooks/use-delete-saved-prompt'
 import type { SavedPrompt } from '../../types/saved-prompt'
 
@@ -39,24 +38,24 @@ export function PromptLibrary() {
       </Header>
 
       <Main>
-        <div className='mb-8 flex items-start justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>
-              Prompt Library
-            </h1>
-
-            <p className='mt-2 text-muted-foreground'>
-              Your saved prompts, ready to reuse.
-            </p>
-          </div>
-
-          <Button
-            data-presentation-target='content-studio.new-prompt'
-            onClick={() => setDialogState({ open: true, prompt: null })}
-          >
-            <Plus className='mr-2 h-4 w-4' />
-            New Prompt
-          </Button>
+        <div className='mb-8'>
+          <PageHeader
+            title='Prompt Library'
+            description='Your saved prompts, ready to reuse.'
+            breadcrumbs={[
+              { label: 'Content Studio', to: '/app/content-studio' },
+              { label: 'Prompt Library' },
+            ]}
+            actions={
+              <Button
+                data-presentation-target='content-studio.new-prompt'
+                onClick={() => setDialogState({ open: true, prompt: null })}
+              >
+                <Plus className='mr-2 h-4 w-4' />
+                New Prompt
+              </Button>
+            }
+          />
         </div>
 
         <SavedPromptList

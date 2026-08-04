@@ -6,6 +6,10 @@ export function SettingsNotifications() {
     <ContentSection
       title='Notifications'
       desc='Configure how you receive notifications.'
+      breadcrumbs={[
+        { label: 'Settings', to: '/app/settings' },
+        { label: 'Notifications' },
+      ]}
     >
       <NotificationsForm />
     </ContentSection>

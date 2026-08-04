@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 import { useCan } from '@/features/auth/hooks/use-can'
 import { ForbiddenError } from '@/features/errors/forbidden'
 import { useRoles } from '../hooks/use-roles'
@@ -31,15 +32,14 @@ export function RolesPage() {
   return (
     <>
       <Main className='space-y-6'>
-        <div className='flex items-center justify-between gap-4'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight'>Roles</h1>
-            <p className='text-muted-foreground'>
-              Manage roles and the access they provide.
-            </p>
-          </div>
-          <Button onClick={() => setCreateOpen(true)}>New Role</Button>
-        </div>
+        <PageHeader
+          title='Roles'
+          description='Manage roles and the access they provide.'
+          breadcrumbs={[{ label: 'Administration' }, { label: 'Roles' }]}
+          actions={
+            <Button onClick={() => setCreateOpen(true)}>New Role</Button>
+          }
+        />
         <RolesTable roles={roles} />
       </Main>
       <RoleDialog
