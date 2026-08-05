@@ -16,6 +16,9 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "format": "pnpm -r format",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "ai": "./tools/ai",
+    "ai:start": "./tools/ai start",
+    "ai:help": "./tools/ai help"
   }
 }

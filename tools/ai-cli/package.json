@@ -1,0 +1,23 @@
+{
+  "name": "@eyan/ai-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal TypeScript engine behind the tools/ai launcher.",
+  "type": "module",
+  "scripts": {
+    "cli": "tsx cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.2.1",
+    "globals": "^17.5.0",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^4.1.10"
+  }
+}

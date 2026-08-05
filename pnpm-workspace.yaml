@@ -1,6 +1,7 @@
 packages:
   - backend
   - frontend
+  - tools/ai-cli
 allowBuilds:
   '@google/genai': true
   '@prisma/engines': true

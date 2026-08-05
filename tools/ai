@@ -14,27 +14,43 @@ show_menu() {
     echo
     echo "Project : Eyan AI Platform"
     echo
-    echo "1) Review"
-    echo "2) Architect"
-    echo "3) Code"
-    echo "4) Doctor"
-    echo "5) Models"
-    echo "6) Exit"
+    echo "1) Start"
+    echo "2) Review"
+    echo "3) Architect"
+    echo "4) Code"
+    echo "5) Doctor"
+    echo "6) Models"
+    echo "7) Help"
+    echo "8) Exit"
     echo
     read -rp "Select: " choice
 
     case "$choice" in
-        1) exec "$0" review ;;
-        2) exec "$0" architect ;;
-        3) exec "$0" code ;;
-        4) exec "$0" doctor ;;
-        5) exec "$0" models ;;
-        6) exit 0 ;;
+        1) exec "$0" start ;;
+        2) exec "$0" review ;;
+        3) exec "$0" architect ;;
+        4) exec "$0" code ;;
+        5) exec "$0" doctor ;;
+        6) exec "$0" models ;;
+        7) exec "$0" help ;;
+        8) exit 0 ;;
         *) echo "Invalid option"; sleep 1; show_menu ;;
     esac
 }
 
+# Sprint 1 commands (start, help) are implemented in the @eyan/ai-cli TypeScript
+# package; this stays the stable entrypoint and just dispatches to it.
+run_ai_cli() {
+    (cd "$ROOT_DIR" && exec pnpm --filter @eyan/ai-cli run cli "$@")
+}
+
 case "${1:-}" in
+    start)
+        run_ai_cli start
+        ;;
+    help)
+        run_ai_cli help
+        ;;
     review)
         exec bash "$LIB_DIR/review.sh"
         ;;
@@ -57,6 +73,8 @@ case "${1:-}" in
         echo "Unknown command: $1"
         echo
         echo "Usage:"
+        echo "  ./tools/ai start"
+        echo "  ./tools/ai help"
         echo "  ./tools/ai review"
         echo "  ./tools/ai architect"
         echo "  ./tools/ai code"

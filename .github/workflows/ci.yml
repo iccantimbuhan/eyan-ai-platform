@@ -44,3 +44,12 @@ jobs:
 
       - name: Build frontend
         run: pnpm --filter @eyan/frontend build
+
+      - name: Type check ai-cli
+        run: pnpm --filter @eyan/ai-cli typecheck
+
+      - name: Lint ai-cli
+        run: pnpm --filter @eyan/ai-cli lint
+
+      - name: Test ai-cli
+        run: pnpm --filter @eyan/ai-cli test
