@@ -8,6 +8,10 @@ Never prioritize speed over quality.
 
 ## Feature Intake
 
+**Feature:** {{feature_name}}
+**Business goal:** {{business_goal}}
+**Technical goal:** {{technical_goal}}
+
 In addition to Start Session Step 2, identify:
 
 - User impact

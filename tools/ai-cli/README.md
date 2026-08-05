@@ -11,7 +11,13 @@ Internal TypeScript engine behind the `tools/ai` launcher.
 
 Run via `tools/ai start` / `tools/ai help`, or the pnpm wrappers `pnpm ai:start` / `pnpm ai:help`.
 
-Future commands (`feature`, `bug`, `review`, `audit`, `doctor`, `stats`) are reserved for later sprints — see `docs/prompts/02_BUILD_FEATURE.md`.
+Future commands (`bug`, `review`, `audit`, `doctor`, `stats`) are reserved for later sprints — see `docs/prompts/02_BUILD_FEATURE.md`.
+
+## `feature` command (Sprint 5)
+
+`commands/feature.ts` — the first production command built on the Prompt Builder. Run via `tools/ai feature` / `pnpm ai feature`.
+
+Prompts interactively for: feature name, business goal, technical goal, repository contexts (numbered multi-select, sourced live from `listContextDomains()`), and whether to enable Portfolio Mode. It then constructs a `PromptRequest`, calls `buildPrompt()`, and prints the returned string — nothing else. It's a thin layer: input collection lives in `core/input.ts` (generic readline primitives, no knowledge of what's being asked), and all assembly logic stays inside the Prompt Builder, Prompt Engine, and Context Engine, none of which this command touches directly beyond `buildPrompt` and the read-only `listContextDomains`.
 
 ## Prompt Engine (Sprint 2)
 
