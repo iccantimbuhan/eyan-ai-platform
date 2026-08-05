@@ -27,6 +27,7 @@ import automationAuditLogsRoutes from "./routes/v1/automation-audit-logs.routes.
 import financeDashboardRoutes from "./routes/v1/finance-dashboard.routes.js";
 import financeExpensesRoutes from "./routes/v1/finance-expenses.routes.js";
 import financeBudgetRoutes from "./routes/v1/finance-budget.routes.js";
+import financeServiceRoutes from "./routes/v1/finance-service.routes.js";
 import crmLeadsRoutes from "./routes/v1/crm-leads.routes.js";
 import crmServiceRoutes from "./routes/v1/crm-service.routes.js";
 import aiCoreCapabilitiesRoutes from "./routes/v1/ai-core-capabilities.routes.js";
@@ -169,6 +170,7 @@ app.use("/api/v1/automation/audit-logs", automationAuditLogsRoutes);
 app.use("/api/v1/finance/dashboard", financeDashboardRoutes);
 app.use("/api/v1/finance/expenses", financeExpensesRoutes);
 app.use("/api/v1/finance/budget", financeBudgetRoutes);
+app.use("/api/v1/finance/service", financeServiceRoutes);
 app.use("/api/v1/crm/leads", crmLeadsRoutes);
 app.use("/api/v1/crm/service", crmServiceRoutes);
 app.use("/api/v1/ai-core/capabilities", aiCoreCapabilitiesRoutes);
