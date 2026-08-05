@@ -37,3 +37,36 @@ export interface PromptRequest {
   modifierIds?: string[]
   variables?: PromptVariables
 }
+
+export interface PromptStatsSummary {
+  templateTitle: string
+  contextTitles: string[]
+  modifierTitles: string[]
+}
+
+export interface ContextStats {
+  fileCount: number
+  categories: ContextCategory[]
+}
+
+export interface PromptMetrics {
+  characterCount: number
+  wordCount: number
+  estimatedTokenCount: number
+}
+
+export type PromptComplexity = 'Low' | 'Medium' | 'High'
+
+export interface OptimizationStats {
+  duplicateContextsAvoided: number
+  possiblyUnnecessaryContextIds: string[]
+  complexity: PromptComplexity
+  estimatedTokenSavings: number
+}
+
+export interface PromptStats {
+  prompt: PromptStatsSummary
+  context: ContextStats
+  metrics: PromptMetrics
+  optimization: OptimizationStats
+}

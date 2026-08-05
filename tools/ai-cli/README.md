@@ -11,7 +11,7 @@ Internal TypeScript engine behind the `tools/ai` launcher.
 
 Run via `tools/ai start` / `tools/ai help`, or the pnpm wrappers `pnpm ai:start` / `pnpm ai:help`.
 
-Future commands (`bug`, `review`, `audit`, `doctor`, `stats`) are reserved for later sprints — see `docs/prompts/02_BUILD_FEATURE.md`.
+Future commands (`bug`, `review`, `audit`, `doctor`) are reserved for later sprints — see `docs/prompts/02_BUILD_FEATURE.md`.
 
 ## `feature` command (Sprint 5)
 
@@ -49,3 +49,22 @@ A future command only needs a prompt ID and a variables object — everything el
 **Public API — `core/builder/index.ts`:**
 
 - `buildPrompt(request: PromptRequest)` — resolves `request.templateId` via the Prompt Engine, resolves and dedupes `request.contextIds` via the Context Engine, loads any `request.modifierIds` as prompt modifiers, substitutes `request.variables` throughout, and returns the assembled prompt as a plain string. Context (if any) is placed before the task prompt, mirroring Start Session's own "load context, then act" ordering. Never prints, never wired into any command yet — that's future scope.
+
+## `stats` command (Sprint 6)
+
+`commands/stats.ts` — analyzes what the Prompt Builder produces for a `PromptRequest`, instead of printing the raw prompt. Run via `tools/ai stats` / `pnpm ai stats`.
+
+Asks the same five questions `feature` does — that input collection now lives in the shared `core/promptRequest.ts` (`collectPromptRequest`), used by both commands so the two don't duplicate it. `stats` builds the same kind of `PromptRequest` `feature` does, but hands it to the new **Stats Engine** (`core/stats/`) instead of printing `buildPrompt()`'s output directly.
+
+**Public API — `core/stats/index.ts` only:**
+
+- `analyzePromptRequest(request: PromptRequest)` — calls `buildPrompt()` (Prompt Builder) for the real assembled output, and `resolvePromptTemplate` / `resolveContext` / `loadContextSource` (Prompt Engine, Context Engine) for everything else. Returns a `PromptStats` object — never prints, and never modifies the Prompt Engine, Context Engine, or Prompt Builder, only builds on their existing public functions.
+
+It reports:
+
+- **Prompt** — the resolved template, context, and modifier titles.
+- **Context** — how many context files were loaded and which categories they belong to.
+- **Metrics** — character count, word count, and an estimated token count (`chars / 4`, a standard rough approximation — not a real tokenizer).
+- **Optimization** — how many duplicate context entries the Prompt Builder's own dedup step avoided (and the estimated tokens that saved); which explicitly-requested context ids are already pulled in as a dependency of another requested id (e.g. requesting both `crm` and `coding-rules`, when `crm` already includes `coding-rules`); and an estimated complexity (`Low` / `Medium` / `High`) from the token count.
+
+`analyzer.ts` and `tokens.ts` are private implementation details, same pattern as the Context Engine's `registry.ts` — not re-exported from `index.ts`.

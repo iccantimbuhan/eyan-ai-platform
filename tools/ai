@@ -16,33 +16,35 @@ show_menu() {
     echo
     echo "1) Start"
     echo "2) Feature"
-    echo "3) Review"
-    echo "4) Architect"
-    echo "5) Code"
-    echo "6) Doctor"
-    echo "7) Models"
-    echo "8) Help"
-    echo "9) Exit"
+    echo "3) Stats"
+    echo "4) Review"
+    echo "5) Architect"
+    echo "6) Code"
+    echo "7) Doctor"
+    echo "8) Models"
+    echo "9) Help"
+    echo "10) Exit"
     echo
     read -rp "Select: " choice
 
     case "$choice" in
         1) exec "$0" start ;;
         2) exec "$0" feature ;;
-        3) exec "$0" review ;;
-        4) exec "$0" architect ;;
-        5) exec "$0" code ;;
-        6) exec "$0" doctor ;;
-        7) exec "$0" models ;;
-        8) exec "$0" help ;;
-        9) exit 0 ;;
+        3) exec "$0" stats ;;
+        4) exec "$0" review ;;
+        5) exec "$0" architect ;;
+        6) exec "$0" code ;;
+        7) exec "$0" doctor ;;
+        8) exec "$0" models ;;
+        9) exec "$0" help ;;
+        10) exit 0 ;;
         *) echo "Invalid option"; sleep 1; show_menu ;;
     esac
 }
 
-# Sprint 1 commands (start, help) and Sprint 5's feature command are implemented
-# in the @eyan/ai-cli TypeScript package; this stays the stable entrypoint and
-# just dispatches to it.
+# Sprint 1 commands (start, help), Sprint 5's feature command, and Sprint 6's
+# stats command are implemented in the @eyan/ai-cli TypeScript package; this
+# stays the stable entrypoint and just dispatches to it.
 run_ai_cli() {
     (cd "$ROOT_DIR" && exec pnpm --filter @eyan/ai-cli run cli "$@")
 }
@@ -53,6 +55,9 @@ case "${1:-}" in
         ;;
     feature)
         run_ai_cli feature
+        ;;
+    stats)
+        run_ai_cli stats
         ;;
     help)
         run_ai_cli help
@@ -81,6 +86,7 @@ case "${1:-}" in
         echo "Usage:"
         echo "  ./tools/ai start"
         echo "  ./tools/ai feature"
+        echo "  ./tools/ai stats"
         echo "  ./tools/ai help"
         echo "  ./tools/ai review"
         echo "  ./tools/ai architect"

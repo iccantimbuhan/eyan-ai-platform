@@ -2,11 +2,13 @@
 import { runFeature } from './commands/feature.js'
 import { runHelp } from './commands/help.js'
 import { runStart } from './commands/start.js'
+import { runStats } from './commands/stats.js'
 
 const COMMANDS: Record<string, () => number | Promise<number>> = {
   start: runStart,
   help: runHelp,
   feature: runFeature,
+  stats: runStats,
 }
 
 async function main(): Promise<void> {

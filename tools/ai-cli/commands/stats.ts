@@ -1,11 +1,12 @@
-import { buildPrompt } from '../core/builder/index.js'
 import { createPrompter } from '../core/input.js'
-import { printLine } from '../core/output.js'
+import { printLine, printStats } from '../core/output.js'
 import { collectPromptRequest } from '../core/promptRequest.js'
+import { analyzePromptRequest } from '../core/stats/index.js'
 
-// Thin orchestration layer: collect input, build a PromptRequest, call the Prompt
-// Builder, print what it returns. No prompt/context/assembly logic lives here.
-export async function runFeature(
+// Thin orchestration layer, same shape as `feature`: collect input, build a
+// PromptRequest, hand it to the Stats engine, print what it returns. No
+// analysis logic lives here.
+export async function runStats(
   input: NodeJS.ReadableStream = process.stdin,
   output: NodeJS.WritableStream = process.stdout
 ): Promise<number> {
@@ -13,9 +14,9 @@ export async function runFeature(
 
   try {
     const request = await collectPromptRequest(prompter)
-    const prompt = buildPrompt(request)
+    const stats = analyzePromptRequest(request)
     printLine()
-    printLine(prompt)
+    printStats(stats)
     return 0
   } finally {
     prompter.close()
