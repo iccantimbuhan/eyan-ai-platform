@@ -1,57 +1,36 @@
 import type { PrismaClient } from '../src/generated/prisma/client'
-import { hashPassword } from '../src/utils/password'
-
-// Placeholder seed account for the real restaurant manager — same posture
-// as seed.ts's DEMO_USER_*, not a real production credential. Replace with
-// the actual manager's own account once Sprint 1 ships membership
-// management in the admin UI.
-const MANAGER_EMAIL = 'manager@eyan-restaurants.dev'
-const MANAGER_PASSWORD = 'RestaurantManager!2026'
-const MANAGER_NAME = 'Restaurant Manager'
 
 const ORGANIZATION_NAME = "Burger's Ink & Topo Gigio"
+const DEFAULT_BRANCH_NAME = 'Main Branch'
 const RESTAURANT_NAMES = ["Burger's Ink", 'Topo Gigio Pizzeria'] as const
 
-// Sprint 0 — Restaurant Operations Platform tenancy foundation (ADR-0025,
-// ADR-0026). Seeds the real business this module is built for: one
-// Organization owning both restaurant brands, the manager granted
-// OrganizationMember (access to both restaurants, matching how they run
-// the business today), and the "restaurant" module enabled for that
-// Organization. No Branch is seeded — branches are real physical
-// locations; none has been confirmed as multi-location yet, so none is
-// guessed here. Idempotent: safe to run against an already-seeded database.
+// Restaurant Operations Platform tenancy foundation (ADR-0025, ADR-0026).
+// Platform-required bootstrap data, not demo/sample content — safe and
+// required to run against any environment, including production, on every
+// deploy (see bootstrap.ts, .context/deployment.md). Seeds the one real
+// Organization this platform serves today, owning both real restaurant
+// brands, each with one default Branch (a real second/third Branch is
+// created via Sprint 1's admin UI, not guessed here), with the "restaurant"
+// module enabled for that Organization.
+//
+// Membership is granted to every user who already holds the platform's
+// global "Owner" role, rather than a fake placeholder account — whoever is
+// Owner in a given environment automatically gets tenant access. This is
+// what a fresh deploy was actually missing (see the Sprint 0 finalization
+// investigation): the Organization/Restaurant/Branch/OrganizationModule
+// tables existed after migration, but this function had never run in
+// production, so no Owner user had an OrganizationMember row and the
+// "restaurant" Permission itself didn't exist yet either (see bootstrap.ts).
+//
+// Idempotent: every write is an upsert or a find-or-create; safe to run
+// repeatedly against an already-seeded database.
 export async function seedRestaurantTenancyFoundation(prisma: PrismaClient) {
-  const existingManager = await prisma.user.findUnique({
-    where: { email: MANAGER_EMAIL },
-  })
-  const manager =
-    existingManager ??
-    (await prisma.user.create({
-      data: {
-        name: MANAGER_NAME,
-        email: MANAGER_EMAIL,
-        passwordHash: await hashPassword(MANAGER_PASSWORD),
-        emailVerified: true,
-      },
-    }))
-
   const existingOrganization = await prisma.organization.findFirst({
     where: { name: ORGANIZATION_NAME },
   })
   const organization =
     existingOrganization ??
     (await prisma.organization.create({ data: { name: ORGANIZATION_NAME } }))
-
-  await prisma.organizationMember.upsert({
-    where: {
-      userId_organizationId: {
-        userId: manager.id,
-        organizationId: organization.id,
-      },
-    },
-    update: { role: 'OWNER' },
-    create: { userId: manager.id, organizationId: organization.id, role: 'OWNER' },
-  })
 
   await prisma.organizationModule.upsert({
     where: {
@@ -72,10 +51,38 @@ export async function seedRestaurantTenancyFoundation(prisma: PrismaClient) {
     const existingRestaurant = await prisma.restaurant.findFirst({
       where: { organizationId: organization.id, name },
     })
-
-    if (!existingRestaurant) {
-      await prisma.restaurant.create({
+    const restaurant =
+      existingRestaurant ??
+      (await prisma.restaurant.create({
         data: { organizationId: organization.id, name },
+      }))
+
+    const existingBranch = await prisma.branch.findFirst({
+      where: { restaurantId: restaurant.id, name: DEFAULT_BRANCH_NAME },
+    })
+
+    if (!existingBranch) {
+      await prisma.branch.create({
+        data: { restaurantId: restaurant.id, name: DEFAULT_BRANCH_NAME },
+      })
+    }
+  }
+
+  const ownerRole = await prisma.role.findUnique({ where: { name: 'Owner' } })
+
+  if (ownerRole) {
+    const ownerUsers = await prisma.userRole.findMany({
+      where: { roleId: ownerRole.id },
+      select: { userId: true },
+    })
+
+    for (const { userId } of ownerUsers) {
+      await prisma.organizationMember.upsert({
+        where: {
+          userId_organizationId: { userId, organizationId: organization.id },
+        },
+        update: { role: 'OWNER' },
+        create: { userId, organizationId: organization.id, role: 'OWNER' },
       })
     }
   }

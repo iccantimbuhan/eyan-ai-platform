@@ -31,6 +31,15 @@ echo ""
 echo "🗄 Running Prisma migrations..."
 cd backend
 pnpm prisma migrate deploy
+
+echo ""
+echo "🌱 Running platform bootstrap (roles, permissions, Restaurant tenancy foundation)..."
+# Idempotent, production-safe — never demo/sample content (that stays a
+# manual `pnpm db:seed`, deliberately not run here). This is exactly what
+# a Sprint 0 deploy was missing: migrations create the schema, but nothing
+# populated it until this ran. See backend/prisma/bootstrap.ts and
+# .context/deployment.md.
+pnpm db:bootstrap
 cd ..
 
 echo ""

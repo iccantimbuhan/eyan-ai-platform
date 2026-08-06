@@ -10,7 +10,7 @@ import {
   seedVideoPlanningBrain,
   seedVideoTextBrains,
 } from './seed-ai-core'
-import { seedRestaurantTenancyFoundation } from './seed-restaurant-tenancy'
+import { bootstrapPlatform } from './bootstrap'
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
 
@@ -21,30 +21,6 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: proc
 const DEMO_USER_EMAIL = 'demo@eyanstudio.dev'
 const DEMO_USER_PASSWORD = 'EyanStudioDemo!2026'
 const DEMO_USER_NAME = 'Portfolio Demo'
-
-const roles = [
-  { name: 'Owner', description: 'Full system owner' },
-  { name: 'Admin', description: 'System administrator' },
-  { name: 'Developer', description: 'Software developer' },
-  { name: 'QA Engineer', description: 'Quality Assurance' },
-  { name: 'Viewer', description: 'Read-only user' },
-]
-
-// Page-level permissions. Granular keys can be added later without a schema change.
-const permissions = [
-  ['dashboard', 'View the dashboard'], ['chat', 'Use AI Chat'], ['models', 'View models'],
-  ['conversations', 'View conversations'], ['users', 'Access users'], ['roles', 'Access roles'],
-  ['providers', 'Access AI providers'], ['settings', 'Access settings'], ['apikeys', 'Access API keys'],
-  ['analytics', 'View analytics'], ['auditlogs', 'View audit logs'],
-  ['automation', 'Access the MCP automation foundation'],
-  ['automationcredentials', 'Manage automation connection credentials'],
-  ['finance', 'Access Finance Management'],
-  ['presentation-engine', 'Access the Presentation Engine'],
-  ['crm', 'Access the CRM (leads, pipeline)'],
-  ['aicore', 'Access the AI Core platform (Capabilities, Brains, Providers, Playground, Usage)'],
-  ['aicoreadmin', 'Administer AI Core (create/edit Brains and Capabilities, manage provider credentials, routing policies, prompts, and the Playground)'],
-  ['restaurant', 'Access Restaurant Operations'],
-] as const
 
 const promptTemplates = [
   { name: 'Blog Post', category: 'Blogging', contentType: 'BLOG', promptBody: 'Write a blog post about {{topic}} for {{business}}. Target audience: {{audience}}. Tone: {{tone}}. Write in {{language}}.' },
@@ -59,13 +35,13 @@ const promptTemplates = [
 ] as const
 
 async function main() {
-  for (const role of roles) await prisma.role.upsert({ where: { name: role.name }, update: {}, create: role })
-  for (const [name, description] of permissions) await prisma.permission.upsert({ where: { name }, update: { description }, create: { name, description } })
-  const owner = await prisma.role.findUniqueOrThrow({ where: { name: 'Owner' } })
-  for (const [name] of permissions) {
-    const permission = await prisma.permission.findUniqueOrThrow({ where: { name } })
-    await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: owner.id, permissionId: permission.id } }, update: {}, create: { roleId: owner.id, permissionId: permission.id } })
-  }
+  // Platform-required bootstrap (roles, permissions, Restaurant tenancy
+  // foundation) — the same function deploy.sh now runs automatically via
+  // `pnpm db:bootstrap`. Called here too so `pnpm db:seed` remains a
+  // complete one-command setup for a fresh local/dev database. See
+  // bootstrap.ts for why this is a separate function, not inlined here.
+  await bootstrapPlatform(prisma)
+
   for (const template of promptTemplates) await prisma.promptTemplate.upsert({ where: { name: template.name }, update: template, create: template })
 
   // The public demo/presentation account is read-only by design (a publicly
@@ -115,9 +91,5 @@ async function main() {
   await seedContentBrains(prisma)
   await seedVideoPlanningBrain(prisma)
   await seedVideoTextBrains(prisma)
-
-  // Sprint 0 — Restaurant Operations Platform tenancy foundation. See
-  // seed-restaurant-tenancy.ts.
-  await seedRestaurantTenancyFoundation(prisma)
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

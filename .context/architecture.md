@@ -24,7 +24,10 @@ Business Module → Capability → Brain → Routing → Provider → Model → 
 Lead → Automation Hub → Validation → AI Qualification → CRM Updated → Dashboard. Full detail: `crm.md`.
 
 ## Status
-AI Core Phase 1 (foundation) and Phase 3 (CRM migration) complete. Restaurant Operations Sprint 0 (tenancy foundation) complete — no business features yet. Current: AI Core Phase 2 (Chat/Video/Content migration) — see `current-sprint.md`.
+AI Core Phase 1 (foundation) and Phase 3 (CRM migration) complete. Restaurant Operations Sprint 0 (tenancy foundation) complete, deployed, and verified in production — no business features yet. Current: AI Core Phase 2 (Chat/Video/Content migration) — see `current-sprint.md`.
+
+## Deployment seeding
+Two tiers, not one: `bootstrap.ts` (platform-required — roles, permissions, Restaurant tenancy foundation) runs automatically on every `deploy.sh` run; `seed.ts` (adds demo/sample content) stays manual, permanently. See `deployment.md`, ADR-0035.
 
 ## Deep reference
 Full architecture writeup (700+ lines): `docs/ARCHITECTURE.md`. Decision history: `docs/architecture/decisions/`.
