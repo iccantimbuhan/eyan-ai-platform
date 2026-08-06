@@ -10,6 +10,7 @@ import {
   seedVideoPlanningBrain,
   seedVideoTextBrains,
 } from './seed-ai-core'
+import { seedRestaurantTenancyFoundation } from './seed-restaurant-tenancy'
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
 
@@ -42,6 +43,7 @@ const permissions = [
   ['crm', 'Access the CRM (leads, pipeline)'],
   ['aicore', 'Access the AI Core platform (Capabilities, Brains, Providers, Playground, Usage)'],
   ['aicoreadmin', 'Administer AI Core (create/edit Brains and Capabilities, manage provider credentials, routing policies, prompts, and the Playground)'],
+  ['restaurant', 'Access Restaurant Operations'],
 ] as const
 
 const promptTemplates = [
@@ -113,5 +115,9 @@ async function main() {
   await seedContentBrains(prisma)
   await seedVideoPlanningBrain(prisma)
   await seedVideoTextBrains(prisma)
+
+  // Sprint 0 — Restaurant Operations Platform tenancy foundation. See
+  // seed-restaurant-tenancy.ts.
+  await seedRestaurantTenancyFoundation(prisma)
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

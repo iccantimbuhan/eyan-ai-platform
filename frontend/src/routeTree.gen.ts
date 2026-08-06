@@ -40,6 +40,7 @@ import { Route as AppAuthenticatedErrorsErrorRouteImport } from './routes/app/_a
 import { Route as AppAuthenticatedFinanceIndexRouteImport } from './routes/app/_authenticated/finance/index'
 import { Route as AppAuthenticatedModelsIndexRouteImport } from './routes/app/_authenticated/models/index'
 import { Route as AppAuthenticatedPresentationEngineIndexRouteImport } from './routes/app/_authenticated/presentation-engine/index'
+import { Route as AppAuthenticatedRestaurantIndexRouteImport } from './routes/app/_authenticated/restaurant/index'
 import { Route as AppAuthenticatedRolesIndexRouteImport } from './routes/app/_authenticated/roles/index'
 import { Route as AppAuthenticatedSettingsIndexRouteImport } from './routes/app/_authenticated/settings/index'
 import { Route as AppAuthenticatedSettingsAccountRouteImport } from './routes/app/_authenticated/settings/account'
@@ -230,6 +231,12 @@ const AppAuthenticatedPresentationEngineIndexRoute =
   AppAuthenticatedPresentationEngineIndexRouteImport.update({
     id: '/presentation-engine/',
     path: '/presentation-engine/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantIndexRoute =
+  AppAuthenticatedRestaurantIndexRouteImport.update({
+    id: '/restaurant/',
+    path: '/restaurant/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const AppAuthenticatedRolesIndexRoute =
@@ -424,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/app/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models/': typeof AppAuthenticatedModelsIndexRoute
   '/app/presentation-engine/': typeof AppAuthenticatedPresentationEngineIndexRoute
+  '/app/restaurant/': typeof AppAuthenticatedRestaurantIndexRoute
   '/app/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users/': typeof AppAuthenticatedUsersIndexRoute
@@ -479,6 +487,7 @@ export interface FileRoutesByTo {
   '/app/finance': typeof AppAuthenticatedFinanceIndexRoute
   '/app/models': typeof AppAuthenticatedModelsIndexRoute
   '/app/presentation-engine': typeof AppAuthenticatedPresentationEngineIndexRoute
+  '/app/restaurant': typeof AppAuthenticatedRestaurantIndexRoute
   '/app/roles': typeof AppAuthenticatedRolesIndexRoute
   '/app/settings': typeof AppAuthenticatedSettingsIndexRoute
   '/app/users': typeof AppAuthenticatedUsersIndexRoute
@@ -539,6 +548,7 @@ export interface FileRoutesById {
   '/app/_authenticated/finance/': typeof AppAuthenticatedFinanceIndexRoute
   '/app/_authenticated/models/': typeof AppAuthenticatedModelsIndexRoute
   '/app/_authenticated/presentation-engine/': typeof AppAuthenticatedPresentationEngineIndexRoute
+  '/app/_authenticated/restaurant/': typeof AppAuthenticatedRestaurantIndexRoute
   '/app/_authenticated/roles/': typeof AppAuthenticatedRolesIndexRoute
   '/app/_authenticated/settings/': typeof AppAuthenticatedSettingsIndexRoute
   '/app/_authenticated/users/': typeof AppAuthenticatedUsersIndexRoute
@@ -598,6 +608,7 @@ export interface FileRouteTypes {
     | '/app/finance/'
     | '/app/models/'
     | '/app/presentation-engine/'
+    | '/app/restaurant/'
     | '/app/roles/'
     | '/app/settings/'
     | '/app/users/'
@@ -653,6 +664,7 @@ export interface FileRouteTypes {
     | '/app/finance'
     | '/app/models'
     | '/app/presentation-engine'
+    | '/app/restaurant'
     | '/app/roles'
     | '/app/settings'
     | '/app/users'
@@ -712,6 +724,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/finance/'
     | '/app/_authenticated/models/'
     | '/app/_authenticated/presentation-engine/'
+    | '/app/_authenticated/restaurant/'
     | '/app/_authenticated/roles/'
     | '/app/_authenticated/settings/'
     | '/app/_authenticated/users/'
@@ -971,6 +984,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedPresentationEngineIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/restaurant/': {
+      id: '/app/_authenticated/restaurant/'
+      path: '/restaurant'
+      fullPath: '/app/restaurant/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/roles/': {
       id: '/app/_authenticated/roles/'
       path: '/roles'
@@ -1225,6 +1245,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedFinanceIndexRoute: typeof AppAuthenticatedFinanceIndexRoute
   AppAuthenticatedModelsIndexRoute: typeof AppAuthenticatedModelsIndexRoute
   AppAuthenticatedPresentationEngineIndexRoute: typeof AppAuthenticatedPresentationEngineIndexRoute
+  AppAuthenticatedRestaurantIndexRoute: typeof AppAuthenticatedRestaurantIndexRoute
   AppAuthenticatedRolesIndexRoute: typeof AppAuthenticatedRolesIndexRoute
   AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
   AppAuthenticatedAiCoreBrainsBrainIdRoute: typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
@@ -1267,6 +1288,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedModelsIndexRoute: AppAuthenticatedModelsIndexRoute,
   AppAuthenticatedPresentationEngineIndexRoute:
     AppAuthenticatedPresentationEngineIndexRoute,
+  AppAuthenticatedRestaurantIndexRoute: AppAuthenticatedRestaurantIndexRoute,
   AppAuthenticatedRolesIndexRoute: AppAuthenticatedRolesIndexRoute,
   AppAuthenticatedUsersIndexRoute: AppAuthenticatedUsersIndexRoute,
   AppAuthenticatedAiCoreBrainsBrainIdRoute:

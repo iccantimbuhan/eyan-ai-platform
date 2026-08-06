@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  Bot,
   LayoutDashboard,
   MessageSquare,
   Boxes,
@@ -25,6 +24,7 @@ import {
   Layers,
   FlaskConical,
   DollarSign,
+  UtensilsCrossed,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -34,14 +34,6 @@ export const sidebarData: SidebarData = {
     email: 'ian@localhost',
     avatar: '/avatars/placeholder.jpg',
   },
-
-  teams: [
-    {
-      name: 'EYAN Studio',
-      logo: Bot,
-      plan: 'Self-Hosted AI',
-    },
-  ],
 
   navGroups: [
     {
@@ -112,6 +104,25 @@ export const sidebarData: SidebarData = {
             { title: 'Dashboard', url: '/app/finance' },
             { title: 'Expenses', url: '/app/finance/expenses' },
           ],
+        },
+      ],
+    },
+
+    {
+      // Sprint 0 (ADR-0025/ADR-0026) — Restaurant Operations, the
+      // platform's first commercial business module. Gated by both the
+      // "restaurant" RBAC permission and the "restaurant" Module Registry
+      // entry (moduleKey) — an Organization must have the module enabled
+      // *and* the user must hold the permission. Points at a placeholder
+      // dashboard only; no business features ship until Sprint 1+.
+      title: 'Restaurant Operations',
+      items: [
+        {
+          title: 'Restaurant Operations',
+          url: '/app/restaurant',
+          icon: UtensilsCrossed,
+          permission: 'restaurant',
+          moduleKey: 'restaurant',
         },
       ],
     },

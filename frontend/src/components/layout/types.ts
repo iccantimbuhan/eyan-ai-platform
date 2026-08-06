@@ -6,17 +6,15 @@ type User = {
   avatar: string
 }
 
-type Team = {
-  name: string
-  logo: React.ElementType
-  plan: string
-}
-
 type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
   permission?: string
+  // Module Registry gate (ADR-0026) — in addition to `permission`, hides
+  // this item when the active Organization doesn't have this module
+  // enabled. Omit for items that aren't part of a gated business module.
+  moduleKey?: string
 }
 
 type NavLink = BaseNavItem & {
@@ -38,7 +36,6 @@ type NavGroup = {
 
 type SidebarData = {
   user: User
-  teams: Team[]
   navGroups: NavGroup[]
 }
 

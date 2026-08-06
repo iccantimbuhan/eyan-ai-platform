@@ -164,6 +164,9 @@ model User {
   assignedLeads  Lead[]         @relation("LeadAssignee")
   leadActivities LeadActivity[] @relation("LeadActivityActor")
 
+  organizationMemberships OrganizationMember[]
+  restaurantMemberships   RestaurantMember[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1691,4 +1694,128 @@ model AiAuditEvent {
   @@index([actorId])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+// --- Restaurant Operations Platform: Tenancy Foundation (Sprint 0) -------
+// Platform-level multi-tenancy — introduced for Restaurant Operations (the
+// first commercial business module) but designed for reuse by any future
+// module. Organization is the one reusable tenant/membership/billing root;
+// Restaurant and Branch are this module's own domain vocabulary beneath
+// it — a future module (Retail, Salon, ...) defines its own children under
+// Organization rather than reusing Restaurant/Branch. See ADR-0025 and
+// ADR-0026. Restaurant business data (Menu/Ingredients/Suppliers/Inventory/
+// Daily Closing/...) does not exist yet — this migration is tenancy
+// foundation only, no business tables.
+enum TenantRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+model Organization {
+  id String @id @default(cuid())
+
+  name String
+
+  members     OrganizationMember[]
+  restaurants Restaurant[]
+  modules     OrganizationModule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Membership grants access to every Restaurant under the Organization
+// (and, transitively, every Branch under those). Composite-keyed junction,
+// same shape as UserRole — no separate id.
+model OrganizationMember {
+  userId         String
+  organizationId String
+
+  role TenantRole
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([userId, organizationId])
+  @@index([userId])
+}
+
+// A restaurant brand under an Organization (e.g. Burger's Ink). Owns Menu,
+// Categories, Ingredients, Recipes, Suppliers once those ship — none of
+// that exists yet.
+model Restaurant {
+  id             String @id @default(cuid())
+  organizationId String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name String
+
+  members  RestaurantMember[]
+  branches Branch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// Scopes a user to one Restaurant (and implicitly all its Branches),
+// without requiring Organization-wide access. Same junction shape as
+// OrganizationMember.
+model RestaurantMember {
+  userId       String
+  restaurantId String
+
+  role TenantRole
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([userId, restaurantId])
+  @@index([userId])
+}
+
+// A physical location under a Restaurant (e.g. Burger's Ink - Downtown).
+// Owns Inventory, Inventory Transactions, Purchases, Expenses, Daily
+// Closing, Sales, and Reports once those ship — none of that exists yet.
+// Branch-level membership is deliberately not modeled (YAGNI) — access is
+// derived from Restaurant/Organization membership until a real customer
+// needs per-location staff restriction.
+model Branch {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+// Per-Organization module enablement — the Module Registry's DB half (see
+// ADR-0026). moduleKey references the in-code catalog
+// (backend/src/config/module-registry.ts) by a free string, the same
+// posture Permission.name already uses for RBAC, so enabling a future
+// module for a customer is a config row, never a schema migration. This
+// gates nav/route *visibility* only — requirePermission/requireRestaurantAccess
+// remain the actual request-level enforcement.
+model OrganizationModule {
+  organizationId String
+  moduleKey      String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  enabled   Boolean  @default(true)
+  enabledAt DateTime @default(now())
+
+  @@id([organizationId, moduleKey])
 }

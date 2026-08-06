@@ -15,6 +15,8 @@ type AuthenticatedUser = Prisma.UserGetPayload<{
         };
       };
     };
+    organizationMemberships: true;
+    restaurantMemberships: true;
   };
 }>;
 

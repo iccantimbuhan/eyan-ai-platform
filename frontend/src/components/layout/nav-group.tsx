@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useCan } from '@/features/auth/hooks/use-can'
+import { useModuleEnabled } from '@/features/organizations/hooks/use-module-enabled'
 import { Badge } from '../ui/badge'
 import {
   DropdownMenu,
@@ -38,8 +39,11 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
   const can = useCan()
+  const moduleEnabled = useModuleEnabled()
 
-  const visibleItems = items.filter((item) => can(item.permission))
+  const visibleItems = items.filter(
+    (item) => can(item.permission) && moduleEnabled(item.moduleKey)
+  )
 
   if (visibleItems.length === 0) {
     return null
@@ -104,8 +108,11 @@ function SidebarMenuCollapsible({
   const { setOpenMobile } = useSidebar()
 
   const can = useCan()
+  const moduleEnabled = useModuleEnabled()
 
-  const visibleChildren = item.items.filter((child) => can(child.permission))
+  const visibleChildren = item.items.filter(
+    (child) => can(child.permission) && moduleEnabled(child.moduleKey)
+  )
 
   if (visibleChildren.length === 0) {
     return null
@@ -158,8 +165,11 @@ function SidebarMenuCollapsedDropdown({
   href: string
 }) {
   const can = useCan()
+  const moduleEnabled = useModuleEnabled()
 
-  const visibleChildren = item.items.filter((child) => can(child.permission))
+  const visibleChildren = item.items.filter(
+    (child) => can(child.permission) && moduleEnabled(child.moduleKey)
+  )
 
   if (visibleChildren.length === 0) {
     return null

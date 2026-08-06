@@ -16,11 +16,12 @@ Single responsibility: where each module lives in the filesystem. Consult this b
 | Finance | `finance*` (see `finance.md`) | ADR-0013 |
 | Automation / MCP | `mcp*`, `provider*`, `providers/*` (see `automation.md`) | ADR-0012 |
 | Content Studio | `content*`, `image*`, `video*`, `brand-kit*`, `asset*` (see `content-studio.md`) | ADR-0006–0011 |
+| Restaurant Tenancy | `organization*`, `restaurant*`, `branch*`, `module-registry*` (see `restaurant.md`) | ADR-0025, 0026 |
 
-Backend globs apply across `backend/src/{controllers,services,repositories}/`.
+Backend globs apply across `backend/src/{controllers,services,repositories}/`. Tenant authorization middleware lives at `backend/src/middleware/tenant.middleware.ts`.
 
 ## Frontend features
-`frontend/src/features/{ai-core, crm, finance, automation, content-studio, auth, dashboard, users, roles, settings, portfolio, presentation-engine}`
+`frontend/src/features/{ai-core, crm, finance, automation, content-studio, auth, dashboard, users, roles, settings, portfolio, presentation-engine, organizations, restaurant-ops}`
 
 ## AI providers (AI Core only)
 Ollama, OpenAI, Anthropic, Gemini — registered in `AiCoreProviderFactory`. Not the same registry as MCP connectors — see `automation.md`.

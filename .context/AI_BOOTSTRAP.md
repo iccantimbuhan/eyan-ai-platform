@@ -19,6 +19,7 @@ Stack: Node/Express/TypeScript/Prisma/PostgreSQL backend; React/TypeScript/Vite/
 | Finance | `finance.md` + `coding-rules.md` |
 | Content Studio (content/image/video/brand-kit/asset) | `content-studio.md` + `coding-rules.md` |
 | Automation / MCP | `automation.md` + `coding-rules.md` |
+| Restaurant Operations | `restaurant.md` + `coding-rules.md` |
 | Deployment | `deployment.md` |
 | "Where is X?" | `repository-map.md` |
 | "What's happening right now?" | `current-sprint.md` |

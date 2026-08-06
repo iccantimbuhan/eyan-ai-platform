@@ -1,5 +1,9 @@
 import { prisma } from "../lib/prisma.js";
 
+// Sprint 0 (ADR-0025) — organizationMemberships/restaurantMemberships load
+// alongside roles/permissions in this one shared include, so tenant context
+// is resolved in the same query authenticate() already runs, with no
+// change to authenticate() itself or to the JWT payload.
 const userWithRolesInclude = {
   roles: {
     include: {
@@ -14,6 +18,8 @@ const userWithRolesInclude = {
       },
     },
   },
+  organizationMemberships: true,
+  restaurantMemberships: true,
 } as const;
 
 export class UserRepository {
