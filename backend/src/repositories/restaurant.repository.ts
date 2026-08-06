@@ -30,6 +30,14 @@ export class RestaurantRepository {
   async create(data: { organizationId: string; name: string }) {
     return prisma.restaurant.create({ data });
   }
+
+  async update(id: string, data: { name?: string }) {
+    return prisma.restaurant.update({ where: { id }, data });
+  }
+
+  async delete(id: string) {
+    return prisma.restaurant.delete({ where: { id } });
+  }
 }
 
 export const restaurantRepository = new RestaurantRepository();

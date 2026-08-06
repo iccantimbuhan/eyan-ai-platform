@@ -15,6 +15,10 @@ import {
   RestaurantMemberRepository,
 } from "../repositories/restaurant-member.repository.js";
 import {
+  branchMemberRepository,
+  BranchMemberRepository,
+} from "../repositories/branch-member.repository.js";
+import {
   moduleRegistryService,
   ModuleRegistryService,
 } from "./module-registry.service.js";
@@ -29,6 +33,7 @@ export class OrganizationService {
     private readonly organizationMembers: OrganizationMemberRepository = organizationMemberRepository,
     private readonly restaurants: RestaurantRepository = restaurantRepository,
     private readonly restaurantMembers: RestaurantMemberRepository = restaurantMemberRepository,
+    private readonly branchMembers: BranchMemberRepository = branchMemberRepository,
     private readonly moduleRegistry: ModuleRegistryService = moduleRegistryService
   ) {}
 
@@ -40,10 +45,11 @@ export class OrganizationService {
   // Branches) without granting the rest of its siblings under the same
   // Organization.
   async getTenantContextForUser(userId: string) {
-    const [organizationMemberships, restaurantMemberships] =
+    const [organizationMemberships, restaurantMemberships, branchMemberships] =
       await Promise.all([
         this.organizationMembers.findByUserId(userId),
         this.restaurantMembers.findByUserId(userId),
+        this.branchMembers.findByUserId(userId),
       ]);
 
     const fullAccessOrganizationIds = new Set(
@@ -99,10 +105,26 @@ export class OrganizationService {
       restaurantsByOrganizationId.set(restaurant.organizationId, existing);
     }
 
+    // Sprint 1.2 (ADR-0036) — myRole is display-only context for the
+    // frontend (e.g. hiding Staff Management actions from a non-Owner/
+    // Manager); requireTenantRole on the backend is the real enforcement,
+    // always. Same most-specific-wins precedence as
+    // tenant.middleware.ts's resolveEffectiveTenantRole.
+    const myRoleByOrganizationId = new Map(
+      organizationMemberships.map((m) => [m.organizationId, m.role])
+    );
+    const myRoleByRestaurantId = new Map(
+      restaurantMemberships.map((m) => [m.restaurantId, m.role])
+    );
+    const myRoleByBranchId = new Map(branchMemberships.map((m) => [m.branchId, m.role]));
+
     return mapTenantContextToResponse(
       organizations,
       restaurantsByOrganizationId,
-      enabledModulesByOrganizationId
+      enabledModulesByOrganizationId,
+      myRoleByOrganizationId,
+      myRoleByRestaurantId,
+      myRoleByBranchId
     );
   }
 }

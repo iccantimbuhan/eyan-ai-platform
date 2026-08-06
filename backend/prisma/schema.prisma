@@ -166,6 +166,7 @@ model User {
 
   organizationMemberships OrganizationMember[]
   restaurantMemberships   RestaurantMember[]
+  branchMemberships       BranchMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1706,10 +1707,20 @@ model AiAuditEvent {
 // ADR-0026. Restaurant business data (Menu/Ingredients/Suppliers/Inventory/
 // Daily Closing/...) does not exist yet — this migration is tenancy
 // foundation only, no business tables.
+// Sprint 1.2 (ADR-0036) — expanded from OWNER/MANAGER/STAFF to the named
+// operational roles a real restaurant business actually uses. STAFF is kept
+// (Postgres enum values can't be cleanly dropped) but is no longer assigned
+// by any code path going forward — every new membership uses one of the
+// named roles below.
 enum TenantRole {
   OWNER
   MANAGER
   STAFF
+  SUPERVISOR
+  CASHIER
+  KITCHEN
+  INVENTORY_STAFF
+  ACCOUNTANT
 }
 
 model Organization {
@@ -1744,8 +1755,9 @@ model OrganizationMember {
 }
 
 // A restaurant brand under an Organization (e.g. Burger's Ink). Owns Menu,
-// Categories, Ingredients, Recipes, Suppliers once those ship — none of
-// that exists yet.
+// Categories, Ingredients, Recipes, Suppliers. Sprint 1.1 (ADR-0025/0026)
+// adds Menu/MenuCategory as the first of these — Ingredients, Recipes,
+// Suppliers still don't exist.
 model Restaurant {
   id             String @id @default(cuid())
   organizationId String
@@ -1754,8 +1766,17 @@ model Restaurant {
 
   name String
 
-  members  RestaurantMember[]
-  branches Branch[]
+  members        RestaurantMember[]
+  branches       Branch[]
+  menuCategories MenuCategory[]
+  menuItems      MenuItem[]
+
+  units                Unit[]
+  ingredientCategories IngredientCategory[]
+  suppliers            Supplier[]
+  ingredients          Ingredient[]
+  recipes              Recipe[]
+  recipeIngredients    RecipeIngredient[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1784,9 +1805,10 @@ model RestaurantMember {
 // A physical location under a Restaurant (e.g. Burger's Ink - Downtown).
 // Owns Inventory, Inventory Transactions, Purchases, Expenses, Daily
 // Closing, Sales, and Reports once those ship — none of that exists yet.
-// Branch-level membership is deliberately not modeled (YAGNI) — access is
-// derived from Restaurant/Organization membership until a real customer
-// needs per-location staff restriction.
+// Branch-level membership was deliberately not modeled at first (YAGNI,
+// ADR-0025) "until a real customer needs per-location staff restriction" —
+// Sprint 1.2's Staff Management (ADR-0036) is that real need, so
+// `BranchMember` below fulfills the condition ADR-0025 itself set.
 model Branch {
   id           String @id @default(cuid())
   restaurantId String
@@ -1795,10 +1817,87 @@ model Branch {
 
   name String
 
+  members BranchMember[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([restaurantId])
+}
+
+// Scopes a user to one Branch, without requiring Restaurant- or
+// Organization-wide access. Same junction shape as OrganizationMember/
+// RestaurantMember — see ADR-0036.
+model BranchMember {
+  userId   String
+  branchId String
+
+  role TenantRole
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([userId, branchId])
+  @@index([userId])
+}
+
+enum MenuItemStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+// Restaurant-owned master data (Sprint 1.1, ADR-0025/0026) — Menu Categories
+// group a Restaurant's Menu Items (e.g. Burger's Ink: Burgers, Wraps,
+// Hotdogs). Restaurant-scoped, not Branch-scoped, per the approved
+// ownership model in .context/restaurant.md. Every query must filter by
+// restaurantId — no exceptions.
+model MenuCategory {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name         String
+  displayOrder Int    @default(0)
+
+  menuItems MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+// A single sellable item on a Restaurant's menu, belonging to one
+// MenuCategory. restaurantId is denormalized (not derived via
+// menuCategoryId) so every repository query here can filter by it directly,
+// per this module's tenant-isolation rule. No Inventory/Ingredient linkage
+// yet (Sprint 2+) — this is master data only.
+model MenuItem {
+  id             String @id @default(cuid())
+  restaurantId   String
+  menuCategoryId String
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuCategory MenuCategory @relation(fields: [menuCategoryId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  price       Decimal        @db.Decimal(10, 2)
+  imagePath   String? // relative StorageProvider path or URL; upload UI is a later sprint, same posture as Expense.receiptPath
+  available   Boolean        @default(true) // day-to-day "in stock right now" toggle
+  status      MenuItemStatus @default(DRAFT) // menu-building lifecycle, independent of `available`
+
+  recipe Recipe?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([menuCategoryId])
 }
 
 // Per-Organization module enablement — the Module Registry's DB half (see
@@ -1818,4 +1917,161 @@ model OrganizationModule {
   enabledAt DateTime @default(now())
 
   @@id([organizationId, moduleKey])
+}
+
+// Restaurant Product Foundation (Sprint 1.3). Restaurant owns Ingredients,
+// Suppliers, Units, Ingredient Categories, and Recipes — Inventory (Branch-
+// scoped, Sprint 2+) will only manage stock against these, never own
+// product knowledge itself. See .context/restaurant.md and ADR-0037.
+
+// Restaurant-scoped unit-of-measure master list (g, kg, ml, piece, ...).
+// Deliberately not hardcoded/global — different restaurants may want
+// different vocabularies (ADR-0037), same posture as IngredientCategory.
+model Unit {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name         String
+  abbreviation String
+
+  recipeIngredients RecipeIngredient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+// Restaurant-scoped, configurable grouping for Ingredients (Vegetables,
+// Cheese, Meat, ...). Optional on Ingredient — deleting a category
+// un-categorizes its ingredients rather than deleting them (SetNull below),
+// unlike MenuCategory/MenuItem's ownership cascade: a category here is a
+// soft label, not a parent that owns its children's lifecycle.
+model IngredientCategory {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  ingredients Ingredient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+// Restaurant-scoped supplier contact. No pricing/purchasing yet (Sprint
+// 2+, ADR-0037) — only the relationship to which Ingredients each Supplier
+// can provide (IngredientSupplier below).
+model Supplier {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name  String
+  phone String?
+  email String?
+  notes String?
+
+  ingredients IngredientSupplier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+// Restaurant-scoped raw/purchasable product (e.g. Lettuce, Beef Patty).
+// Owns no stock/quantity — that's Inventory's job (Branch-scoped, Sprint
+// 2+, deliberately not built yet per ADR-0037: Inventory only manages
+// stock, never product knowledge).
+model Ingredient {
+  id                   String  @id @default(cuid())
+  restaurantId         String
+  ingredientCategoryId String?
+
+  restaurant Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category   IngredientCategory? @relation(fields: [ingredientCategoryId], references: [id], onDelete: SetNull)
+
+  name String
+
+  suppliers         IngredientSupplier[]
+  recipeIngredients RecipeIngredient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([ingredientCategoryId])
+}
+
+// Many-to-many: a Supplier may supply many Ingredients, an Ingredient may
+// have many Suppliers (confirmed by Burger's Ink's real order sheet — "oil"
+// is sourced from two different suppliers). No pricing on this join yet —
+// that's Sprint 2+ (Purchases/ADR-0037), deliberately excluded here.
+model IngredientSupplier {
+  ingredientId String
+  supplierId   String
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  supplier   Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([ingredientId, supplierId])
+  @@index([supplierId])
+}
+
+// One Recipe per MenuItem (menuItemId is unique below) — "what ingredients
+// are consumed when this product is sold." No stock deduction yet
+// (Inventory, Sprint 2+) — this is the product-knowledge foundation only.
+model Recipe {
+  id           String @id @default(cuid())
+  restaurantId String
+  menuItemId   String @unique
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  notes String?
+
+  ingredients RecipeIngredient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+// One line of a Recipe: this Ingredient, this Quantity, this Unit.
+// restaurantId is denormalized (not derived via recipeId), same posture as
+// MenuItem.restaurantId, so every repository query here can filter by it
+// directly per this module's tenant-isolation rule.
+model RecipeIngredient {
+  id           String @id @default(cuid())
+  restaurantId String
+  recipeId     String
+  ingredientId String
+  unitId       String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  unit       Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  quantity Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([recipeId, ingredientId])
+  @@index([restaurantId])
+  @@index([recipeId])
+  @@index([ingredientId])
 }

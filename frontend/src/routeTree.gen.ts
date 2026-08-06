@@ -67,6 +67,16 @@ import { Route as AppAuthenticatedAutomationProvidersIndexRouteImport } from './
 import { Route as AppAuthenticatedCrmLeadsIndexRouteImport } from './routes/app/_authenticated/crm/leads/index'
 import { Route as AppAuthenticatedCrmLeadsLeadIdRouteImport } from './routes/app/_authenticated/crm/leads/$leadId'
 import { Route as AppAuthenticatedFinanceExpensesIndexRouteImport } from './routes/app/_authenticated/finance/expenses/index'
+import { Route as AppAuthenticatedRestaurantBranchesIndexRouteImport } from './routes/app/_authenticated/restaurant/branches/index'
+import { Route as AppAuthenticatedRestaurantIngredientCategoriesIndexRouteImport } from './routes/app/_authenticated/restaurant/ingredient-categories/index'
+import { Route as AppAuthenticatedRestaurantIngredientsIndexRouteImport } from './routes/app/_authenticated/restaurant/ingredients/index'
+import { Route as AppAuthenticatedRestaurantMenuCategoriesIndexRouteImport } from './routes/app/_authenticated/restaurant/menu-categories/index'
+import { Route as AppAuthenticatedRestaurantMenuItemsIndexRouteImport } from './routes/app/_authenticated/restaurant/menu-items/index'
+import { Route as AppAuthenticatedRestaurantRecipesIndexRouteImport } from './routes/app/_authenticated/restaurant/recipes/index'
+import { Route as AppAuthenticatedRestaurantRestaurantsIndexRouteImport } from './routes/app/_authenticated/restaurant/restaurants/index'
+import { Route as AppAuthenticatedRestaurantStaffIndexRouteImport } from './routes/app/_authenticated/restaurant/staff/index'
+import { Route as AppAuthenticatedRestaurantSuppliersIndexRouteImport } from './routes/app/_authenticated/restaurant/suppliers/index'
+import { Route as AppAuthenticatedRestaurantUnitsIndexRouteImport } from './routes/app/_authenticated/restaurant/units/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -395,6 +405,66 @@ const AppAuthenticatedFinanceExpensesIndexRoute =
     path: '/finance/expenses/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedRestaurantBranchesIndexRoute =
+  AppAuthenticatedRestaurantBranchesIndexRouteImport.update({
+    id: '/restaurant/branches/',
+    path: '/restaurant/branches/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantIngredientCategoriesIndexRoute =
+  AppAuthenticatedRestaurantIngredientCategoriesIndexRouteImport.update({
+    id: '/restaurant/ingredient-categories/',
+    path: '/restaurant/ingredient-categories/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantIngredientsIndexRoute =
+  AppAuthenticatedRestaurantIngredientsIndexRouteImport.update({
+    id: '/restaurant/ingredients/',
+    path: '/restaurant/ingredients/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantMenuCategoriesIndexRoute =
+  AppAuthenticatedRestaurantMenuCategoriesIndexRouteImport.update({
+    id: '/restaurant/menu-categories/',
+    path: '/restaurant/menu-categories/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantMenuItemsIndexRoute =
+  AppAuthenticatedRestaurantMenuItemsIndexRouteImport.update({
+    id: '/restaurant/menu-items/',
+    path: '/restaurant/menu-items/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantRecipesIndexRoute =
+  AppAuthenticatedRestaurantRecipesIndexRouteImport.update({
+    id: '/restaurant/recipes/',
+    path: '/restaurant/recipes/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantRestaurantsIndexRoute =
+  AppAuthenticatedRestaurantRestaurantsIndexRouteImport.update({
+    id: '/restaurant/restaurants/',
+    path: '/restaurant/restaurants/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantStaffIndexRoute =
+  AppAuthenticatedRestaurantStaffIndexRouteImport.update({
+    id: '/restaurant/staff/',
+    path: '/restaurant/staff/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantSuppliersIndexRoute =
+  AppAuthenticatedRestaurantSuppliersIndexRouteImport.update({
+    id: '/restaurant/suppliers/',
+    path: '/restaurant/suppliers/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantUnitsIndexRoute =
+  AppAuthenticatedRestaurantUnitsIndexRouteImport.update({
+    id: '/restaurant/units/',
+    path: '/restaurant/units/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -453,6 +523,16 @@ export interface FileRoutesByFullPath {
   '/app/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
   '/app/crm/leads/': typeof AppAuthenticatedCrmLeadsIndexRoute
   '/app/finance/expenses/': typeof AppAuthenticatedFinanceExpensesIndexRoute
+  '/app/restaurant/branches/': typeof AppAuthenticatedRestaurantBranchesIndexRoute
+  '/app/restaurant/ingredient-categories/': typeof AppAuthenticatedRestaurantIngredientCategoriesIndexRoute
+  '/app/restaurant/ingredients/': typeof AppAuthenticatedRestaurantIngredientsIndexRoute
+  '/app/restaurant/menu-categories/': typeof AppAuthenticatedRestaurantMenuCategoriesIndexRoute
+  '/app/restaurant/menu-items/': typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
+  '/app/restaurant/recipes/': typeof AppAuthenticatedRestaurantRecipesIndexRoute
+  '/app/restaurant/restaurants/': typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  '/app/restaurant/staff/': typeof AppAuthenticatedRestaurantStaffIndexRoute
+  '/app/restaurant/suppliers/': typeof AppAuthenticatedRestaurantSuppliersIndexRoute
+  '/app/restaurant/units/': typeof AppAuthenticatedRestaurantUnitsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -509,6 +589,16 @@ export interface FileRoutesByTo {
   '/app/automation/providers': typeof AppAuthenticatedAutomationProvidersIndexRoute
   '/app/crm/leads': typeof AppAuthenticatedCrmLeadsIndexRoute
   '/app/finance/expenses': typeof AppAuthenticatedFinanceExpensesIndexRoute
+  '/app/restaurant/branches': typeof AppAuthenticatedRestaurantBranchesIndexRoute
+  '/app/restaurant/ingredient-categories': typeof AppAuthenticatedRestaurantIngredientCategoriesIndexRoute
+  '/app/restaurant/ingredients': typeof AppAuthenticatedRestaurantIngredientsIndexRoute
+  '/app/restaurant/menu-categories': typeof AppAuthenticatedRestaurantMenuCategoriesIndexRoute
+  '/app/restaurant/menu-items': typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
+  '/app/restaurant/recipes': typeof AppAuthenticatedRestaurantRecipesIndexRoute
+  '/app/restaurant/restaurants': typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  '/app/restaurant/staff': typeof AppAuthenticatedRestaurantStaffIndexRoute
+  '/app/restaurant/suppliers': typeof AppAuthenticatedRestaurantSuppliersIndexRoute
+  '/app/restaurant/units': typeof AppAuthenticatedRestaurantUnitsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -570,6 +660,16 @@ export interface FileRoutesById {
   '/app/_authenticated/automation/providers/': typeof AppAuthenticatedAutomationProvidersIndexRoute
   '/app/_authenticated/crm/leads/': typeof AppAuthenticatedCrmLeadsIndexRoute
   '/app/_authenticated/finance/expenses/': typeof AppAuthenticatedFinanceExpensesIndexRoute
+  '/app/_authenticated/restaurant/branches/': typeof AppAuthenticatedRestaurantBranchesIndexRoute
+  '/app/_authenticated/restaurant/ingredient-categories/': typeof AppAuthenticatedRestaurantIngredientCategoriesIndexRoute
+  '/app/_authenticated/restaurant/ingredients/': typeof AppAuthenticatedRestaurantIngredientsIndexRoute
+  '/app/_authenticated/restaurant/menu-categories/': typeof AppAuthenticatedRestaurantMenuCategoriesIndexRoute
+  '/app/_authenticated/restaurant/menu-items/': typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
+  '/app/_authenticated/restaurant/recipes/': typeof AppAuthenticatedRestaurantRecipesIndexRoute
+  '/app/_authenticated/restaurant/restaurants/': typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  '/app/_authenticated/restaurant/staff/': typeof AppAuthenticatedRestaurantStaffIndexRoute
+  '/app/_authenticated/restaurant/suppliers/': typeof AppAuthenticatedRestaurantSuppliersIndexRoute
+  '/app/_authenticated/restaurant/units/': typeof AppAuthenticatedRestaurantUnitsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -630,6 +730,16 @@ export interface FileRouteTypes {
     | '/app/automation/providers/'
     | '/app/crm/leads/'
     | '/app/finance/expenses/'
+    | '/app/restaurant/branches/'
+    | '/app/restaurant/ingredient-categories/'
+    | '/app/restaurant/ingredients/'
+    | '/app/restaurant/menu-categories/'
+    | '/app/restaurant/menu-items/'
+    | '/app/restaurant/recipes/'
+    | '/app/restaurant/restaurants/'
+    | '/app/restaurant/staff/'
+    | '/app/restaurant/suppliers/'
+    | '/app/restaurant/units/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -686,6 +796,16 @@ export interface FileRouteTypes {
     | '/app/automation/providers'
     | '/app/crm/leads'
     | '/app/finance/expenses'
+    | '/app/restaurant/branches'
+    | '/app/restaurant/ingredient-categories'
+    | '/app/restaurant/ingredients'
+    | '/app/restaurant/menu-categories'
+    | '/app/restaurant/menu-items'
+    | '/app/restaurant/recipes'
+    | '/app/restaurant/restaurants'
+    | '/app/restaurant/staff'
+    | '/app/restaurant/suppliers'
+    | '/app/restaurant/units'
   id:
     | '__root__'
     | '/'
@@ -746,6 +866,16 @@ export interface FileRouteTypes {
     | '/app/_authenticated/automation/providers/'
     | '/app/_authenticated/crm/leads/'
     | '/app/_authenticated/finance/expenses/'
+    | '/app/_authenticated/restaurant/branches/'
+    | '/app/_authenticated/restaurant/ingredient-categories/'
+    | '/app/_authenticated/restaurant/ingredients/'
+    | '/app/_authenticated/restaurant/menu-categories/'
+    | '/app/_authenticated/restaurant/menu-items/'
+    | '/app/_authenticated/restaurant/recipes/'
+    | '/app/_authenticated/restaurant/restaurants/'
+    | '/app/_authenticated/restaurant/staff/'
+    | '/app/_authenticated/restaurant/suppliers/'
+    | '/app/_authenticated/restaurant/units/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1173,6 +1303,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedFinanceExpensesIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/restaurant/branches/': {
+      id: '/app/_authenticated/restaurant/branches/'
+      path: '/restaurant/branches'
+      fullPath: '/app/restaurant/branches/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantBranchesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/ingredient-categories/': {
+      id: '/app/_authenticated/restaurant/ingredient-categories/'
+      path: '/restaurant/ingredient-categories'
+      fullPath: '/app/restaurant/ingredient-categories/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantIngredientCategoriesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/ingredients/': {
+      id: '/app/_authenticated/restaurant/ingredients/'
+      path: '/restaurant/ingredients'
+      fullPath: '/app/restaurant/ingredients/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantIngredientsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/menu-categories/': {
+      id: '/app/_authenticated/restaurant/menu-categories/'
+      path: '/restaurant/menu-categories'
+      fullPath: '/app/restaurant/menu-categories/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantMenuCategoriesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/menu-items/': {
+      id: '/app/_authenticated/restaurant/menu-items/'
+      path: '/restaurant/menu-items'
+      fullPath: '/app/restaurant/menu-items/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantMenuItemsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/recipes/': {
+      id: '/app/_authenticated/restaurant/recipes/'
+      path: '/restaurant/recipes'
+      fullPath: '/app/restaurant/recipes/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantRecipesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/restaurants/': {
+      id: '/app/_authenticated/restaurant/restaurants/'
+      path: '/restaurant/restaurants'
+      fullPath: '/app/restaurant/restaurants/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantRestaurantsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/staff/': {
+      id: '/app/_authenticated/restaurant/staff/'
+      path: '/restaurant/staff'
+      fullPath: '/app/restaurant/staff/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantStaffIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/suppliers/': {
+      id: '/app/_authenticated/restaurant/suppliers/'
+      path: '/restaurant/suppliers'
+      fullPath: '/app/restaurant/suppliers/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantSuppliersIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/units/': {
+      id: '/app/_authenticated/restaurant/units/'
+      path: '/restaurant/units'
+      fullPath: '/app/restaurant/units/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantUnitsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1266,6 +1466,16 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedAutomationProvidersIndexRoute: typeof AppAuthenticatedAutomationProvidersIndexRoute
   AppAuthenticatedCrmLeadsIndexRoute: typeof AppAuthenticatedCrmLeadsIndexRoute
   AppAuthenticatedFinanceExpensesIndexRoute: typeof AppAuthenticatedFinanceExpensesIndexRoute
+  AppAuthenticatedRestaurantBranchesIndexRoute: typeof AppAuthenticatedRestaurantBranchesIndexRoute
+  AppAuthenticatedRestaurantIngredientCategoriesIndexRoute: typeof AppAuthenticatedRestaurantIngredientCategoriesIndexRoute
+  AppAuthenticatedRestaurantIngredientsIndexRoute: typeof AppAuthenticatedRestaurantIngredientsIndexRoute
+  AppAuthenticatedRestaurantMenuCategoriesIndexRoute: typeof AppAuthenticatedRestaurantMenuCategoriesIndexRoute
+  AppAuthenticatedRestaurantMenuItemsIndexRoute: typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
+  AppAuthenticatedRestaurantRecipesIndexRoute: typeof AppAuthenticatedRestaurantRecipesIndexRoute
+  AppAuthenticatedRestaurantRestaurantsIndexRoute: typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  AppAuthenticatedRestaurantStaffIndexRoute: typeof AppAuthenticatedRestaurantStaffIndexRoute
+  AppAuthenticatedRestaurantSuppliersIndexRoute: typeof AppAuthenticatedRestaurantSuppliersIndexRoute
+  AppAuthenticatedRestaurantUnitsIndexRoute: typeof AppAuthenticatedRestaurantUnitsIndexRoute
 }
 
 const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
@@ -1322,6 +1532,26 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedCrmLeadsIndexRoute: AppAuthenticatedCrmLeadsIndexRoute,
   AppAuthenticatedFinanceExpensesIndexRoute:
     AppAuthenticatedFinanceExpensesIndexRoute,
+  AppAuthenticatedRestaurantBranchesIndexRoute:
+    AppAuthenticatedRestaurantBranchesIndexRoute,
+  AppAuthenticatedRestaurantIngredientCategoriesIndexRoute:
+    AppAuthenticatedRestaurantIngredientCategoriesIndexRoute,
+  AppAuthenticatedRestaurantIngredientsIndexRoute:
+    AppAuthenticatedRestaurantIngredientsIndexRoute,
+  AppAuthenticatedRestaurantMenuCategoriesIndexRoute:
+    AppAuthenticatedRestaurantMenuCategoriesIndexRoute,
+  AppAuthenticatedRestaurantMenuItemsIndexRoute:
+    AppAuthenticatedRestaurantMenuItemsIndexRoute,
+  AppAuthenticatedRestaurantRecipesIndexRoute:
+    AppAuthenticatedRestaurantRecipesIndexRoute,
+  AppAuthenticatedRestaurantRestaurantsIndexRoute:
+    AppAuthenticatedRestaurantRestaurantsIndexRoute,
+  AppAuthenticatedRestaurantStaffIndexRoute:
+    AppAuthenticatedRestaurantStaffIndexRoute,
+  AppAuthenticatedRestaurantSuppliersIndexRoute:
+    AppAuthenticatedRestaurantSuppliersIndexRoute,
+  AppAuthenticatedRestaurantUnitsIndexRoute:
+    AppAuthenticatedRestaurantUnitsIndexRoute,
 }
 
 const AppAuthenticatedRouteRouteWithChildren =

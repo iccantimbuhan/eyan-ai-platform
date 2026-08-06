@@ -26,6 +26,15 @@ const roles = [
   { name: 'Developer', description: 'Software developer' },
   { name: 'QA Engineer', description: 'Quality Assurance' },
   { name: 'Viewer', description: 'Read-only user' },
+  // Sprint 1.2 (ADR-0036) — the platform-level half of customer-facing
+  // authorization. Granted ONLY the 'restaurant' permission (see the grant
+  // loop below, separate from Owner's all-permissions loop), so every
+  // commercial customer user sees Restaurant Operations and nothing else —
+  // the same useCan()/useModuleEnabled() nav gating every other module
+  // already uses, no frontend change required. Fine-grained differentiation
+  // within Restaurant Operations (Owner/Manager/Cashier/...) is a separate,
+  // tenant-scoped concern — see TenantRole and requireTenantRole.
+  { name: 'Restaurant Customer', description: 'Commercial customer — Restaurant Operations only' },
 ] as const
 
 // Page-level permissions. Granular keys can be added later without a schema change.
@@ -63,6 +72,23 @@ export async function bootstrapPlatform(prisma: PrismaClient) {
       create: { roleId: owner.id, permissionId: permission.id },
     })
   }
+
+  // Restaurant Customer gets exactly one permission — deliberately not
+  // folded into the loop above, which grants every internal Role the full
+  // permission set. See ADR-0036.
+  const restaurantCustomer = await prisma.role.findUniqueOrThrow({
+    where: { name: 'Restaurant Customer' },
+  })
+  const restaurantPermission = await prisma.permission.findUniqueOrThrow({
+    where: { name: 'restaurant' },
+  })
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: { roleId: restaurantCustomer.id, permissionId: restaurantPermission.id },
+    },
+    update: {},
+    create: { roleId: restaurantCustomer.id, permissionId: restaurantPermission.id },
+  })
 
   await seedRestaurantTenancyFoundation(prisma)
 }

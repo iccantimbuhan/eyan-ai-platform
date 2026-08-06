@@ -20,6 +20,7 @@ const userWithRolesInclude = {
   },
   organizationMemberships: true,
   restaurantMemberships: true,
+  branchMemberships: true,
 } as const;
 
 export class UserRepository {

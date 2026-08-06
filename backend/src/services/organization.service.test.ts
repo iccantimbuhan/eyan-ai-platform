@@ -8,6 +8,7 @@ function createRepositories(overrides: {
   organizationMembers?: Partial<Record<string, unknown>>;
   restaurants?: Partial<Record<string, unknown>>;
   restaurantMembers?: Partial<Record<string, unknown>>;
+  branchMembers?: Partial<Record<string, unknown>>;
 } = {}) {
   const organizations = {
     findManyByIds: vi.fn().mockResolvedValue([]),
@@ -26,12 +27,23 @@ function createRepositories(overrides: {
     findByUserId: vi.fn().mockResolvedValue([]),
     ...overrides.restaurantMembers,
   };
+  const branchMembers = {
+    findByUserId: vi.fn().mockResolvedValue([]),
+    ...overrides.branchMembers,
+  };
   const moduleRegistry: ModuleRegistryService = {
     enabledModuleKeysByOrganization: vi.fn().mockResolvedValue(new Map()),
     setEnabled: vi.fn(),
   } as unknown as ModuleRegistryService;
 
-  return { organizations, organizationMembers, restaurants, restaurantMembers, moduleRegistry };
+  return {
+    organizations,
+    organizationMembers,
+    restaurants,
+    restaurantMembers,
+    branchMembers,
+    moduleRegistry,
+  };
 }
 
 // Sprint 0 (ADR-0025) — this is the service the TeamSwitcher's tenant
@@ -48,6 +60,7 @@ describe("OrganizationService.getTenantContextForUser", () => {
       repos.organizationMembers as never,
       repos.restaurants as never,
       repos.restaurantMembers as never,
+      repos.branchMembers as never,
       repos.moduleRegistry
     );
 
@@ -76,6 +89,7 @@ describe("OrganizationService.getTenantContextForUser", () => {
       repos.organizationMembers as never,
       repos.restaurants as never,
       repos.restaurantMembers as never,
+      repos.branchMembers as never,
       repos.moduleRegistry
     );
 
@@ -111,6 +125,7 @@ describe("OrganizationService.getTenantContextForUser", () => {
       repos.organizationMembers as never,
       repos.restaurants as never,
       repos.restaurantMembers as never,
+      repos.branchMembers as never,
       repos.moduleRegistry
     );
 
@@ -153,6 +168,7 @@ describe("OrganizationService.getTenantContextForUser", () => {
       repos.organizationMembers as never,
       repos.restaurants as never,
       repos.restaurantMembers as never,
+      repos.branchMembers as never,
       repos.moduleRegistry
     );
 

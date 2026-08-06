@@ -6,6 +6,13 @@ export class OrganizationMemberRepository {
     return prisma.organizationMember.findMany({ where: { userId } });
   }
 
+  async findByOrganizationId(organizationId: string) {
+    return prisma.organizationMember.findMany({
+      where: { organizationId },
+      include: { user: true },
+    });
+  }
+
   async upsert(data: {
     userId: string;
     organizationId: string;
@@ -21,6 +28,10 @@ export class OrganizationMemberRepository {
       update: { role: data.role },
       create: data,
     });
+  }
+
+  async delete(userId: string, organizationId: string) {
+    return prisma.organizationMember.deleteMany({ where: { userId, organizationId } });
   }
 }
 

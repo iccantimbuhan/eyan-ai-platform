@@ -113,16 +113,30 @@ export const sidebarData: SidebarData = {
       // platform's first commercial business module. Gated by both the
       // "restaurant" RBAC permission and the "restaurant" Module Registry
       // entry (moduleKey) — an Organization must have the module enabled
-      // *and* the user must hold the permission. Points at a placeholder
-      // dashboard only; no business features ship until Sprint 1+.
+      // *and* the user must hold the permission. Sprint 1.1 adds the
+      // master-data CRUD screens (Restaurants/Branches/Menu Categories/
+      // Menu Items) as sub-items; the top-level Dashboard entry is still
+      // the Sprint 0 placeholder.
       title: 'Restaurant Operations',
       items: [
         {
           title: 'Restaurant Operations',
-          url: '/app/restaurant',
           icon: UtensilsCrossed,
           permission: 'restaurant',
           moduleKey: 'restaurant',
+          items: [
+            { title: 'Dashboard', url: '/app/restaurant' },
+            { title: 'Restaurants', url: '/app/restaurant/restaurants' },
+            { title: 'Branches', url: '/app/restaurant/branches' },
+            { title: 'Menu Categories', url: '/app/restaurant/menu-categories' },
+            { title: 'Menu Items', url: '/app/restaurant/menu-items' },
+            { title: 'Ingredient Categories', url: '/app/restaurant/ingredient-categories' },
+            { title: 'Ingredients', url: '/app/restaurant/ingredients' },
+            { title: 'Suppliers', url: '/app/restaurant/suppliers' },
+            { title: 'Units', url: '/app/restaurant/units' },
+            { title: 'Recipes', url: '/app/restaurant/recipes' },
+            { title: 'Staff', url: '/app/restaurant/staff' },
+          ],
         },
       ],
     },

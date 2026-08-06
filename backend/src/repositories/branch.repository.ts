@@ -13,8 +13,23 @@ export class BranchRepository {
     });
   }
 
+  async findManyByRestaurantId(restaurantId: string) {
+    return prisma.branch.findMany({
+      where: { restaurantId },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
   async create(data: { restaurantId: string; name: string }) {
     return prisma.branch.create({ data });
+  }
+
+  async update(id: string, data: { name?: string }) {
+    return prisma.branch.update({ where: { id }, data });
+  }
+
+  async delete(id: string) {
+    return prisma.branch.delete({ where: { id } });
   }
 }
 

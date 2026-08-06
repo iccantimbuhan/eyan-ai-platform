@@ -6,6 +6,15 @@ export class RestaurantMemberRepository {
     return prisma.restaurantMember.findMany({ where: { userId } });
   }
 
+  async findByRestaurantIds(restaurantIds: string[]) {
+    if (restaurantIds.length === 0) return [];
+
+    return prisma.restaurantMember.findMany({
+      where: { restaurantId: { in: restaurantIds } },
+      include: { user: true },
+    });
+  }
+
   async upsert(data: {
     userId: string;
     restaurantId: string;
@@ -20,6 +29,18 @@ export class RestaurantMemberRepository {
       },
       update: { role: data.role },
       create: data,
+    });
+  }
+
+  async delete(userId: string, restaurantId: string) {
+    return prisma.restaurantMember.deleteMany({ where: { userId, restaurantId } });
+  }
+
+  async deleteManyForUser(userId: string, restaurantIds: string[]) {
+    if (restaurantIds.length === 0) return { count: 0 };
+
+    return prisma.restaurantMember.deleteMany({
+      where: { userId, restaurantId: { in: restaurantIds } },
     });
   }
 }
