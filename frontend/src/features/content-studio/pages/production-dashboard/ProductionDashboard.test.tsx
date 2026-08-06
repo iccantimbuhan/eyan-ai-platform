@@ -1,8 +1,30 @@
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { useAuthStore } from '@/stores/auth-store'
 import type { ProjectAnalyticsSummary } from '../../types/analytics'
 import { ProductionDashboard } from './ProductionDashboard'
+
+// ForbiddenError itself calls useRouter()/useNavigate(), which requires a
+// <RouterProvider> this isolated component test doesn't set up — stubbed
+// the same way providers-page.test.tsx isolates it (Sprint 1.3.1 added the
+// `!can('dashboard')` gate this page didn't have before).
+vi.mock('@/features/errors/forbidden', () => ({
+  ForbiddenError: () => <div>Forbidden</div>,
+}))
+
+function setPermissions(permissions: string[]) {
+  useAuthStore.getState().auth.setUser({
+    id: 'user-1',
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'Owner',
+    roles: ['Owner'],
+    permissions,
+    createdAt: '',
+    updatedAt: '',
+  })
+}
 
 // The app chrome (Header/Search/ThemeSwitch/ConfigDrawer/ProfileDropdown)
 // requires a SidebarProvider and other app-shell context this test isn't
@@ -66,6 +88,7 @@ describe('ProductionDashboard', () => {
     useProjectsMock.mockReset()
     usePlatformAnalyticsSummaryMock.mockReset()
     usePlatformActivityMock.mockReset()
+    setPermissions(['dashboard'])
 
     useProjectsMock.mockReturnValue({
       data: {

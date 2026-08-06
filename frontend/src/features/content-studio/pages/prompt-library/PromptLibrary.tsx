@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/page-header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { useCan } from '@/features/auth/hooks/use-can'
+import { ForbiddenError } from '@/features/errors/forbidden'
 import { SavePromptDialog } from '../../components/prompt-library/SavePromptDialog'
 import { SavedPromptList } from '../../components/prompt-library/SavedPromptList'
 import { useDeleteSavedPrompt } from '../../hooks/use-delete-saved-prompt'
@@ -20,6 +22,7 @@ interface DialogState {
 }
 
 export function PromptLibrary() {
+  const can = useCan()
   const [dialogState, setDialogState] = useState<DialogState>({
     open: false,
     prompt: null,
@@ -27,6 +30,8 @@ export function PromptLibrary() {
   const [deleteTarget, setDeleteTarget] = useState<SavedPrompt | null>(null)
 
   const deleteSavedPrompt = useDeleteSavedPrompt()
+
+  if (!can('dashboard')) return <ForbiddenError />
 
   return (
     <>

@@ -8,7 +8,9 @@ import { PageHeader } from '@/components/page-header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { useCan } from '@/features/auth/hooks/use-can'
 import { StatCard } from '@/features/dashboard/components/stat-card'
+import { ForbiddenError } from '@/features/errors/forbidden'
 import { ActivityFeed } from '../../components/analytics/ActivityFeed'
 import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary'
 import {
@@ -43,12 +45,15 @@ function countByType(
 // publishing, and the Sprint 6.5 analytics endpoints) with no new storage
 // of its own.
 export function ProductionDashboard() {
+  const can = useCan()
   const [activityPage, setActivityPage] = useState(1)
   const projects = useProjects()
   const summary = usePlatformAnalyticsSummary()
   const activity = usePlatformActivity(activityPage, ACTIVITY_PAGE_SIZE)
 
   const assetCounts = summary.data?.assetCounts ?? []
+
+  if (!can('dashboard')) return <ForbiddenError />
 
   return (
     <>

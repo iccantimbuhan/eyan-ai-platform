@@ -73,22 +73,41 @@ export const sidebarData: SidebarData = {
     },
 
     {
+      // Sprint 1.3.1 — previously had no `permission` at all, so
+      // useCan(undefined) defaulted to true and every authenticated user
+      // (including Restaurant Customer) saw this group regardless of RBAC.
+      // Gated on the "dashboard" permission, matching
+      // config/module-registry.ts's Module Registry entry
+      // (`{ key: "content-studio", permission: "dashboard" }`) — the same
+      // permission-only pattern Finance/CRM/AI Core's own sidebar items
+      // already use below. Deliberately NOT setting `moduleKey` too: unlike
+      // Restaurant Operations (the platform's one per-tenant-enabled SaaS
+      // module), no OrganizationModule row for "content-studio" exists for
+      // any Organization, and most accounts (including the portfolio demo
+      // account whose Recruiter Tour depends on this page — see seed.ts)
+      // have no Organization membership at all. Adding moduleKey here
+      // would hide Content Studio from every user platform-wide, verified
+      // against the live database before this change (Sprint 1.3.1
+      // completion report).
       title: 'Content Studio',
       items: [
         {
           title: 'Content Studio',
           url: '/app/content-studio',
           icon: FolderOpen,
+          permission: 'dashboard',
         },
         {
           title: 'Production Dashboard',
           url: '/app/content-studio/dashboard',
           icon: BarChart3,
+          permission: 'dashboard',
         },
         {
           title: 'Prompt Library',
           url: '/app/content-studio/prompt-library',
           icon: BookOpen,
+          permission: 'dashboard',
         },
       ],
     },

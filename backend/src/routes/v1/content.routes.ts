@@ -3,6 +3,7 @@ import { Router, type Router as ExpressRouter } from "express";
 import { ContentController } from "../../controllers/content.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
+import { requirePermission } from "../../middleware/permission.middleware.js";
 import { validate } from "../../middleware/validation.middleware.js";
 
 import {
@@ -13,9 +14,13 @@ import {
 
 const router: ExpressRouter = Router();
 
+// Content Studio's platform permission is "dashboard" — see
+// backend/src/config/module-registry.ts's Module Registry entry, the same
+// permission the frontend's sidebar/route guards reuse (Sprint 1.3.1).
+router.use(authenticate, requirePermission("dashboard"));
+
 router.get(
   "/",
-  authenticate,
   listContentValidator,
   validate,
   ContentController.getContents
@@ -23,7 +28,6 @@ router.get(
 
 router.get(
   "/:id",
-  authenticate,
   contentIdParamValidator,
   validate,
   ContentController.getContent
@@ -31,7 +35,6 @@ router.get(
 
 router.post(
   "/generate",
-  authenticate,
   generateContentValidator,
   validate,
   ContentController.generateContent
@@ -39,7 +42,6 @@ router.post(
 
 router.delete(
   "/:id",
-  authenticate,
   contentIdParamValidator,
   validate,
   ContentController.deleteContent

@@ -3,6 +3,7 @@ import { Router, type Router as ExpressRouter } from "express";
 import { SavedPromptController } from "../../controllers/saved-prompt.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
+import { requirePermission } from "../../middleware/permission.middleware.js";
 import { validate } from "../../middleware/validation.middleware.js";
 
 import {
@@ -13,15 +14,17 @@ import {
 
 const router: ExpressRouter = Router();
 
+// Content Studio's platform permission is "dashboard" — see
+// backend/src/config/module-registry.ts (Sprint 1.3.1).
+router.use(authenticate, requirePermission("dashboard"));
+
 router.get(
   "/",
-  authenticate,
   SavedPromptController.getSavedPrompts
 );
 
 router.get(
   "/:id",
-  authenticate,
   savedPromptIdParamValidator,
   validate,
   SavedPromptController.getSavedPrompt
@@ -29,7 +32,6 @@ router.get(
 
 router.post(
   "/",
-  authenticate,
   createSavedPromptValidator,
   validate,
   SavedPromptController.createSavedPrompt
@@ -37,7 +39,6 @@ router.post(
 
 router.patch(
   "/:id",
-  authenticate,
   savedPromptIdParamValidator,
   updateSavedPromptValidator,
   validate,
@@ -46,7 +47,6 @@ router.patch(
 
 router.delete(
   "/:id",
-  authenticate,
   savedPromptIdParamValidator,
   validate,
   SavedPromptController.deleteSavedPrompt

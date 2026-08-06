@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/page-header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { useCan } from '@/features/auth/hooks/use-can'
+import { ForbiddenError } from '@/features/errors/forbidden'
 import { ContentPipeline } from './components/ContentPipeline'
 import { NewProjectDialog } from './components/NewProjectDialog'
 import { QuickActions } from './components/QuickActions'
@@ -14,6 +16,10 @@ import { RecentProjects } from './components/RecentProjects'
 const isQuickActionsEnabled = false
 
 export function ContentStudio() {
+  const can = useCan()
+
+  if (!can('dashboard')) return <ForbiddenError />
+
   return (
     <>
       <Header>

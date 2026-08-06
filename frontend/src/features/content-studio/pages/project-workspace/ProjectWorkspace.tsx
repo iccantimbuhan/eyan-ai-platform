@@ -10,6 +10,8 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { useCan } from '@/features/auth/hooks/use-can'
+import { ForbiddenError } from '@/features/errors/forbidden'
 import { TourOverlay } from '@/features/portfolio/components/TourOverlay'
 import { VideoComparisonPlayer } from '@/features/portfolio/components/VideoComparisonPlayer'
 import { useTourRunner } from '@/features/portfolio/hooks/use-tour-runner'
@@ -54,6 +56,7 @@ function ProjectWorkspaceShell({ children }: { children: React.ReactNode }) {
 }
 
 export function ProjectWorkspace() {
+  const can = useCan()
   const { projectId } = useParams({
     from: '/app/_authenticated/content-studio/$projectId',
   })
@@ -88,6 +91,8 @@ export function ProjectWorkspace() {
     activeTab,
     setActiveTab,
   })
+
+  if (!can('dashboard')) return <ForbiddenError />
 
   if (isLoading) {
     return (
