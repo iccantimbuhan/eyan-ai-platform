@@ -1,0 +1,284 @@
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  SalesCategoryEntryService,
+  SalesChannelEntryService,
+  SalesItemEntryService,
+  SalesPaymentMethodEntryService,
+} from "./sales-entry.service.js";
+import { NotFoundError } from "../errors/auth.error.js";
+import { SalesEntryAlreadyExistsError, SalesScopeMismatchError } from "../errors/sales.error.js";
+
+function recordRow(overrides: Partial<Record<string, unknown>> = {}) {
+  return { id: "sales-1", branchId: "branch-1", restaurantId: "rest-1", ...overrides };
+}
+
+function recordRepository(overrides: Partial<Record<string, unknown>> = {}) {
+  return { findById: vi.fn().mockResolvedValue(recordRow()), ...overrides };
+}
+
+describe("SalesChannelEntryService", () => {
+  function channelRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findById: vi.fn().mockResolvedValue({ id: "channel-1", restaurantId: "rest-1", name: "Wolt" }),
+      ...overrides,
+    };
+  }
+
+  function entryRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findByRecordAndChannel: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({
+        id: "entry-1",
+        salesChannelId: "channel-1",
+        salesChannel: { name: "Wolt" },
+        amount: { toFixed: () => "229.05" },
+        createdAt: new Date(2026, 0, 1),
+      }),
+      findById: vi.fn().mockResolvedValue({ id: "entry-1", dailySalesRecordId: "sales-1" }),
+      delete: vi.fn().mockResolvedValue(undefined),
+      ...overrides,
+    };
+  }
+
+  it("create() rejects a channel that belongs to a different restaurant", async () => {
+    const entries = entryRepository();
+    const service = new SalesChannelEntryService(
+      entries as never,
+      recordRepository() as never,
+      channelRepository({
+        findById: vi.fn().mockResolvedValue({ id: "channel-1", restaurantId: "rest-OTHER" }),
+      }) as never
+    );
+
+    await expect(service.create("sales-1", { salesChannelId: "channel-1", amount: 100 })).rejects.toThrow(
+      SalesScopeMismatchError
+    );
+    expect(entries.create).not.toHaveBeenCalled();
+  });
+
+  it("create() rejects a duplicate channel entry on the same record", async () => {
+    const entries = entryRepository({ findByRecordAndChannel: vi.fn().mockResolvedValue({ id: "existing" }) });
+    const service = new SalesChannelEntryService(entries as never, recordRepository() as never, channelRepository() as never);
+
+    await expect(service.create("sales-1", { salesChannelId: "channel-1", amount: 100 })).rejects.toThrow(
+      SalesEntryAlreadyExistsError
+    );
+    expect(entries.create).not.toHaveBeenCalled();
+  });
+
+  it("create() persists a valid entry", async () => {
+    const entries = entryRepository();
+    const service = new SalesChannelEntryService(entries as never, recordRepository() as never, channelRepository() as never);
+
+    await service.create("sales-1", { salesChannelId: "channel-1", amount: 229.05 });
+
+    expect(entries.create).toHaveBeenCalledWith({
+      dailySalesRecordId: "sales-1",
+      branchId: "branch-1",
+      salesChannelId: "channel-1",
+      amount: 229.05,
+    });
+  });
+
+  it("delete() 404s when the entry does not belong to the given sales record", async () => {
+    const entries = entryRepository({
+      findById: vi.fn().mockResolvedValue({ id: "entry-1", dailySalesRecordId: "sales-OTHER" }),
+    });
+    const service = new SalesChannelEntryService(entries as never, recordRepository() as never, channelRepository() as never);
+
+    await expect(service.delete("sales-1", "entry-1")).rejects.toThrow(NotFoundError);
+    expect(entries.delete).not.toHaveBeenCalled();
+  });
+
+  it("delete() removes the entry when it belongs to the given sales record", async () => {
+    const entries = entryRepository();
+    const service = new SalesChannelEntryService(entries as never, recordRepository() as never, channelRepository() as never);
+
+    await service.delete("sales-1", "entry-1");
+
+    expect(entries.delete).toHaveBeenCalledWith("entry-1");
+  });
+});
+
+describe("SalesPaymentMethodEntryService", () => {
+  function paymentMethodRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findById: vi.fn().mockResolvedValue({ id: "method-1", restaurantId: "rest-1", name: "Electronic" }),
+      ...overrides,
+    };
+  }
+
+  function entryRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findByRecordAndMethod: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({
+        id: "entry-1",
+        salesPaymentMethodId: "method-1",
+        salesPaymentMethod: { name: "Electronic" },
+        amount: { toFixed: () => "213.20" },
+        transactionCount: 12,
+        createdAt: new Date(2026, 0, 1),
+      }),
+      findById: vi.fn().mockResolvedValue({ id: "entry-1", dailySalesRecordId: "sales-1" }),
+      delete: vi.fn().mockResolvedValue(undefined),
+      ...overrides,
+    };
+  }
+
+  it("create() rejects a payment method from a different restaurant", async () => {
+    const entries = entryRepository();
+    const service = new SalesPaymentMethodEntryService(
+      entries as never,
+      recordRepository() as never,
+      paymentMethodRepository({
+        findById: vi.fn().mockResolvedValue({ id: "method-1", restaurantId: "rest-OTHER" }),
+      }) as never
+    );
+
+    await expect(
+      service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 213.2 })
+    ).rejects.toThrow(SalesScopeMismatchError);
+  });
+
+  it("create() persists a valid entry with an optional transaction count", async () => {
+    const entries = entryRepository();
+    const service = new SalesPaymentMethodEntryService(entries as never, recordRepository() as never, paymentMethodRepository() as never);
+
+    await service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 213.2, transactionCount: 12 });
+
+    expect(entries.create).toHaveBeenCalledWith({
+      dailySalesRecordId: "sales-1",
+      branchId: "branch-1",
+      salesPaymentMethodId: "method-1",
+      amount: 213.2,
+      transactionCount: 12,
+    });
+  });
+});
+
+describe("SalesCategoryEntryService", () => {
+  function categoryRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findById: vi.fn().mockResolvedValue({ id: "category-1", restaurantId: "rest-1", name: "Pizza" }),
+      ...overrides,
+    };
+  }
+
+  function entryRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findByRecordAndCategory: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({
+        id: "entry-1",
+        salesCategoryId: "category-1",
+        salesCategory: { name: "Pizza" },
+        quantity: null,
+        amount: { toFixed: () => "500.00" },
+        createdAt: new Date(2026, 0, 1),
+      }),
+      findById: vi.fn().mockResolvedValue({ id: "entry-1", dailySalesRecordId: "sales-1" }),
+      delete: vi.fn().mockResolvedValue(undefined),
+      ...overrides,
+    };
+  }
+
+  it("create() rejects a category from a different restaurant", async () => {
+    const entries = entryRepository();
+    const service = new SalesCategoryEntryService(
+      entries as never,
+      recordRepository() as never,
+      categoryRepository({
+        findById: vi.fn().mockResolvedValue({ id: "category-1", restaurantId: "rest-OTHER" }),
+      }) as never
+    );
+
+    await expect(service.create("sales-1", { salesCategoryId: "category-1", amount: 500 })).rejects.toThrow(
+      SalesScopeMismatchError
+    );
+  });
+
+  it("create() persists a valid entry", async () => {
+    const entries = entryRepository();
+    const service = new SalesCategoryEntryService(entries as never, recordRepository() as never, categoryRepository() as never);
+
+    await service.create("sales-1", { salesCategoryId: "category-1", amount: 500 });
+
+    expect(entries.create).toHaveBeenCalledWith({
+      dailySalesRecordId: "sales-1",
+      branchId: "branch-1",
+      salesCategoryId: "category-1",
+      quantity: null,
+      amount: 500,
+    });
+  });
+});
+
+describe("SalesItemEntryService", () => {
+  function menuItemRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findById: vi.fn().mockResolvedValue({ id: "menu-item-1", restaurantId: "rest-1" }),
+      ...overrides,
+    };
+  }
+
+  function entryRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      create: vi.fn().mockResolvedValue({
+        id: "entry-1",
+        menuItemId: null,
+        itemName: "Margherita",
+        categoryName: "Pizza",
+        quantity: { toFixed: () => "3.00" },
+        amount: { toFixed: () => "36.00" },
+        createdAt: new Date(2026, 0, 1),
+      }),
+      findById: vi.fn().mockResolvedValue({ id: "entry-1", dailySalesRecordId: "sales-1" }),
+      delete: vi.fn().mockResolvedValue(undefined),
+      ...overrides,
+    };
+  }
+
+  it("create() allows an item entry with no menuItemId at all", async () => {
+    const entries = entryRepository();
+    const menuItems = menuItemRepository();
+    const service = new SalesItemEntryService(entries as never, recordRepository() as never, menuItems as never);
+
+    await service.create("sales-1", { itemName: "Margherita", categoryName: "Pizza", quantity: 3, amount: 36 });
+
+    expect(menuItems.findById).not.toHaveBeenCalled();
+    expect(entries.create).toHaveBeenCalledWith({
+      dailySalesRecordId: "sales-1",
+      branchId: "branch-1",
+      menuItemId: null,
+      itemName: "Margherita",
+      categoryName: "Pizza",
+      quantity: 3,
+      amount: 36,
+    });
+  });
+
+  it("create() rejects a menuItemId belonging to a different restaurant", async () => {
+    const entries = entryRepository();
+    const service = new SalesItemEntryService(
+      entries as never,
+      recordRepository() as never,
+      menuItemRepository({
+        findById: vi.fn().mockResolvedValue({ id: "menu-item-1", restaurantId: "rest-OTHER" }),
+      }) as never
+    );
+
+    await expect(
+      service.create("sales-1", { menuItemId: "menu-item-1", itemName: "Margherita", quantity: 3, amount: 36 })
+    ).rejects.toThrow(SalesScopeMismatchError);
+    expect(entries.create).not.toHaveBeenCalled();
+  });
+
+  it("delete() 404s when the entry does not belong to the given sales record", async () => {
+    const entries = entryRepository({
+      findById: vi.fn().mockResolvedValue({ id: "entry-1", dailySalesRecordId: "sales-OTHER" }),
+    });
+    const service = new SalesItemEntryService(entries as never, recordRepository() as never, menuItemRepository() as never);
+
+    await expect(service.delete("sales-1", "entry-1")).rejects.toThrow(NotFoundError);
+  });
+});

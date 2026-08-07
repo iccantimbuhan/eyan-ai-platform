@@ -9,10 +9,15 @@ import { IngredientCategoryController } from "../../controllers/ingredient-categ
 import { SupplierController } from "../../controllers/supplier.controller.js";
 import { IngredientController } from "../../controllers/ingredient.controller.js";
 import { RecipeController } from "../../controllers/recipe.controller.js";
+import {
+  SalesCategoryController,
+  SalesChannelController,
+  SalesPaymentMethodController,
+} from "../../controllers/sales-reference.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
 import { requirePermission } from "../../middleware/permission.middleware.js";
-import { requireRestaurantAccess } from "../../middleware/tenant.middleware.js";
+import { requireRestaurantAccess, requireTenantRole } from "../../middleware/tenant.middleware.js";
 import { validate } from "../../middleware/validation.middleware.js";
 
 import {
@@ -30,6 +35,7 @@ import { createIngredientCategoryValidator } from "../../validators/ingredient-c
 import { createSupplierValidator } from "../../validators/supplier.validator.js";
 import { createIngredientValidator } from "../../validators/ingredient.validator.js";
 import { createRecipeValidator } from "../../validators/recipe.validator.js";
+import { createSalesReferenceValidator } from "../../validators/sales-reference.validator.js";
 
 // Mounted at /api/v1/restaurants. Every route here is scoped by
 // :restaurantId and guarded by requireRestaurantAccess — this is also
@@ -206,6 +212,69 @@ router.post(
   validate,
   requireRestaurantAccess(),
   RecipeController.create
+);
+
+// Sales Foundation (Sprint 2C, ADR-0039) — SalesChannel/SalesPaymentMethod/
+// SalesCategory are Restaurant-scoped configurable master lists, same
+// posture as Unit above. Unlike Unit/Ingredient/etc., writes here require
+// the Sales write-role policy (confirmed with the user) rather than being
+// open to any Restaurant/Organization member — these are financial
+// reference data, not general product-catalog config. No single-resource
+// GET/PATCH/DELETE in this sprint (create+list only).
+const SALES_WRITE_ROLES = ["OWNER", "MANAGER", "SUPERVISOR", "ACCOUNTANT"] as const;
+
+router.get(
+  "/:restaurantId/sales-channels",
+  restaurantIdParamValidator,
+  validate,
+  requireRestaurantAccess(),
+  SalesChannelController.list
+);
+
+router.post(
+  "/:restaurantId/sales-channels",
+  restaurantIdParamValidator,
+  createSalesReferenceValidator,
+  validate,
+  requireRestaurantAccess(),
+  requireTenantRole(...SALES_WRITE_ROLES),
+  SalesChannelController.create
+);
+
+router.get(
+  "/:restaurantId/sales-payment-methods",
+  restaurantIdParamValidator,
+  validate,
+  requireRestaurantAccess(),
+  SalesPaymentMethodController.list
+);
+
+router.post(
+  "/:restaurantId/sales-payment-methods",
+  restaurantIdParamValidator,
+  createSalesReferenceValidator,
+  validate,
+  requireRestaurantAccess(),
+  requireTenantRole(...SALES_WRITE_ROLES),
+  SalesPaymentMethodController.create
+);
+
+router.get(
+  "/:restaurantId/sales-categories",
+  restaurantIdParamValidator,
+  validate,
+  requireRestaurantAccess(),
+  SalesCategoryController.list
+);
+
+router.post(
+  "/:restaurantId/sales-categories",
+  restaurantIdParamValidator,
+  createSalesReferenceValidator,
+  validate,
+  requireRestaurantAccess(),
+  requireTenantRole(...SALES_WRITE_ROLES),
+  SalesCategoryController.create
 );
 
 export default router;

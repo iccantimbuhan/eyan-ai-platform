@@ -1,0 +1,156 @@
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Plus, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useCreateSalesPaymentMethod, useSalesPaymentMethods } from '../../../hooks/use-sales-reference'
+import { useCreatePaymentMethodEntry, useDeletePaymentMethodEntry } from '../../../hooks/use-sales'
+import {
+  defaultPaymentMethodEntryValues,
+  paymentMethodEntrySchema,
+  type PaymentMethodEntryFormValues,
+} from '../../../schemas/sales-schema'
+import type { SalesPaymentMethodEntry } from '../../../types/restaurant-ops'
+
+type PaymentMethodEntrySectionProps = {
+  restaurantId: string
+  salesId: string
+  entries: SalesPaymentMethodEntry[]
+}
+
+export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: PaymentMethodEntrySectionProps) {
+  const { data: methods } = useSalesPaymentMethods(restaurantId)
+  const createMethod = useCreateSalesPaymentMethod(restaurantId)
+  const createEntry = useCreatePaymentMethodEntry()
+  const deleteEntry = useDeletePaymentMethodEntry()
+  const [newMethodName, setNewMethodName] = useState('')
+
+  const form = useForm<PaymentMethodEntryFormValues>({
+    resolver: zodResolver(paymentMethodEntrySchema),
+    defaultValues: defaultPaymentMethodEntryValues,
+  })
+
+  useEffect(() => {
+    form.reset(defaultPaymentMethodEntryValues)
+  }, [salesId, form])
+
+  async function onSubmit(values: PaymentMethodEntryFormValues) {
+    await createEntry.mutateAsync({
+      salesId,
+      salesPaymentMethodId: values.salesPaymentMethodId,
+      amount: Number(values.amount),
+      transactionCount: values.transactionCount ? Number(values.transactionCount) : undefined,
+    })
+    form.reset(defaultPaymentMethodEntryValues)
+  }
+
+  async function addNewMethod() {
+    if (!newMethodName.trim()) return
+    const method = await createMethod.mutateAsync(newMethodName.trim())
+    form.setValue('salesPaymentMethodId', method.id)
+    setNewMethodName('')
+  }
+
+  return (
+    <div className='space-y-3'>
+      <p className='text-sm font-medium'>Payment Methods</p>
+
+      <div className='space-y-2'>
+        {entries.length === 0 ? (
+          <p className='text-sm text-muted-foreground'>No payment method entries yet.</p>
+        ) : (
+          entries.map((entry) => (
+            <div key={entry.id} className='flex items-center justify-between rounded-md border px-3 py-2'>
+              <span className='text-sm'>
+                {entry.paymentMethodName}: &euro;{entry.amount}
+                {entry.transactionCount !== null ? ` (${entry.transactionCount} tx)` : ''}
+              </span>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                disabled={deleteEntry.isPending}
+                onClick={() => deleteEntry.mutate({ salesId, entryId: entry.id })}
+              >
+                <Trash2 className='h-4 w-4 text-destructive' />
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className='flex items-end gap-2'>
+          <FormField
+            control={form.control}
+            name='salesPaymentMethodId'
+            render={({ field }) => (
+              <FormItem className='flex-1'>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='Payment method' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {(methods ?? []).map((method) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='amount'
+            render={({ field }) => (
+              <FormItem className='w-24'>
+                <FormControl>
+                  <Input inputMode='decimal' placeholder='Amount' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='transactionCount'
+            render={({ field }) => (
+              <FormItem className='w-20'>
+                <FormControl>
+                  <Input inputMode='numeric' placeholder='Tx #' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type='submit' size='icon' aria-label='Add payment method entry' disabled={createEntry.isPending}>
+            <Plus className='h-4 w-4' />
+          </Button>
+        </form>
+      </Form>
+
+      <div className='flex items-end gap-2'>
+        <Input
+          placeholder='New payment method name (e.g. Cash Guard)'
+          value={newMethodName}
+          onChange={(e) => setNewMethodName(e.target.value)}
+          className='flex-1'
+        />
+        <Button type='button' variant='outline' size='sm' onClick={addNewMethod} disabled={createMethod.isPending}>
+          Add Payment Method
+        </Button>
+      </div>
+    </div>
+  )
+}

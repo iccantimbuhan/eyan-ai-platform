@@ -42,3 +42,15 @@ const INVENTORY_WRITE_ROLES = new Set(['OWNER', 'MANAGER', 'SUPERVISOR', 'INVENT
 export function canWriteInventory(role: string | null): boolean {
   return role !== null && INVENTORY_WRITE_ROLES.has(role)
 }
+
+// Sales Foundation (Sprint 2C, ADR-0039) — mirrors the backend's
+// requireTenantRole('OWNER', 'MANAGER', 'SUPERVISOR', 'ACCOUNTANT') gate on
+// every Sales write route (daily sales records, their line entries, and
+// the three master-list create routes). Display-only: hides "Add Daily
+// Sales"/line-entry actions the backend would 403 anyway, never the real
+// enforcement.
+const SALES_WRITE_ROLES = new Set(['OWNER', 'MANAGER', 'SUPERVISOR', 'ACCOUNTANT'])
+
+export function canWriteSales(role: string | null): boolean {
+  return role !== null && SALES_WRITE_ROLES.has(role)
+}

@@ -75,6 +75,8 @@ import { Route as AppAuthenticatedRestaurantMenuCategoriesIndexRouteImport } fro
 import { Route as AppAuthenticatedRestaurantMenuItemsIndexRouteImport } from './routes/app/_authenticated/restaurant/menu-items/index'
 import { Route as AppAuthenticatedRestaurantRecipesIndexRouteImport } from './routes/app/_authenticated/restaurant/recipes/index'
 import { Route as AppAuthenticatedRestaurantRestaurantsIndexRouteImport } from './routes/app/_authenticated/restaurant/restaurants/index'
+import { Route as AppAuthenticatedRestaurantSalesIndexRouteImport } from './routes/app/_authenticated/restaurant/sales/index'
+import { Route as AppAuthenticatedRestaurantSalesWeeklyRouteImport } from './routes/app/_authenticated/restaurant/sales/weekly'
 import { Route as AppAuthenticatedRestaurantStaffIndexRouteImport } from './routes/app/_authenticated/restaurant/staff/index'
 import { Route as AppAuthenticatedRestaurantSuppliersIndexRouteImport } from './routes/app/_authenticated/restaurant/suppliers/index'
 import { Route as AppAuthenticatedRestaurantUnitsIndexRouteImport } from './routes/app/_authenticated/restaurant/units/index'
@@ -454,6 +456,18 @@ const AppAuthenticatedRestaurantRestaurantsIndexRoute =
     path: '/restaurant/restaurants/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedRestaurantSalesIndexRoute =
+  AppAuthenticatedRestaurantSalesIndexRouteImport.update({
+    id: '/restaurant/sales/',
+    path: '/restaurant/sales/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedRestaurantSalesWeeklyRoute =
+  AppAuthenticatedRestaurantSalesWeeklyRouteImport.update({
+    id: '/restaurant/sales/weekly',
+    path: '/restaurant/sales/weekly',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedRestaurantStaffIndexRoute =
   AppAuthenticatedRestaurantStaffIndexRouteImport.update({
     id: '/restaurant/staff/',
@@ -514,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/app/users/': typeof AppAuthenticatedUsersIndexRoute
   '/app/ai-core/brains/$brainId': typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   '/app/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  '/app/restaurant/sales/weekly': typeof AppAuthenticatedRestaurantSalesWeeklyRoute
   '/app/ai-core/audit/': typeof AppAuthenticatedAiCoreAuditIndexRoute
   '/app/ai-core/brains/': typeof AppAuthenticatedAiCoreBrainsIndexRoute
   '/app/ai-core/capabilities/': typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
@@ -538,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/app/restaurant/menu-items/': typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
   '/app/restaurant/recipes/': typeof AppAuthenticatedRestaurantRecipesIndexRoute
   '/app/restaurant/restaurants/': typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  '/app/restaurant/sales/': typeof AppAuthenticatedRestaurantSalesIndexRoute
   '/app/restaurant/staff/': typeof AppAuthenticatedRestaurantStaffIndexRoute
   '/app/restaurant/suppliers/': typeof AppAuthenticatedRestaurantSuppliersIndexRoute
   '/app/restaurant/units/': typeof AppAuthenticatedRestaurantUnitsIndexRoute
@@ -581,6 +597,7 @@ export interface FileRoutesByTo {
   '/app/users': typeof AppAuthenticatedUsersIndexRoute
   '/app/ai-core/brains/$brainId': typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   '/app/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  '/app/restaurant/sales/weekly': typeof AppAuthenticatedRestaurantSalesWeeklyRoute
   '/app/ai-core/audit': typeof AppAuthenticatedAiCoreAuditIndexRoute
   '/app/ai-core/brains': typeof AppAuthenticatedAiCoreBrainsIndexRoute
   '/app/ai-core/capabilities': typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
@@ -605,6 +622,7 @@ export interface FileRoutesByTo {
   '/app/restaurant/menu-items': typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
   '/app/restaurant/recipes': typeof AppAuthenticatedRestaurantRecipesIndexRoute
   '/app/restaurant/restaurants': typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  '/app/restaurant/sales': typeof AppAuthenticatedRestaurantSalesIndexRoute
   '/app/restaurant/staff': typeof AppAuthenticatedRestaurantStaffIndexRoute
   '/app/restaurant/suppliers': typeof AppAuthenticatedRestaurantSuppliersIndexRoute
   '/app/restaurant/units': typeof AppAuthenticatedRestaurantUnitsIndexRoute
@@ -653,6 +671,7 @@ export interface FileRoutesById {
   '/app/_authenticated/users/': typeof AppAuthenticatedUsersIndexRoute
   '/app/_authenticated/ai-core/brains/$brainId': typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   '/app/_authenticated/crm/leads/$leadId': typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  '/app/_authenticated/restaurant/sales/weekly': typeof AppAuthenticatedRestaurantSalesWeeklyRoute
   '/app/_authenticated/ai-core/audit/': typeof AppAuthenticatedAiCoreAuditIndexRoute
   '/app/_authenticated/ai-core/brains/': typeof AppAuthenticatedAiCoreBrainsIndexRoute
   '/app/_authenticated/ai-core/capabilities/': typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
@@ -677,6 +696,7 @@ export interface FileRoutesById {
   '/app/_authenticated/restaurant/menu-items/': typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
   '/app/_authenticated/restaurant/recipes/': typeof AppAuthenticatedRestaurantRecipesIndexRoute
   '/app/_authenticated/restaurant/restaurants/': typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  '/app/_authenticated/restaurant/sales/': typeof AppAuthenticatedRestaurantSalesIndexRoute
   '/app/_authenticated/restaurant/staff/': typeof AppAuthenticatedRestaurantStaffIndexRoute
   '/app/_authenticated/restaurant/suppliers/': typeof AppAuthenticatedRestaurantSuppliersIndexRoute
   '/app/_authenticated/restaurant/units/': typeof AppAuthenticatedRestaurantUnitsIndexRoute
@@ -724,6 +744,7 @@ export interface FileRouteTypes {
     | '/app/users/'
     | '/app/ai-core/brains/$brainId'
     | '/app/crm/leads/$leadId'
+    | '/app/restaurant/sales/weekly'
     | '/app/ai-core/audit/'
     | '/app/ai-core/brains/'
     | '/app/ai-core/capabilities/'
@@ -748,6 +769,7 @@ export interface FileRouteTypes {
     | '/app/restaurant/menu-items/'
     | '/app/restaurant/recipes/'
     | '/app/restaurant/restaurants/'
+    | '/app/restaurant/sales/'
     | '/app/restaurant/staff/'
     | '/app/restaurant/suppliers/'
     | '/app/restaurant/units/'
@@ -791,6 +813,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/app/ai-core/brains/$brainId'
     | '/app/crm/leads/$leadId'
+    | '/app/restaurant/sales/weekly'
     | '/app/ai-core/audit'
     | '/app/ai-core/brains'
     | '/app/ai-core/capabilities'
@@ -815,6 +838,7 @@ export interface FileRouteTypes {
     | '/app/restaurant/menu-items'
     | '/app/restaurant/recipes'
     | '/app/restaurant/restaurants'
+    | '/app/restaurant/sales'
     | '/app/restaurant/staff'
     | '/app/restaurant/suppliers'
     | '/app/restaurant/units'
@@ -862,6 +886,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/users/'
     | '/app/_authenticated/ai-core/brains/$brainId'
     | '/app/_authenticated/crm/leads/$leadId'
+    | '/app/_authenticated/restaurant/sales/weekly'
     | '/app/_authenticated/ai-core/audit/'
     | '/app/_authenticated/ai-core/brains/'
     | '/app/_authenticated/ai-core/capabilities/'
@@ -886,6 +911,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/restaurant/menu-items/'
     | '/app/_authenticated/restaurant/recipes/'
     | '/app/_authenticated/restaurant/restaurants/'
+    | '/app/_authenticated/restaurant/sales/'
     | '/app/_authenticated/restaurant/staff/'
     | '/app/_authenticated/restaurant/suppliers/'
     | '/app/_authenticated/restaurant/units/'
@@ -1372,6 +1398,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedRestaurantRestaurantsIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/restaurant/sales/': {
+      id: '/app/_authenticated/restaurant/sales/'
+      path: '/restaurant/sales'
+      fullPath: '/app/restaurant/sales/'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantSalesIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/restaurant/sales/weekly': {
+      id: '/app/_authenticated/restaurant/sales/weekly'
+      path: '/restaurant/sales/weekly'
+      fullPath: '/app/restaurant/sales/weekly'
+      preLoaderRoute: typeof AppAuthenticatedRestaurantSalesWeeklyRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/restaurant/staff/': {
       id: '/app/_authenticated/restaurant/staff/'
       path: '/restaurant/staff'
@@ -1470,6 +1510,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedUsersIndexRoute: typeof AppAuthenticatedUsersIndexRoute
   AppAuthenticatedAiCoreBrainsBrainIdRoute: typeof AppAuthenticatedAiCoreBrainsBrainIdRoute
   AppAuthenticatedCrmLeadsLeadIdRoute: typeof AppAuthenticatedCrmLeadsLeadIdRoute
+  AppAuthenticatedRestaurantSalesWeeklyRoute: typeof AppAuthenticatedRestaurantSalesWeeklyRoute
   AppAuthenticatedAiCoreAuditIndexRoute: typeof AppAuthenticatedAiCoreAuditIndexRoute
   AppAuthenticatedAiCoreBrainsIndexRoute: typeof AppAuthenticatedAiCoreBrainsIndexRoute
   AppAuthenticatedAiCoreCapabilitiesIndexRoute: typeof AppAuthenticatedAiCoreCapabilitiesIndexRoute
@@ -1494,6 +1535,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedRestaurantMenuItemsIndexRoute: typeof AppAuthenticatedRestaurantMenuItemsIndexRoute
   AppAuthenticatedRestaurantRecipesIndexRoute: typeof AppAuthenticatedRestaurantRecipesIndexRoute
   AppAuthenticatedRestaurantRestaurantsIndexRoute: typeof AppAuthenticatedRestaurantRestaurantsIndexRoute
+  AppAuthenticatedRestaurantSalesIndexRoute: typeof AppAuthenticatedRestaurantSalesIndexRoute
   AppAuthenticatedRestaurantStaffIndexRoute: typeof AppAuthenticatedRestaurantStaffIndexRoute
   AppAuthenticatedRestaurantSuppliersIndexRoute: typeof AppAuthenticatedRestaurantSuppliersIndexRoute
   AppAuthenticatedRestaurantUnitsIndexRoute: typeof AppAuthenticatedRestaurantUnitsIndexRoute
@@ -1525,6 +1567,8 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedAiCoreBrainsBrainIdRoute:
     AppAuthenticatedAiCoreBrainsBrainIdRoute,
   AppAuthenticatedCrmLeadsLeadIdRoute: AppAuthenticatedCrmLeadsLeadIdRoute,
+  AppAuthenticatedRestaurantSalesWeeklyRoute:
+    AppAuthenticatedRestaurantSalesWeeklyRoute,
   AppAuthenticatedAiCoreAuditIndexRoute: AppAuthenticatedAiCoreAuditIndexRoute,
   AppAuthenticatedAiCoreBrainsIndexRoute:
     AppAuthenticatedAiCoreBrainsIndexRoute,
@@ -1569,6 +1613,8 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedRestaurantRecipesIndexRoute,
   AppAuthenticatedRestaurantRestaurantsIndexRoute:
     AppAuthenticatedRestaurantRestaurantsIndexRoute,
+  AppAuthenticatedRestaurantSalesIndexRoute:
+    AppAuthenticatedRestaurantSalesIndexRoute,
   AppAuthenticatedRestaurantStaffIndexRoute:
     AppAuthenticatedRestaurantStaffIndexRoute,
   AppAuthenticatedRestaurantSuppliersIndexRoute:

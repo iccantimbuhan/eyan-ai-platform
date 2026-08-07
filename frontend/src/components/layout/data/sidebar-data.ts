@@ -155,6 +155,8 @@ export const sidebarData: SidebarData = {
             { title: 'Units', url: '/app/restaurant/units' },
             { title: 'Recipes', url: '/app/restaurant/recipes' },
             { title: 'Inventory', url: '/app/restaurant/inventory' },
+            { title: 'Sales', url: '/app/restaurant/sales' },
+            { title: 'Weekly Sales', url: '/app/restaurant/sales/weekly' },
             { title: 'Staff', url: '/app/restaurant/staff' },
           ],
         },

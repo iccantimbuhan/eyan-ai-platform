@@ -13,6 +13,7 @@ import { ingredientRepository } from "../repositories/ingredient.repository.js";
 import { recipeRepository } from "../repositories/recipe.repository.js";
 import { recipeIngredientRepository } from "../repositories/recipe-ingredient.repository.js";
 import { inventoryItemRepository } from "../repositories/inventory-item.repository.js";
+import { dailySalesRecordRepository } from "../repositories/daily-sales-record.repository.js";
 
 // Express 5's ParamsDictionary allows string[] for wildcard/repeated
 // segments; every route this middleware guards uses a single named
@@ -489,6 +490,19 @@ function createBranchScopedAccessGuard(
 export function requireInventoryItemAccess(paramName = "inventoryItemId") {
   return createBranchScopedAccessGuard("Inventory item", paramName, (id) =>
     inventoryItemRepository.findById(id)
+  );
+}
+
+// Sales Foundation (Sprint 2C, ADR-0039) — DailySalesRecord is Branch-scoped
+// (per ADR-0037: Branch owns operational data, the same posture Inventory
+// established), so it reuses createBranchScopedAccessGuard exactly like
+// requireInventoryItemAccess — no new authorization pattern. Every
+// channel/payment-method/category/item line-entry route is nested under a
+// record's own id (/sales/:salesId/...), so this one guard covers all of
+// them at the parent-resolution step.
+export function requireSalesRecordAccess(paramName = "salesId") {
+  return createBranchScopedAccessGuard("Daily sales record", paramName, (id) =>
+    dailySalesRecordRepository.findById(id)
   );
 }
 

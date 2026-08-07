@@ -174,6 +174,201 @@ export interface StockMovement {
   createdAt: string
 }
 
+// Sales Foundation (Sprint 2C, ADR-0039) — Branch-scoped, mirrors
+// Inventory's ownership posture. Reference lists (channel/payment method/
+// category) are Restaurant-scoped configurable vocabulary, same posture as
+// Unit — never a hardcoded enum, a manager can add their own.
+export interface SalesReference {
+  id: string
+  restaurantId: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type SalesSource = 'MANUAL' | 'POS_REPORT'
+export type PosReportType = 'Z_REPORT' | 'X_REPORT'
+
+export interface SalesChannelEntry {
+  id: string
+  salesChannelId: string
+  channelName: string
+  amount: string
+  createdAt: string
+}
+
+export interface SalesPaymentMethodEntry {
+  id: string
+  salesPaymentMethodId: string
+  paymentMethodName: string
+  amount: string
+  transactionCount: number | null
+  createdAt: string
+}
+
+export interface SalesCategoryEntry {
+  id: string
+  salesCategoryId: string
+  categoryName: string
+  quantity: string | null
+  amount: string
+  createdAt: string
+}
+
+export interface SalesItemEntry {
+  id: string
+  menuItemId: string | null
+  itemName: string
+  categoryName: string | null
+  quantity: string
+  amount: string
+  createdAt: string
+}
+
+// RAW INPUT — one business day's manually-entered sales record for one
+// Branch. Never confuse this with a WeeklySalesSummary below, which is a
+// CALCULATED SUMMARY computed on read, never stored.
+export interface DailySalesRecord {
+  id: string
+  branchId: string
+  restaurantId: string
+  businessDate: string
+  source: SalesSource
+  posReportType: PosReportType | null
+  posReportNumber: string | null
+  posReportedTotal: string | null
+  totalSales: string
+  discountsTotal: string
+  vouchersAmount: string
+  vouchersCount: number | null
+  notes: string | null
+  channels: SalesChannelEntry[]
+  paymentMethods: SalesPaymentMethodEntry[]
+  categories: SalesCategoryEntry[]
+  items: SalesItemEntry[]
+  // Sprint 2D — the same reconciliation shape the weekly summary uses,
+  // computed server-side for this single day.
+  reconciliation: SalesReconciliation
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DailySalesRecordListItem {
+  id: string
+  branchId: string
+  businessDate: string
+  source: SalesSource
+  totalSales: string
+  createdAt: string
+}
+
+export interface DailySalesTotal {
+  date: string
+  totalSales: string
+  // Independent figures shown alongside totalSales — never assumed to
+  // reconcile with it (ADR-0039 Decision 2/3).
+  posReportedTotal: string | null
+  channelEntriesTotal: string
+}
+
+export interface ChannelTotal {
+  salesChannelId: string
+  channelName: string
+  amount: string
+  // Share of this breakdown's OWN recorded total (Σ channel entries), never
+  // a share of totalSales — the two are independent figures that are not
+  // guaranteed to reconcile. null when the breakdown's own total is zero.
+  percentOfChannelEntriesTotal: string | null
+  activeDays: number
+  averageAmountPerActiveDay: string | null
+}
+
+export interface PaymentMethodTotal {
+  salesPaymentMethodId: string
+  paymentMethodName: string
+  amount: string
+  transactionCount: number
+  percentOfPaymentMethodEntriesTotal: string | null
+}
+
+export interface CategoryTotal {
+  salesCategoryId: string
+  categoryName: string
+  quantity: string | null
+  amount: string
+  percentOfCategoryEntriesTotal: string | null
+}
+
+export interface TopItem {
+  key: string
+  itemName: string
+  quantity: string
+  amount: string
+}
+
+// Days in the requested range with no DailySalesRecord at all — distinct
+// from a recorded day with €0 sales. Never treated as zero (spec §G).
+export interface SalesDataCoverage {
+  daysInRange: number
+  daysRecorded: number
+  missingDays: number
+  missingDates: string[]
+  averageSalesPerRecordedDay: string | null
+}
+
+// A non-zero variance is not automatically an error — display it neutrally
+// ("recorded difference — requires review"), never mutate the underlying
+// records to "fix" it (ADR-0039 Decision 2/3, spec §F).
+export interface SalesReconciliation {
+  totalSales: string
+  posReportedTotal: string | null
+  posReportedRecordCount: number
+  channelEntriesTotal: string
+  varianceVsPosReportedTotal: string | null
+  varianceVsChannelEntriesTotal: string
+}
+
+export interface WeeklySalesSummary {
+  branchId: string
+  startDate: string
+  endDate: string
+  totalSales: string
+  discountsTotal: string
+  vouchersAmount: string
+  vouchersCount: number
+  coverage: SalesDataCoverage
+  reconciliation: SalesReconciliation
+  dailySales: DailySalesTotal[]
+  channelTotals: ChannelTotal[]
+  paymentMethodTotals: PaymentMethodTotal[]
+  categoryTotals: CategoryTotal[]
+  topItems: TopItem[]
+}
+
+// changePercent is null (not an invalid/infinite value) when the previous
+// period's value is zero — "no comparison data" is a distinct state from
+// "0% change" (spec §C).
+export interface SalesComparisonEntry {
+  key: string
+  label: string
+  current: string
+  previous: string
+  change: string
+  changePercent: string | null
+}
+
+// Both periods are supplied explicitly by the caller — never inferred by
+// the backend.
+export interface SalesComparison {
+  branchId: string
+  current: WeeklySalesSummary
+  previous: WeeklySalesSummary
+  totalSalesComparison: SalesComparisonEntry
+  channelComparison: SalesComparisonEntry[]
+  categoryComparison: SalesComparisonEntry[]
+  topItemsComparison: SalesComparisonEntry[]
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data: T

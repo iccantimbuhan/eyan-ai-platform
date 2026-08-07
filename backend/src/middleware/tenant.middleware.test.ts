@@ -13,6 +13,7 @@ const findIngredientByIdMock = vi.fn();
 const findRecipeByIdMock = vi.fn();
 const findRecipeIngredientByIdMock = vi.fn();
 const findInventoryItemByIdMock = vi.fn();
+const findDailySalesRecordByIdMock = vi.fn();
 
 vi.mock("../repositories/restaurant.repository.js", () => ({
   restaurantRepository: { findById: findRestaurantByIdMock },
@@ -62,6 +63,10 @@ vi.mock("../repositories/inventory-item.repository.js", () => ({
   inventoryItemRepository: { findById: findInventoryItemByIdMock },
 }));
 
+vi.mock("../repositories/daily-sales-record.repository.js", () => ({
+  dailySalesRecordRepository: { findById: findDailySalesRecordByIdMock },
+}));
+
 const {
   requireRestaurantAccess,
   requireBranchAccess,
@@ -75,6 +80,7 @@ const {
   requireRecipeAccess,
   requireRecipeIngredientAccess,
   requireInventoryItemAccess,
+  requireSalesRecordAccess,
   requireTenantRole,
 } = await import("./tenant.middleware.js");
 
@@ -740,6 +746,72 @@ describe("requireInventoryItemAccess", () => {
     const next = vi.fn() as NextFunction;
 
     await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
+// Sales Foundation (Sprint 2C, ADR-0039) — DailySalesRecord reuses the same
+// createBranchScopedAccessGuard factory requireInventoryItemAccess uses
+// (only a smaller matrix here: the factory's full tier/cross-tenant/
+// cross-branch/not-found behavior is already exhaustively covered above —
+// this just confirms requireSalesRecordAccess is wired to it correctly).
+describe("requireSalesRecordAccess", () => {
+  beforeEach(() => {
+    findDailySalesRecordByIdMock.mockReset();
+    findBranchByIdMock.mockReset();
+    findRestaurantByIdMock.mockReset();
+  });
+
+  it("calls next() when the user has a direct BranchMember row for the record's branch", async () => {
+    findDailySalesRecordByIdMock.mockResolvedValue({ id: "sales-1", branchId: "branch-1" });
+    const req = createRequest({
+      params: { salesId: "sales-1" },
+      branchMemberships: [{ branchId: "branch-1" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireSalesRecordAccess()(req, res, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(findBranchByIdMock).not.toHaveBeenCalled();
+  });
+
+  it("responds 403 for a sales record under a different tenant entirely — cross-tenant isolation", async () => {
+    findDailySalesRecordByIdMock.mockResolvedValue({
+      id: "sales-other-tenant",
+      branchId: "branch-other-tenant",
+    });
+    findBranchByIdMock.mockResolvedValue({
+      id: "branch-other-tenant",
+      restaurantId: "rest-other-tenant",
+    });
+    findRestaurantByIdMock.mockResolvedValue({
+      id: "rest-other-tenant",
+      organizationId: "org-other-tenant",
+    });
+    const req = createRequest({
+      params: { salesId: "sales-other-tenant" },
+      organizationMemberships: [{ organizationId: "org-mine" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireSalesRecordAccess()(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it("responds 404 when the sales record does not exist", async () => {
+    findDailySalesRecordByIdMock.mockResolvedValue(null);
+    const req = createRequest({ params: { salesId: "missing" } });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireSalesRecordAccess()(req, res, next);
 
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(404);

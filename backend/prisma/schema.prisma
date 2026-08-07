@@ -169,6 +169,7 @@ model User {
   branchMemberships       BranchMember[]
 
   stockMovementsRecorded StockMovement[]
+  dailySalesRecords      DailySalesRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1781,6 +1782,11 @@ model Restaurant {
   recipeIngredients    RecipeIngredient[]
   inventoryItems       InventoryItem[]
 
+  salesChannels       SalesChannel[]
+  salesPaymentMethods SalesPaymentMethod[]
+  salesCategories     SalesCategory[]
+  dailySalesRecords   DailySalesRecord[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1824,6 +1830,12 @@ model Branch {
 
   inventoryItems InventoryItem[]
   stockMovements StockMovement[]
+
+  dailySalesRecords    DailySalesRecord[]
+  salesChannelEntries  SalesChannelEntry[]
+  salesPaymentEntries  SalesPaymentMethodEntry[]
+  salesCategoryEntries SalesCategoryEntry[]
+  salesItemEntries     SalesItemEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1898,6 +1910,11 @@ model MenuItem {
   status      MenuItemStatus @default(DRAFT) // menu-building lifecycle, independent of `available`
 
   recipe Recipe?
+
+  // Sales Foundation (Sprint 2C) — optional cross-reference only, onDelete:
+  // SetNull. Itemized sales snapshot their own itemName/categoryName, so
+  // this relation is never required for a historical sales line to render.
+  salesItemEntries SalesItemEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2164,4 +2181,234 @@ model StockMovement {
   @@index([inventoryItemId])
   @@index([branchId])
   @@index([createdAt])
+}
+
+// --- Sales Foundation (Sprint 2C, ADR-0039) -------------------------------
+// Branch-scoped, per ADR-0037's ownership boundary (Restaurant owns product
+// knowledge; Branch owns operational data — Inventory was the first
+// instance of this, Sales is the second). DailySalesRecord is one business
+// day's manually-entered sales record for one Branch, sourced from a
+// printed POS Z/X report and/or Wolt/Bolt/MyPOS/Cash channel totals — the
+// POS itself is never integrated with. Explicitly excludes recipe
+// consumption, inventory deduction, purchasing, and costing — see ADR-0039.
+
+enum SalesSource {
+  MANUAL // no POS report backing this record
+  POS_REPORT // backed by a printed Z/X report
+  // WHATSAPP / OCR / AI are future additive values (same posture as
+  // StockMovementType reserving PURCHASE/RECIPE_CONSUMPTION) — not added
+  // now; adding one later is a purely additive enum value, no redesign.
+}
+
+enum PosReportType {
+  Z_REPORT
+  X_REPORT
+}
+
+// Restaurant-scoped configurable vocabulary — same posture as Unit/
+// IngredientCategory: not hardcoded, a manager adds their own via the
+// entry form when the business uses a channel this list doesn't have yet.
+// A soft label, like IngredientCategory: renaming it is not tracked
+// per-entry (no snapshot here) — only Itemized Sales' MenuItem link gets a
+// name snapshot below, because the spec calls that case out explicitly.
+model SalesChannel {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  channelEntries SalesChannelEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+}
+
+// Deliberately a separate master list from SalesChannel — a channel
+// (Wolt, Bolt, POS/In-house) and a payment method (Electronic, Cash Guard,
+// Cash Draw) are independent business concepts. Cash can appear as both a
+// channel and a payment method; that's two separate rows in two separate
+// tables, never conflated.
+model SalesPaymentMethod {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  paymentMethodEntries SalesPaymentMethodEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+}
+
+// POS-printed sales families (Pizza, Chicken, BCRS, Bolt Food, ...).
+// Deliberately independent of MenuCategory — a POS category grouping is
+// not guaranteed to mean the same thing as a MenuCategory built for the
+// digital menu, so this sprint does not force that unverified equivalence.
+model SalesCategory {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  categoryEntries SalesCategoryEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+}
+
+// One business day's sales record for one Branch. RAW INPUT only — nothing
+// on this model or its entry lines is a calculated/derived value; weekly
+// totals, top items, etc. are computed on read (see sales-aggregation
+// service), never stored. restaurantId is denormalized, same posture as
+// InventoryItem.restaurantId. businessDate is a plain DateTime (no
+// @db.Date), same convention as Expense.date.
+model DailySalesRecord {
+  id           String @id @default(cuid())
+  branchId     String
+  restaurantId String
+
+  branch     Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  businessDate DateTime
+
+  source SalesSource
+
+  // POS report metadata — nullable, populated only when source =
+  // POS_REPORT. posReportedTotal is the figure literally printed on the
+  // Z/X report, kept separate from totalSales (this record's own
+  // authoritative headline figure) so neither is silently derived from or
+  // overwrites the other — see ADR-0039 Decision 3. Channel/payment-method
+  // totals are also never required to sum to either total (Decision 2) —
+  // no reconciliation happens anywhere in this sprint.
+  posReportType    PosReportType?
+  posReportNumber  String?
+  posReportedTotal Decimal?       @db.Decimal(10, 2)
+
+  totalSales     Decimal @db.Decimal(10, 2)
+  discountsTotal Decimal @default(0) @db.Decimal(10, 2)
+  vouchersAmount Decimal @default(0) @db.Decimal(10, 2)
+  vouchersCount  Int?
+
+  notes String?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  channelEntries       SalesChannelEntry[]
+  paymentMethodEntries SalesPaymentMethodEntry[]
+  categoryEntries      SalesCategoryEntry[]
+  itemEntries          SalesItemEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One POS register-closing per Branch per day, current single-POS-per-
+  // Branch reality — see ADR-0039 Decision 1 for why multiple reports per
+  // day are out of scope rather than silently allowed as duplicates.
+  @@unique([branchId, businessDate])
+  @@index([branchId])
+  @@index([restaurantId])
+  @@index([businessDate])
+}
+
+model SalesChannelEntry {
+  id                 String @id @default(cuid())
+  dailySalesRecordId String
+  branchId           String
+  salesChannelId     String
+
+  dailySalesRecord DailySalesRecord @relation(fields: [dailySalesRecordId], references: [id], onDelete: Cascade)
+  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  salesChannel     SalesChannel     @relation(fields: [salesChannelId], references: [id], onDelete: Cascade)
+
+  amount Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  @@unique([dailySalesRecordId, salesChannelId])
+  @@index([dailySalesRecordId])
+  @@index([branchId])
+}
+
+model SalesPaymentMethodEntry {
+  id                   String @id @default(cuid())
+  dailySalesRecordId   String
+  branchId             String
+  salesPaymentMethodId String
+
+  dailySalesRecord   DailySalesRecord   @relation(fields: [dailySalesRecordId], references: [id], onDelete: Cascade)
+  branch             Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  salesPaymentMethod SalesPaymentMethod @relation(fields: [salesPaymentMethodId], references: [id], onDelete: Cascade)
+
+  amount           Decimal @db.Decimal(10, 2)
+  transactionCount Int?
+
+  createdAt DateTime @default(now())
+
+  @@unique([dailySalesRecordId, salesPaymentMethodId])
+  @@index([dailySalesRecordId])
+  @@index([branchId])
+}
+
+model SalesCategoryEntry {
+  id                 String @id @default(cuid())
+  dailySalesRecordId String
+  branchId           String
+  salesCategoryId    String
+
+  dailySalesRecord DailySalesRecord @relation(fields: [dailySalesRecordId], references: [id], onDelete: Cascade)
+  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  salesCategory    SalesCategory    @relation(fields: [salesCategoryId], references: [id], onDelete: Cascade)
+
+  quantity Decimal? @db.Decimal(10, 2)
+  amount   Decimal  @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  @@unique([dailySalesRecordId, salesCategoryId])
+  @@index([dailySalesRecordId])
+  @@index([branchId])
+}
+
+// Itemized line. itemName/categoryName are captured as plain strings at
+// write time (a snapshot) — never derived from MenuItem on read. menuItemId
+// is an optional cross-reference only, onDelete: SetNull, so renaming,
+// disabling, or deleting a MenuItem later can never corrupt or orphan a
+// historical sales line — the spec calls this requirement out explicitly.
+model SalesItemEntry {
+  id                 String  @id @default(cuid())
+  dailySalesRecordId String
+  branchId           String
+  menuItemId         String?
+
+  dailySalesRecord DailySalesRecord @relation(fields: [dailySalesRecordId], references: [id], onDelete: Cascade)
+  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  menuItem         MenuItem?        @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+
+  itemName     String
+  categoryName String?
+  quantity     Decimal @db.Decimal(10, 2)
+  amount       Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  @@index([dailySalesRecordId])
+  @@index([branchId])
+  @@index([menuItemId])
 }

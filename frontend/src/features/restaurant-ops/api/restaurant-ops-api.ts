@@ -1,22 +1,34 @@
+import { isAxiosError } from 'axios'
 import { api } from '@/services/api'
 import type {
   ApiResponse,
   Branch,
+  DailySalesRecord,
+  DailySalesRecordListItem,
   Ingredient,
   IngredientCategory,
   InventoryItem,
   MenuCategory,
   MenuItem,
   MenuItemStatus,
+  PosReportType,
   Recipe,
   RecipeIngredientLine,
   Restaurant,
+  SalesCategoryEntry,
+  SalesChannelEntry,
+  SalesItemEntry,
+  SalesPaymentMethodEntry,
+  SalesReference,
+  SalesSource,
   StaffMember,
   StaffMembershipScope,
   StockMovement,
   Supplier,
   TenantRole,
   Unit,
+  WeeklySalesSummary,
+  SalesComparison,
 } from '../types/restaurant-ops'
 
 // Restaurants — Organization-scoped (create/list live under
@@ -456,6 +468,215 @@ export async function createStockCount(
     payload
   )
   return data.data
+}
+
+// Sales Foundation — Branch-scoped (Sprint 2C, ADR-0039). Reference lists
+// (channel/payment method/category) are Restaurant-scoped, create+list
+// only, same posture as Unit. Daily sales record create/list/daily/weekly
+// live under Branch, mirroring Inventory Item; single-record ops and the
+// four line-entry types live under their own flat /sales route file.
+
+export async function getSalesChannels(restaurantId: string): Promise<SalesReference[]> {
+  const { data } = await api.get<ApiResponse<SalesReference[]>>(
+    `/restaurants/${restaurantId}/sales-channels`
+  )
+  return data.data
+}
+
+export async function createSalesChannel(
+  restaurantId: string,
+  payload: { name: string }
+): Promise<SalesReference> {
+  const { data } = await api.post<ApiResponse<SalesReference>>(
+    `/restaurants/${restaurantId}/sales-channels`,
+    payload
+  )
+  return data.data
+}
+
+export async function getSalesPaymentMethods(restaurantId: string): Promise<SalesReference[]> {
+  const { data } = await api.get<ApiResponse<SalesReference[]>>(
+    `/restaurants/${restaurantId}/sales-payment-methods`
+  )
+  return data.data
+}
+
+export async function createSalesPaymentMethod(
+  restaurantId: string,
+  payload: { name: string }
+): Promise<SalesReference> {
+  const { data } = await api.post<ApiResponse<SalesReference>>(
+    `/restaurants/${restaurantId}/sales-payment-methods`,
+    payload
+  )
+  return data.data
+}
+
+export async function getSalesCategories(restaurantId: string): Promise<SalesReference[]> {
+  const { data } = await api.get<ApiResponse<SalesReference[]>>(
+    `/restaurants/${restaurantId}/sales-categories`
+  )
+  return data.data
+}
+
+export async function createSalesCategory(
+  restaurantId: string,
+  payload: { name: string }
+): Promise<SalesReference> {
+  const { data } = await api.post<ApiResponse<SalesReference>>(
+    `/restaurants/${restaurantId}/sales-categories`,
+    payload
+  )
+  return data.data
+}
+
+export interface CreateDailySalesRecordPayload {
+  businessDate: string
+  source: SalesSource
+  posReportType?: PosReportType
+  posReportNumber?: string
+  posReportedTotal?: number
+  totalSales: number
+  discountsTotal?: number
+  vouchersAmount?: number
+  vouchersCount?: number
+  notes?: string
+}
+
+export async function getDailySalesRecords(branchId: string): Promise<DailySalesRecordListItem[]> {
+  const { data } = await api.get<ApiResponse<DailySalesRecordListItem[]>>(
+    `/branches/${branchId}/sales`
+  )
+  return data.data
+}
+
+export async function createDailySalesRecord(
+  branchId: string,
+  payload: CreateDailySalesRecordPayload
+): Promise<DailySalesRecord> {
+  const { data } = await api.post<ApiResponse<DailySalesRecord>>(
+    `/branches/${branchId}/sales`,
+    payload
+  )
+  return data.data
+}
+
+export async function getDailySales(branchId: string, date: string): Promise<DailySalesRecord | null> {
+  try {
+    const { data } = await api.get<ApiResponse<DailySalesRecord>>(
+      `/branches/${branchId}/sales/daily`,
+      { params: { date } }
+    )
+    return data.data
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) return null
+    throw error
+  }
+}
+
+export async function getWeeklySalesSummary(
+  branchId: string,
+  startDate: string,
+  endDate: string
+): Promise<WeeklySalesSummary> {
+  const { data } = await api.get<ApiResponse<WeeklySalesSummary>>(
+    `/branches/${branchId}/sales/weekly`,
+    { params: { startDate, endDate } }
+  )
+  return data.data
+}
+
+// Both periods are supplied explicitly by the caller — this never infers
+// "the previous period" itself.
+export async function getSalesComparison(
+  branchId: string,
+  currentStartDate: string,
+  currentEndDate: string,
+  previousStartDate: string,
+  previousEndDate: string
+): Promise<SalesComparison> {
+  const { data } = await api.get<ApiResponse<SalesComparison>>(
+    `/branches/${branchId}/sales/comparison`,
+    { params: { currentStartDate, currentEndDate, previousStartDate, previousEndDate } }
+  )
+  return data.data
+}
+
+export async function getSalesRecord(salesId: string): Promise<DailySalesRecord> {
+  const { data } = await api.get<ApiResponse<DailySalesRecord>>(`/sales/${salesId}`)
+  return data.data
+}
+
+export async function updateDailySalesRecord(
+  salesId: string,
+  payload: Partial<CreateDailySalesRecordPayload>
+): Promise<DailySalesRecord> {
+  const { data } = await api.patch<ApiResponse<DailySalesRecord>>(`/sales/${salesId}`, payload)
+  return data.data
+}
+
+export async function createChannelEntry(
+  salesId: string,
+  payload: { salesChannelId: string; amount: number }
+): Promise<SalesChannelEntry> {
+  const { data } = await api.post<ApiResponse<SalesChannelEntry>>(
+    `/sales/${salesId}/channel-entries`,
+    payload
+  )
+  return data.data
+}
+
+export async function deleteChannelEntry(salesId: string, entryId: string) {
+  const { data } = await api.delete(`/sales/${salesId}/channel-entries/${entryId}`)
+  return data
+}
+
+export async function createPaymentMethodEntry(
+  salesId: string,
+  payload: { salesPaymentMethodId: string; amount: number; transactionCount?: number }
+): Promise<SalesPaymentMethodEntry> {
+  const { data } = await api.post<ApiResponse<SalesPaymentMethodEntry>>(
+    `/sales/${salesId}/payment-method-entries`,
+    payload
+  )
+  return data.data
+}
+
+export async function deletePaymentMethodEntry(salesId: string, entryId: string) {
+  const { data } = await api.delete(`/sales/${salesId}/payment-method-entries/${entryId}`)
+  return data
+}
+
+export async function createCategoryEntry(
+  salesId: string,
+  payload: { salesCategoryId: string; quantity?: number; amount: number }
+): Promise<SalesCategoryEntry> {
+  const { data } = await api.post<ApiResponse<SalesCategoryEntry>>(
+    `/sales/${salesId}/category-entries`,
+    payload
+  )
+  return data.data
+}
+
+export async function deleteCategoryEntry(salesId: string, entryId: string) {
+  const { data } = await api.delete(`/sales/${salesId}/category-entries/${entryId}`)
+  return data
+}
+
+export async function createItemEntry(
+  salesId: string,
+  payload: { menuItemId?: string; itemName: string; categoryName?: string; quantity: number; amount: number }
+): Promise<SalesItemEntry> {
+  const { data } = await api.post<ApiResponse<SalesItemEntry>>(
+    `/sales/${salesId}/item-entries`,
+    payload
+  )
+  return data.data
+}
+
+export async function deleteItemEntry(salesId: string, entryId: string) {
+  const { data } = await api.delete(`/sales/${salesId}/item-entries/${entryId}`)
+  return data
 }
 
 // Staff Management — Organization-scoped (Sprint 1.2, ADR-0036). The
