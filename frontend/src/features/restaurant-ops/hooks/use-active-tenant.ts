@@ -10,6 +10,7 @@ import { useTenantContext } from '@/features/organizations/hooks/use-tenant-cont
 export function useActiveTenant() {
   const activeOrganizationId = useTenantStore((state) => state.tenant.activeOrganizationId)
   const activeRestaurantId = useTenantStore((state) => state.tenant.activeRestaurantId)
+  const activeBranchId = useTenantStore((state) => state.tenant.activeBranchId)
   const { data: organizations, isLoading } = useTenantContext()
 
   const activeOrganization =
@@ -20,11 +21,20 @@ export function useActiveTenant() {
     activeOrganization?.restaurants.find((restaurant) => restaurant.id === activeRestaurantId) ??
     activeOrganization?.restaurants[0]
 
+  // Sprint 2A (Inventory) — same fallback convention as activeRestaurant
+  // above: fall back to the first Branch under the active Restaurant when
+  // nothing has been explicitly picked in the TeamSwitcher yet.
+  const activeBranch =
+    activeRestaurant?.branches.find((branch) => branch.id === activeBranchId) ??
+    activeRestaurant?.branches[0]
+
   return {
     isLoading,
     organizationId: activeOrganization?.id,
     organizationRole: activeOrganization?.myRole ?? null,
     restaurantId: activeRestaurant?.id,
     restaurants: activeOrganization?.restaurants ?? [],
+    branchId: activeBranch?.id,
+    branches: activeRestaurant?.branches ?? [],
   }
 }

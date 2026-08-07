@@ -4,6 +4,7 @@ import type {
   Branch,
   Ingredient,
   IngredientCategory,
+  InventoryItem,
   MenuCategory,
   MenuItem,
   MenuItemStatus,
@@ -12,6 +13,7 @@ import type {
   Restaurant,
   StaffMember,
   StaffMembershipScope,
+  StockMovement,
   Supplier,
   TenantRole,
   Unit,
@@ -373,6 +375,87 @@ export async function updateRecipeIngredient(
 export async function deleteRecipeIngredient(recipeIngredientId: string) {
   const { data } = await api.delete(`/recipe-ingredients/${recipeIngredientId}`)
   return data
+}
+
+// Inventory Foundation — Branch-scoped (Sprint 2A, ADR-0038). Create/list
+// live under Branch, mirroring Ingredient/Recipe's own nested-under-parent
+// pattern; single-item ops and the three write actions live under their
+// own flat /inventory-items route file (mirrors /recipe-ingredients).
+export interface CreateInventoryItemPayload {
+  ingredientId: string
+  unitId: string
+  openingQuantity: number
+  minimumQuantity: number
+  reason?: string
+}
+
+export async function getInventoryItems(branchId: string): Promise<InventoryItem[]> {
+  const { data } = await api.get<ApiResponse<InventoryItem[]>>(
+    `/branches/${branchId}/inventory-items`
+  )
+  return data.data
+}
+
+export async function createInventoryItem(
+  branchId: string,
+  payload: CreateInventoryItemPayload
+): Promise<InventoryItem> {
+  const { data } = await api.post<ApiResponse<InventoryItem>>(
+    `/branches/${branchId}/inventory-items`,
+    payload
+  )
+  return data.data
+}
+
+export async function updateInventoryItem(
+  inventoryItemId: string,
+  payload: { minimumQuantity: number }
+): Promise<InventoryItem> {
+  const { data } = await api.patch<ApiResponse<InventoryItem>>(
+    `/inventory-items/${inventoryItemId}`,
+    payload
+  )
+  return data.data
+}
+
+export async function getStockMovements(inventoryItemId: string): Promise<StockMovement[]> {
+  const { data } = await api.get<ApiResponse<StockMovement[]>>(
+    `/inventory-items/${inventoryItemId}/movements`
+  )
+  return data.data
+}
+
+export async function createAdjustment(
+  inventoryItemId: string,
+  payload: { quantityDelta: number; reason: string }
+): Promise<StockMovement> {
+  const { data } = await api.post<ApiResponse<StockMovement>>(
+    `/inventory-items/${inventoryItemId}/adjustments`,
+    payload
+  )
+  return data.data
+}
+
+export async function createWaste(
+  inventoryItemId: string,
+  payload: { quantity: number; reason: string }
+): Promise<StockMovement> {
+  const { data } = await api.post<ApiResponse<StockMovement>>(
+    `/inventory-items/${inventoryItemId}/waste`,
+    payload
+  )
+  return data.data
+}
+
+export async function createStockCount(
+  inventoryItemId: string,
+  payload: { countedQuantity: number; reason?: string }
+): Promise<StockMovement> {
+  const { data } = await api.post<ApiResponse<StockMovement>>(
+    `/inventory-items/${inventoryItemId}/stock-count`,
+    payload
+  )
+  return data.data
 }
 
 // Staff Management — Organization-scoped (Sprint 1.2, ADR-0036). The

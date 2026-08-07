@@ -135,6 +135,45 @@ export interface Recipe {
   updatedAt: string
 }
 
+// Inventory Foundation (Sprint 2A, ADR-0038) — Branch-scoped, per
+// ADR-0037: Restaurant owns product knowledge (Ingredient/Unit above);
+// Branch owns stock. status is computed server-side (never stored) from
+// currentQuantity vs minimumQuantity — always trust this field over
+// recomputing it in the frontend.
+export type StockStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK'
+
+export interface InventoryItem {
+  id: string
+  branchId: string
+  restaurantId: string
+  ingredientId: string
+  ingredientName: string
+  unitId: string
+  unitAbbreviation: string
+  currentQuantity: string
+  minimumQuantity: string
+  status: StockStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export type StockMovementType = 'OPENING_STOCK' | 'ADJUSTMENT' | 'WASTE' | 'STOCK_COUNT'
+
+export interface StockMovement {
+  id: string
+  inventoryItemId: string
+  branchId: string
+  unitId: string
+  unitAbbreviation: string
+  type: StockMovementType
+  quantityDelta: string
+  quantityAfter: string
+  reason: string | null
+  createdById: string
+  createdByName: string
+  createdAt: string
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data: T

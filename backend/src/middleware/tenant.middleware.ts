@@ -12,6 +12,7 @@ import { supplierRepository } from "../repositories/supplier.repository.js";
 import { ingredientRepository } from "../repositories/ingredient.repository.js";
 import { recipeRepository } from "../repositories/recipe.repository.js";
 import { recipeIngredientRepository } from "../repositories/recipe-ingredient.repository.js";
+import { inventoryItemRepository } from "../repositories/inventory-item.repository.js";
 
 // Express 5's ParamsDictionary allows string[] for wildcard/repeated
 // segments; every route this middleware guards uses a single named
@@ -400,6 +401,94 @@ export function requireRecipeAccess(paramName = "recipeId") {
 export function requireRecipeIngredientAccess(paramName = "recipeIngredientId") {
   return createRestaurantScopedAccessGuard("Recipe ingredient", paramName, (id) =>
     recipeIngredientRepository.findById(id)
+  );
+}
+
+// Inventory Foundation (Sprint 2A, ADR-0038) — InventoryItem/StockMovement
+// are Branch-scoped, not Restaurant-scoped (per ADR-0037: Branch owns
+// stock), so their single-resource access guard walks the same three-tier
+// Branch->Restaurant->Organization chain requireBranchAccess already
+// implements, rather than createRestaurantScopedAccessGuard's Restaurant-
+// first chain. This is what gives BranchMember-only staff (Cashier/Kitchen/
+// Supervisor/Inventory Staff, no Restaurant/Organization membership) direct
+// access to Inventory routes at tier 1 — closing, for this domain, the gap
+// ADR-0036/ADR-0037 both flagged and deferred to this sprint.
+function createBranchScopedAccessGuard(
+  resourceLabel: string,
+  paramName: string,
+  findById: (id: string) => Promise<{ branchId: string } | null>
+) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const id = getParam(req, paramName);
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing route parameter "${paramName}".`,
+      });
+    }
+
+    const row = await findById(id);
+
+    if (!row) {
+      return res.status(404).json({
+        success: false,
+        message: `${resourceLabel} not found.`,
+      });
+    }
+
+    if (hasDirectBranchAccess(req, row.branchId)) {
+      req.tenantContext = { ...req.tenantContext, branchId: row.branchId };
+      return next();
+    }
+
+    const branch = await branchRepository.findById(row.branchId);
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: "Branch not found.",
+      });
+    }
+
+    if (hasDirectRestaurantAccess(req, branch.restaurantId)) {
+      req.tenantContext = {
+        ...req.tenantContext,
+        branchId: row.branchId,
+        restaurantId: branch.restaurantId,
+      };
+      return next();
+    }
+
+    const restaurant = await restaurantRepository.findById(branch.restaurantId);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found.",
+      });
+    }
+
+    if (hasOrganizationAccess(req, restaurant.organizationId)) {
+      req.tenantContext = {
+        ...req.tenantContext,
+        branchId: row.branchId,
+        restaurantId: branch.restaurantId,
+        organizationId: restaurant.organizationId,
+      };
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: `You do not have access to this ${resourceLabel.toLowerCase()}.`,
+    });
+  };
+}
+
+export function requireInventoryItemAccess(paramName = "inventoryItemId") {
+  return createBranchScopedAccessGuard("Inventory item", paramName, (id) =>
+    inventoryItemRepository.findById(id)
   );
 }
 

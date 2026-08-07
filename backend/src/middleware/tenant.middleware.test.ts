@@ -12,6 +12,7 @@ const findSupplierByIdMock = vi.fn();
 const findIngredientByIdMock = vi.fn();
 const findRecipeByIdMock = vi.fn();
 const findRecipeIngredientByIdMock = vi.fn();
+const findInventoryItemByIdMock = vi.fn();
 
 vi.mock("../repositories/restaurant.repository.js", () => ({
   restaurantRepository: { findById: findRestaurantByIdMock },
@@ -57,6 +58,10 @@ vi.mock("../repositories/recipe-ingredient.repository.js", () => ({
   recipeIngredientRepository: { findById: findRecipeIngredientByIdMock },
 }));
 
+vi.mock("../repositories/inventory-item.repository.js", () => ({
+  inventoryItemRepository: { findById: findInventoryItemByIdMock },
+}));
+
 const {
   requireRestaurantAccess,
   requireBranchAccess,
@@ -69,6 +74,7 @@ const {
   requireIngredientAccess,
   requireRecipeAccess,
   requireRecipeIngredientAccess,
+  requireInventoryItemAccess,
   requireTenantRole,
 } = await import("./tenant.middleware.js");
 
@@ -605,6 +611,140 @@ describeRestaurantScopedGuard(
   findRecipeIngredientByIdMock,
   "recipeIngredientId"
 );
+
+// Inventory Foundation (Sprint 2A, ADR-0038) — InventoryItem/StockMovement
+// are Branch-scoped, so their guard walks Branch->Restaurant->Organization
+// (the same three tiers requireBranchAccess implements), not the Restaurant-
+// first chain the six guards above use. This is what makes a BranchMember-
+// only user (no Restaurant/Organization membership) reach Inventory routes
+// directly at tier 1 — the gap ADR-0036/0037 flagged, closed for this
+// domain specifically.
+describe("requireInventoryItemAccess", () => {
+  beforeEach(() => {
+    findInventoryItemByIdMock.mockReset();
+    findBranchByIdMock.mockReset();
+    findRestaurantByIdMock.mockReset();
+  });
+
+  it("calls next() when the user has a direct BranchMember row for the item's branch — no DB lookup", async () => {
+    findInventoryItemByIdMock.mockResolvedValue({ id: "item-1", branchId: "branch-1" });
+    const req = createRequest({
+      params: { inventoryItemId: "item-1" },
+      branchMemberships: [{ branchId: "branch-1" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(findBranchByIdMock).not.toHaveBeenCalled();
+    expect(findRestaurantByIdMock).not.toHaveBeenCalled();
+  });
+
+  it("calls next() when the user has a direct RestaurantMember row for the item's branch's parent restaurant", async () => {
+    findInventoryItemByIdMock.mockResolvedValue({ id: "item-1", branchId: "branch-1" });
+    findBranchByIdMock.mockResolvedValue({ id: "branch-1", restaurantId: "rest-1" });
+    const req = createRequest({
+      params: { inventoryItemId: "item-1" },
+      restaurantMemberships: [{ restaurantId: "rest-1" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(findRestaurantByIdMock).not.toHaveBeenCalled();
+  });
+
+  it("calls next() when the user has OrganizationMember on the item's grandparent Organization", async () => {
+    findInventoryItemByIdMock.mockResolvedValue({ id: "item-1", branchId: "branch-1" });
+    findBranchByIdMock.mockResolvedValue({ id: "branch-1", restaurantId: "rest-1" });
+    findRestaurantByIdMock.mockResolvedValue({ id: "rest-1", organizationId: "org-1" });
+    const req = createRequest({
+      params: { inventoryItemId: "item-1" },
+      organizationMemberships: [{ organizationId: "org-1" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it("responds 403 for an inventory item under a different tenant entirely — cross-tenant isolation", async () => {
+    findInventoryItemByIdMock.mockResolvedValue({
+      id: "item-other-tenant",
+      branchId: "branch-other-tenant",
+    });
+    findBranchByIdMock.mockResolvedValue({
+      id: "branch-other-tenant",
+      restaurantId: "rest-other-tenant",
+    });
+    findRestaurantByIdMock.mockResolvedValue({
+      id: "rest-other-tenant",
+      organizationId: "org-other-tenant",
+    });
+    const req = createRequest({
+      params: { inventoryItemId: "item-other-tenant" },
+      organizationMemberships: [{ organizationId: "org-mine" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it("responds 403 for a branch belonging to a different restaurant under the SAME organization — cross-branch isolation", async () => {
+    // A user with only a RestaurantMember row on a sibling restaurant (same
+    // Organization) must not reach an inventory item on a restaurant they
+    // aren't a member of and have no Organization-wide membership for.
+    findInventoryItemByIdMock.mockResolvedValue({ id: "item-1", branchId: "branch-1" });
+    findBranchByIdMock.mockResolvedValue({ id: "branch-1", restaurantId: "rest-1" });
+    findRestaurantByIdMock.mockResolvedValue({ id: "rest-1", organizationId: "org-1" });
+    const req = createRequest({
+      params: { inventoryItemId: "item-1" },
+      restaurantMemberships: [{ restaurantId: "rest-sibling" }],
+    });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it("responds 404 when the inventory item does not exist", async () => {
+    findInventoryItemByIdMock.mockResolvedValue(null);
+    const req = createRequest({ params: { inventoryItemId: "missing" } });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it("responds 404 when the item's branch does not exist", async () => {
+    findInventoryItemByIdMock.mockResolvedValue({ id: "item-1", branchId: "missing-branch" });
+    findBranchByIdMock.mockResolvedValue(null);
+    const req = createRequest({ params: { inventoryItemId: "item-1" } });
+    const res = createResponse();
+    const next = vi.fn() as NextFunction;
+
+    await requireInventoryItemAccess()(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
 
 // Sprint 1.2 (ADR-0036) — synchronous, no repository mocks needed: every
 // case reads only req.tenantContext (as if a prior guard already set it)

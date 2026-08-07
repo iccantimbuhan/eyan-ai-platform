@@ -31,3 +31,14 @@ export const STAFF_SCOPE_OPTIONS: { value: StaffMembershipScope; label: string }
 export function canManageStaff(role: string | null): boolean {
   return role === 'OWNER' || role === 'MANAGER'
 }
+
+// Inventory Foundation (Sprint 2A, ADR-0038) — mirrors the backend's
+// requireTenantRole('OWNER', 'MANAGER', 'SUPERVISOR', 'INVENTORY_STAFF')
+// gate on every Inventory write route. Display-only: hides opening-stock/
+// adjustment/waste/stock-count/minimum-threshold actions the backend would
+// 403 anyway, never the real enforcement.
+const INVENTORY_WRITE_ROLES = new Set(['OWNER', 'MANAGER', 'SUPERVISOR', 'INVENTORY_STAFF'])
+
+export function canWriteInventory(role: string | null): boolean {
+  return role !== null && INVENTORY_WRITE_ROLES.has(role)
+}

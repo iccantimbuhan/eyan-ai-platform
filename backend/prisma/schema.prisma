@@ -168,6 +168,8 @@ model User {
   restaurantMemberships   RestaurantMember[]
   branchMemberships       BranchMember[]
 
+  stockMovementsRecorded StockMovement[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1777,6 +1779,7 @@ model Restaurant {
   ingredients          Ingredient[]
   recipes              Recipe[]
   recipeIngredients    RecipeIngredient[]
+  inventoryItems       InventoryItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1818,6 +1821,9 @@ model Branch {
   name String
 
   members BranchMember[]
+
+  inventoryItems InventoryItem[]
+  stockMovements StockMovement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1937,6 +1943,8 @@ model Unit {
   abbreviation String
 
   recipeIngredients RecipeIngredient[]
+  inventoryItems    InventoryItem[]
+  stockMovements    StockMovement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2003,6 +2011,7 @@ model Ingredient {
 
   suppliers         IngredientSupplier[]
   recipeIngredients RecipeIngredient[]
+  inventoryItems    InventoryItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2074,4 +2083,85 @@ model RecipeIngredient {
   @@index([restaurantId])
   @@index([recipeId])
   @@index([ingredientId])
+}
+
+// --- Inventory Foundation (Sprint 2A, ADR-0038) ---------------------------
+// Branch-scoped, per ADR-0037 Decision 1: Restaurant owns product knowledge
+// (Ingredient/Unit above); Branch owns stock. InventoryItem is "how much of
+// this Ingredient is on hand at this Branch right now" — restaurantId is
+// denormalized (not derived via branchId) for the same tenant-isolation-
+// filtering reason every other Restaurant Operations table denormalizes it.
+// No recipe consumption, purchasing, or costing yet — see ADR-0038.
+
+enum StockMovementType {
+  OPENING_STOCK
+  ADJUSTMENT
+  WASTE
+  STOCK_COUNT
+  // PURCHASE and RECIPE_CONSUMPTION are reserved for Sprint 3 / Sprint 2B —
+  // adding them later is a purely additive enum value, no redesign.
+}
+
+model InventoryItem {
+  id           String @id @default(cuid())
+  branchId     String
+  restaurantId String
+  ingredientId String
+  unitId       String
+
+  branch     Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  unit       Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  // Maintained running balance, written only inside the same transaction as
+  // the StockMovement row that changes it (see stock-movement.repository.ts)
+  // — never mutated on its own, so it can't drift from the movement ledger.
+  currentQuantity Decimal @default(0) @db.Decimal(10, 2)
+  minimumQuantity Decimal @default(0) @db.Decimal(10, 2)
+
+  movements StockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, ingredientId])
+  @@index([branchId])
+  @@index([restaurantId])
+  @@index([ingredientId])
+}
+
+// Append-only audit ledger — the source of truth for how an InventoryItem's
+// currentQuantity got to where it is. branchId/unitId are denormalized onto
+// the row (not derived via inventoryItemId) so this stays a self-contained,
+// directly-filterable audit record, same posture as RecipeIngredient's own
+// denormalized restaurantId.
+model StockMovement {
+  id              String @id @default(cuid())
+  inventoryItemId String
+  branchId        String
+  unitId          String
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  branch        Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  unit          Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  type StockMovementType
+
+  // Signed: positive increases stock, negative decreases it.
+  quantityDelta Decimal @db.Decimal(10, 2)
+  // Running balance snapshot immediately after this movement was applied —
+  // makes history self-explanatory without recomputation.
+  quantityAfter Decimal @db.Decimal(10, 2)
+
+  reason String?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([inventoryItemId])
+  @@index([branchId])
+  @@index([createdAt])
 }
