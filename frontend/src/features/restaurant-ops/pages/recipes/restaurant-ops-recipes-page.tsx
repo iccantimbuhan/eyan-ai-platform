@@ -8,6 +8,7 @@ import { ForbiddenError } from '@/features/errors/forbidden'
 import { useTenantStore } from '@/stores/tenant-store'
 import { useActiveTenant } from '../../hooks/use-active-tenant'
 import { useDialogState } from '../../hooks/use-dialog-state'
+import { computeRecipeAvailability } from '../../lib/recipe-availability'
 import { useMenuItems } from '../../hooks/use-menu-items'
 import { useRecipes } from '../../hooks/use-recipes'
 import { RecipeDialog } from './components/recipe-dialog'
@@ -25,6 +26,12 @@ export function RestaurantOpsRecipesPage() {
     const recipeMenuItemIds = new Set((recipes ?? []).map((recipe) => recipe.menuItemId))
     return (menuItems ?? []).filter((item) => !recipeMenuItemIds.has(item.id))
   }, [recipes, menuItems])
+
+  const { canAddRecipe, reason: addRecipeReason } = computeRecipeAvailability(
+    Boolean(restaurantId),
+    menuItems?.length ?? 0,
+    availableMenuItems.length
+  )
 
   if (!can('restaurant')) return <ForbiddenError />
 
@@ -57,10 +64,7 @@ export function RestaurantOpsRecipesPage() {
             { label: 'Recipes' },
           ]}
           actions={
-            <Button
-              onClick={createDialog.openDialog}
-              disabled={!restaurantId || availableMenuItems.length === 0}
-            >
+            <Button onClick={createDialog.openDialog} disabled={!canAddRecipe}>
               Add Recipe
             </Button>
           }
@@ -79,6 +83,10 @@ export function RestaurantOpsRecipesPage() {
             ))}
           </SelectContent>
         </Select>
+
+        {!isLoading && addRecipeReason && (
+          <p className='text-sm text-muted-foreground'>{addRecipeReason}</p>
+        )}
 
         {isLoading ? (
           <div className='flex h-64 items-center justify-center'>Loading recipes...</div>

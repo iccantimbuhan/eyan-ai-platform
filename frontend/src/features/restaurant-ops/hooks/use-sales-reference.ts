@@ -4,9 +4,12 @@ import {
   createSalesCategory,
   createSalesChannel,
   createSalesPaymentMethod,
+  deleteSalesChannelMenuItem,
   getSalesCategories,
+  getSalesChannelMenuItems,
   getSalesChannels,
   getSalesPaymentMethods,
+  upsertSalesChannelMenuItem,
 } from '../api/restaurant-ops-api'
 
 // Restaurant-scoped configurable vocabulary (Sprint 2C, ADR-0039) — same
@@ -84,6 +87,60 @@ export function useCreateSalesCategory(restaurantId: string) {
 
     onError: () => {
       toast.error('Failed to add sales category.')
+    },
+  })
+}
+
+// Sprint 2B Prep — channel-specific MenuItem price/availability overrides.
+// Read wholesale per restaurant (small dataset), mutated one (channel,
+// item) pair at a time.
+export function useSalesChannelMenuItems(restaurantId: string) {
+  return useQuery({
+    queryKey: ['sales-channel-menu-items', restaurantId],
+    queryFn: () => getSalesChannelMenuItems(restaurantId),
+    enabled: Boolean(restaurantId),
+  })
+}
+
+export function useUpsertSalesChannelMenuItem() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      menuItemId,
+      salesChannelId,
+      payload,
+    }: {
+      menuItemId: string
+      salesChannelId: string
+      payload: { price?: number | null; available?: boolean }
+    }) => upsertSalesChannelMenuItem(menuItemId, salesChannelId, payload),
+
+    onSuccess: async () => {
+      toast.success('Channel price saved.')
+      await queryClient.invalidateQueries({ queryKey: ['sales-channel-menu-items'] })
+    },
+
+    onError: () => {
+      toast.error('Failed to save channel price.')
+    },
+  })
+}
+
+export function useDeleteSalesChannelMenuItem() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ menuItemId, salesChannelId }: { menuItemId: string; salesChannelId: string }) =>
+      deleteSalesChannelMenuItem(menuItemId, salesChannelId),
+
+    onSuccess: async () => {
+      toast.success('Channel price override removed.')
+      await queryClient.invalidateQueries({ queryKey: ['sales-channel-menu-items'] })
+    },
+
+    onError: () => {
+      toast.error('Failed to remove channel price override.')
     },
   })
 }

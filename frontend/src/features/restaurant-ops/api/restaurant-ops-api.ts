@@ -29,6 +29,7 @@ import type {
   Unit,
   WeeklySalesSummary,
   SalesComparison,
+  SalesChannelMenuItem,
 } from '../types/restaurant-ops'
 
 // Restaurants — Organization-scoped (create/list live under
@@ -663,9 +664,20 @@ export async function deleteCategoryEntry(salesId: string, entryId: string) {
   return data
 }
 
+export interface CreateItemEntryPayload {
+  menuItemId?: string
+  itemName: string
+  categoryName?: string
+  quantity: number
+  amount: number
+  // POS-reported %QT/%SALE — see SalesItemEntry's own comment. Optional.
+  posQuantityPercent?: number
+  posSalesPercent?: number
+}
+
 export async function createItemEntry(
   salesId: string,
-  payload: { menuItemId?: string; itemName: string; categoryName?: string; quantity: number; amount: number }
+  payload: CreateItemEntryPayload
 ): Promise<SalesItemEntry> {
   const { data } = await api.post<ApiResponse<SalesItemEntry>>(
     `/sales/${salesId}/item-entries`,
@@ -676,6 +688,31 @@ export async function createItemEntry(
 
 export async function deleteItemEntry(salesId: string, entryId: string) {
   const { data } = await api.delete(`/sales/${salesId}/item-entries/${entryId}`)
+  return data
+}
+
+// Sprint 2B Prep — channel-specific MenuItem price/availability overrides.
+export async function getSalesChannelMenuItems(restaurantId: string): Promise<SalesChannelMenuItem[]> {
+  const { data } = await api.get<ApiResponse<SalesChannelMenuItem[]>>(
+    `/restaurants/${restaurantId}/sales-channel-menu-items`
+  )
+  return data.data
+}
+
+export async function upsertSalesChannelMenuItem(
+  menuItemId: string,
+  salesChannelId: string,
+  payload: { price?: number | null; available?: boolean }
+): Promise<SalesChannelMenuItem> {
+  const { data } = await api.put<ApiResponse<SalesChannelMenuItem>>(
+    `/menu-items/${menuItemId}/channel-prices/${salesChannelId}`,
+    payload
+  )
+  return data.data
+}
+
+export async function deleteSalesChannelMenuItem(menuItemId: string, salesChannelId: string) {
+  const { data } = await api.delete(`/menu-items/${menuItemId}/channel-prices/${salesChannelId}`)
   return data
 }
 

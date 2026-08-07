@@ -265,6 +265,8 @@ export function useCreateItemEntry() {
       categoryName,
       quantity,
       amount,
+      posQuantityPercent,
+      posSalesPercent,
     }: {
       salesId: string
       menuItemId?: string
@@ -272,7 +274,18 @@ export function useCreateItemEntry() {
       categoryName?: string
       quantity: number
       amount: number
-    }) => createItemEntry(salesId, { menuItemId, itemName, categoryName, quantity, amount }),
+      posQuantityPercent?: number
+      posSalesPercent?: number
+    }) =>
+      createItemEntry(salesId, {
+        menuItemId,
+        itemName,
+        categoryName,
+        quantity,
+        amount,
+        posQuantityPercent,
+        posSalesPercent,
+      }),
 
     onSuccess: async () => {
       toast.success('Item entry recorded.')

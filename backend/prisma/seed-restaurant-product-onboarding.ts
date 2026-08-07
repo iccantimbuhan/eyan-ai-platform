@@ -611,12 +611,15 @@ async function onboardRestaurant(prisma: PrismaClient, data: RestaurantOnboardin
       if (item.hasRecipe) {
         const existingRecipe = await prisma.recipe.findUnique({ where: { menuItemId: menuItem.id } })
         if (!existingRecipe) {
+          // notes is a manager-facing field for optional prep/operational
+          // instructions ("Prepare dough 24 hours in advance.") — never an
+          // onboarding-status sentence. Ingredient lines are entered
+          // manually via the UI once Units exist; that fact belongs in
+          // onboarding documentation, not in a field a manager will read.
           await prisma.recipe.create({
             data: {
               restaurantId: restaurant.id,
               menuItemId: menuItem.id,
-              notes:
-                'Ingredients per real menu description (see MenuItem.description). Recipe ingredient lines (quantity + unit) are pending manual entry once Units are created via the UI — Sprint 1.4 onboarding deliberately does not seed Units or guess quantities.',
             },
           })
           recipesCreated++

@@ -21,4 +21,8 @@ export interface CreateSalesItemEntryDto {
   categoryName?: string;
   quantity: number | string;
   amount: number | string;
+  // POS-reported %QT/%SALE — see SalesItemEntry's schema comment. Never
+  // confused with Sprint 2D's computed analytics percentages.
+  posQuantityPercent?: number | string;
+  posSalesPercent?: number | string;
 }

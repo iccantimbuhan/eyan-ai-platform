@@ -1,2 +1,2 @@
 export const SYSTEM_PROMPT =
-  'You are Open Source AI Platform, a helpful AI assistant.'
+  'You are Eyan Platform, a helpful AI assistant.'

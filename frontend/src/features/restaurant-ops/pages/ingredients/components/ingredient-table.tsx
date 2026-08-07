@@ -2,6 +2,8 @@ import * as React from 'react'
 import {
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -33,6 +35,14 @@ export function IngredientTable({ ingredients, categories }: IngredientTableProp
 
   const columns = React.useMemo(() => getIngredientColumns(categories), [categories])
 
+  // Category filter options come from the categories already fetched for
+  // this restaurant (the same list the table's 'category' column resolves
+  // names from) — no separate/duplicated category data source.
+  const categoryFilterOptions = React.useMemo(
+    () => categories.map((category) => ({ label: category.name, value: category.name })),
+    [categories]
+  )
+
   const table = useReactTable({
     data: ingredients,
     columns,
@@ -46,6 +56,8 @@ export function IngredientTable({ ingredients, categories }: IngredientTableProp
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
 
     initialState: { pagination: { pageSize: 10 } },
   })
@@ -56,6 +68,13 @@ export function IngredientTable({ ingredients, categories }: IngredientTableProp
         table={table}
         searchPlaceholder='Search ingredients...'
         searchKey='name'
+        filters={[
+          {
+            columnId: 'category',
+            title: 'Category',
+            options: categoryFilterOptions,
+          },
+        ]}
       />
 
       <div className='rounded-lg border'>
@@ -88,7 +107,9 @@ export function IngredientTable({ ingredients, categories }: IngredientTableProp
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className='h-24 text-center'>
-                  No ingredients yet. Add your first ingredient to get started.
+                  {table.getState().columnFilters.length > 0 || table.getState().globalFilter
+                    ? 'No ingredients match your filters.'
+                    : 'No ingredients yet. Add your first ingredient to get started.'}
                 </TableCell>
               </TableRow>
             )}

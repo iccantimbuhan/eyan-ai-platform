@@ -215,6 +215,8 @@ export class SalesItemEntryService {
       categoryName: data.categoryName ?? null,
       quantity: data.quantity,
       amount: data.amount,
+      posQuantityPercent: data.posQuantityPercent ?? null,
+      posSalesPercent: data.posSalesPercent ?? null,
     });
 
     return mapItemEntryToResponse(entry);

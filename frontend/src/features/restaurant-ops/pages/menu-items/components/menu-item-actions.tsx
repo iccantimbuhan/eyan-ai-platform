@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { MenuCategory, MenuItem } from '../../../types/restaurant-ops'
+import { ChannelPricesDialog } from './channel-prices-dialog'
 import { DeleteMenuItemDialog } from './delete-menu-item-dialog'
 import { MenuItemDialog } from './menu-item-dialog'
 
@@ -18,19 +19,22 @@ type MenuItemActionsProps = {
 
 export function MenuItemActions({ item, categories }: MenuItemActionsProps) {
   const [editOpen, setEditOpen] = useState(false)
+  const [channelPricesOpen, setChannelPricesOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant='ghost' size='icon'>
+          <Button variant='ghost' size='icon' aria-label='Menu item actions'>
             <MoreHorizontal className='h-4 w-4' />
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align='end'>
           <DropdownMenuItem onClick={() => setEditOpen(true)}>Edit</DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => setChannelPricesOpen(true)}>Channel Prices</DropdownMenuItem>
 
           <DropdownMenuItem className='text-destructive' onClick={() => setDeleteOpen(true)}>
             Delete
@@ -44,6 +48,13 @@ export function MenuItemActions({ item, categories }: MenuItemActionsProps) {
         categories={categories}
         open={editOpen}
         onOpenChange={setEditOpen}
+      />
+
+      <ChannelPricesDialog
+        item={item}
+        restaurantId={item.restaurantId}
+        open={channelPricesOpen}
+        onOpenChange={setChannelPricesOpen}
       />
 
       <DeleteMenuItemDialog itemId={item.id} open={deleteOpen} onOpenChange={setDeleteOpen} />

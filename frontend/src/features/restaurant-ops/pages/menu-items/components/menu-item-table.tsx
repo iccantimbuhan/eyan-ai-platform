@@ -36,6 +36,14 @@ export function MenuItemTable({ items, categories }: MenuItemTableProps) {
 
   const columns = React.useMemo(() => getMenuItemColumns(categories), [categories])
 
+  // Category filter options come from the categories already fetched for
+  // this restaurant (same list the table's 'category' column resolves
+  // names from) — no separate/duplicated category data source.
+  const categoryFilterOptions = React.useMemo(
+    () => categories.map((category) => ({ label: category.name, value: category.name })),
+    [categories]
+  )
+
   const table = useReactTable({
     data: items,
     columns,
@@ -62,6 +70,11 @@ export function MenuItemTable({ items, categories }: MenuItemTableProps) {
         searchPlaceholder='Search menu items...'
         searchKey='name'
         filters={[
+          {
+            columnId: 'category',
+            title: 'Category',
+            options: categoryFilterOptions,
+          },
           {
             columnId: 'status',
             title: 'Status',
@@ -100,7 +113,9 @@ export function MenuItemTable({ items, categories }: MenuItemTableProps) {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className='h-24 text-center'>
-                  No menu items yet. Add your first item to get started.
+                  {table.getState().columnFilters.length > 0 || table.getState().globalFilter
+                    ? 'No menu items match your filters.'
+                    : 'No menu items yet. Add your first item to get started.'}
                 </TableCell>
               </TableRow>
             )}

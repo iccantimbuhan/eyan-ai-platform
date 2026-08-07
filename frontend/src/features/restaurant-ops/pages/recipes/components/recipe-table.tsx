@@ -21,6 +21,7 @@ import { DataTablePagination } from '@/components/data-table/pagination'
 import { DataTableToolbar } from '@/components/data-table/toolbar'
 import type { MenuItem, Recipe } from '../../../types/restaurant-ops'
 import { getRecipeColumns } from './recipe-columns'
+import { RecipeIngredientsDialog } from './recipe-ingredients-dialog'
 
 type RecipeTableProps = {
   recipes: Recipe[]
@@ -32,8 +33,18 @@ export function RecipeTable({ recipes, menuItems, availableMenuItems }: RecipeTa
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
+  // Owned here, not per-row — the row's clickable menu-item name and its
+  // "Manage Ingredients" dropdown item both open this one shared dialog
+  // instance instead of each having their own. Stored as an id (not the
+  // Recipe object itself) so the dialog always reflects the live recipe —
+  // adding/removing a line invalidates and refetches `recipes`, and a
+  // captured object reference would go stale until the dialog reopened.
+  const [manageIngredientsId, setManageIngredientsId] = React.useState<string | null>(null)
+  const manageIngredientsRecipe = recipes.find((recipe) => recipe.id === manageIngredientsId)
+  const menuItemNameById = React.useMemo(() => new Map(menuItems.map((item) => [item.id, item.name])), [menuItems])
+
   const columns = React.useMemo(
-    () => getRecipeColumns(menuItems, availableMenuItems),
+    () => getRecipeColumns(menuItems, availableMenuItems, (recipe) => setManageIngredientsId(recipe.id)),
     [menuItems, availableMenuItems]
   )
 
@@ -97,6 +108,14 @@ export function RecipeTable({ recipes, menuItems, availableMenuItems }: RecipeTa
       </div>
 
       <DataTablePagination table={table} />
+
+      <RecipeIngredientsDialog
+        recipe={manageIngredientsRecipe}
+        restaurantId={manageIngredientsRecipe?.restaurantId ?? ''}
+        menuItemName={manageIngredientsRecipe ? menuItemNameById.get(manageIngredientsRecipe.menuItemId) : undefined}
+        open={manageIngredientsId !== null}
+        onOpenChange={(open) => !open && setManageIngredientsId(null)}
+      />
     </div>
   )
 }

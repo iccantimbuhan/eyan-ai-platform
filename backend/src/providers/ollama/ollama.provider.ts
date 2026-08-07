@@ -8,7 +8,7 @@ import type {
 } from "../interfaces/ai-provider.js";
 
 export const SYSTEM_PROMPT =
-  "You are Open Source AI Platform, a helpful AI assistant.";
+  "You are Eyan Platform, a helpful AI assistant.";
 
 // 300s: on the production VPS (CPU-only, memory-constrained), the first
 // request after a backend restart can hit a cold model load — Ollama

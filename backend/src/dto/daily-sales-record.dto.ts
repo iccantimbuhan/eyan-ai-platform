@@ -59,6 +59,11 @@ export interface SalesItemEntryResponseDto {
   categoryName: string | null;
   quantity: string;
   amount: string;
+  // POS-reported %QT/%SALE — transcribed as printed on the POS X/Z report,
+  // never confused with Sprint 2D's own computed analytics percentages.
+  // null when this entry wasn't sourced from a POS report.
+  posQuantityPercent: string | null;
+  posSalesPercent: string | null;
   createdAt: Date;
 }
 

@@ -254,7 +254,53 @@ describe("SalesItemEntryService", () => {
       categoryName: "Pizza",
       quantity: 3,
       amount: 36,
+      posQuantityPercent: null,
+      posSalesPercent: null,
     });
+  });
+
+  // The spec's own worked example: Margherita, 6 sold, €63.00, POS-reported
+  // 33.33% of quantity and 29.90% of sales — transcribed manually, distinct
+  // from Sprint 2D's own computed analytics percentages.
+  it("create() passes POS % Qty and POS % Sales through to the repository when provided", async () => {
+    const entries = entryRepository();
+    const service = new SalesItemEntryService(entries as never, recordRepository() as never, menuItemRepository() as never);
+
+    await service.create("sales-1", {
+      itemName: "Margherita",
+      quantity: 6,
+      amount: 63.0,
+      posQuantityPercent: 33.33,
+      posSalesPercent: 29.9,
+    });
+
+    expect(entries.create).toHaveBeenCalledWith(
+      expect.objectContaining({ posQuantityPercent: 33.33, posSalesPercent: 29.9 })
+    );
+  });
+
+  it("create() defaults POS % Qty and POS % Sales to null when omitted", async () => {
+    const entries = entryRepository();
+    const service = new SalesItemEntryService(entries as never, recordRepository() as never, menuItemRepository() as never);
+
+    await service.create("sales-1", { itemName: "Margherita", quantity: 6, amount: 63.0 });
+
+    expect(entries.create).toHaveBeenCalledWith(
+      expect.objectContaining({ posQuantityPercent: null, posSalesPercent: null })
+    );
+  });
+
+  // A pre-existing SalesItemEntry row from before this field existed has no
+  // posQuantityPercent/posSalesPercent key at all — the mapper must still
+  // return a valid, non-crashing response (null, not a thrown error).
+  it("maps a historical entry with no POS percentage data to null, not a crash", async () => {
+    const entries = entryRepository();
+    const service = new SalesItemEntryService(entries as never, recordRepository() as never, menuItemRepository() as never);
+
+    const result = await service.create("sales-1", { itemName: "Margherita", quantity: 3, amount: 36 });
+
+    expect(result.posQuantityPercent).toBeNull();
+    expect(result.posSalesPercent).toBeNull();
   });
 
   it("create() rejects a menuItemId belonging to a different restaurant", async () => {

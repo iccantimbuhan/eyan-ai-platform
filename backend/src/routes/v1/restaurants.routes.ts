@@ -14,6 +14,7 @@ import {
   SalesChannelController,
   SalesPaymentMethodController,
 } from "../../controllers/sales-reference.controller.js";
+import { SalesChannelMenuItemController } from "../../controllers/sales-channel-menu-item.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
 import { requirePermission } from "../../middleware/permission.middleware.js";
@@ -275,6 +276,19 @@ router.post(
   requireRestaurantAccess(),
   requireTenantRole(...SALES_WRITE_ROLES),
   SalesCategoryController.create
+);
+
+// Sprint 2B Prep — every channel-specific MenuItem price/availability
+// override for this restaurant, read wholesale (same posture as the three
+// reference lists above). Mutations (upsert/remove one override) live
+// under menu-items.routes.ts, scoped by requireMenuItemAccess — this is
+// only the restaurant-wide read.
+router.get(
+  "/:restaurantId/sales-channel-menu-items",
+  restaurantIdParamValidator,
+  validate,
+  requireRestaurantAccess(),
+  SalesChannelMenuItemController.listByRestaurant
 );
 
 export default router;

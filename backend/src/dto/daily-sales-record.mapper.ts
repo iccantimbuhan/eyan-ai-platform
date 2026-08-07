@@ -85,6 +85,8 @@ export function mapDailySalesRecordToResponse(
       categoryName: entry.categoryName,
       quantity: entry.quantity.toFixed(2),
       amount: entry.amount.toFixed(2),
+      posQuantityPercent: entry.posQuantityPercent ? entry.posQuantityPercent.toFixed(2) : null,
+      posSalesPercent: entry.posSalesPercent ? entry.posSalesPercent.toFixed(2) : null,
       createdAt: entry.createdAt,
     })),
     reconciliation: computeReconciliation(row),

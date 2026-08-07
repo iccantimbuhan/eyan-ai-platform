@@ -102,6 +102,11 @@ export class SalesItemEntryRepository {
     categoryName?: string | null;
     quantity: Prisma.Decimal | string | number;
     amount: Prisma.Decimal | string | number;
+    // POS-reported %QT/%SALE, transcribed as-is — distinct from Sprint 2D's
+    // computed analytics percentages. Optional: not every entry comes from
+    // a POS report.
+    posQuantityPercent?: Prisma.Decimal | string | number | null;
+    posSalesPercent?: Prisma.Decimal | string | number | null;
   }) {
     return prisma.salesItemEntry.create({ data });
   }

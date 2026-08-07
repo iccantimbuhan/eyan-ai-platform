@@ -8,9 +8,15 @@ import { RecipeActions } from './recipe-actions'
 // (menu items aren't embedded on Recipe), so the column definitions need
 // the current restaurant's menu item list in scope. Same pattern as
 // menu-item-columns.tsx's getMenuItemColumns.
+//
+// onManageIngredients is owned one level up (recipe-table.tsx) and shared
+// between this column's clickable menu-item name and RecipeActions' own
+// "Manage Ingredients" item, so both trigger the exact same
+// RecipeIngredientsDialog instance rather than two separate ones.
 export function getRecipeColumns(
   menuItems: MenuItem[],
-  availableMenuItems: MenuItem[]
+  availableMenuItems: MenuItem[],
+  onManageIngredients: (recipe: Recipe) => void
 ): ColumnDef<Recipe>[] {
   const menuItemNameById = new Map(menuItems.map((item) => [item.id, item.name]))
 
@@ -20,9 +26,13 @@ export function getRecipeColumns(
       accessorFn: (row) => menuItemNameById.get(row.menuItemId) ?? '—',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Menu Item' />,
       cell: ({ row }) => (
-        <span className='font-medium'>
+        <button
+          type='button'
+          className='font-medium text-foreground underline-offset-4 hover:text-primary hover:underline'
+          onClick={() => onManageIngredients(row.original)}
+        >
           {menuItemNameById.get(row.original.menuItemId) ?? '—'}
-        </span>
+        </button>
       ),
     },
     {
@@ -35,7 +45,7 @@ export function getRecipeColumns(
       accessorKey: 'notes',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Notes' />,
       cell: ({ row }) => (
-        <span className='text-muted-foreground'>{row.original.notes ?? '—'}</span>
+        <span className='text-muted-foreground'>{row.original.notes ?? 'No notes'}</span>
       ),
     },
     {
@@ -47,6 +57,7 @@ export function getRecipeColumns(
           recipe={row.original}
           menuItemName={menuItemNameById.get(row.original.menuItemId)}
           availableMenuItems={availableMenuItems}
+          onManageIngredients={() => onManageIngredients(row.original)}
         />
       ),
     },

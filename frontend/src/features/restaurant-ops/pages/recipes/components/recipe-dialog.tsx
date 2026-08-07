@@ -138,9 +138,15 @@ export function RecipeDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Notes</FormLabel>
+                    <p className='text-xs text-muted-foreground'>
+                      Optional prep or operational instructions for this recipe — not a status field.
+                    </p>
 
                     <FormControl>
-                      <Textarea placeholder='optional' {...field} />
+                      <Textarea
+                        placeholder='e.g. Prepare dough 24 hours in advance. Use 120g mozzarella per pizza.'
+                        {...field}
+                      />
                     </FormControl>
 
                     <FormMessage />

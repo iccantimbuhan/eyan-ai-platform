@@ -1782,10 +1782,11 @@ model Restaurant {
   recipeIngredients    RecipeIngredient[]
   inventoryItems       InventoryItem[]
 
-  salesChannels       SalesChannel[]
-  salesPaymentMethods SalesPaymentMethod[]
-  salesCategories     SalesCategory[]
-  dailySalesRecords   DailySalesRecord[]
+  salesChannels         SalesChannel[]
+  salesPaymentMethods   SalesPaymentMethod[]
+  salesCategories       SalesCategory[]
+  dailySalesRecords     DailySalesRecord[]
+  salesChannelMenuItems SalesChannelMenuItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1915,6 +1916,11 @@ model MenuItem {
   // SetNull. Itemized sales snapshot their own itemName/categoryName, so
   // this relation is never required for a historical sales line to render.
   salesItemEntries SalesItemEntry[]
+
+  // Sprint 2B Prep — optional per-channel price/availability overrides.
+  // MenuItem.price above remains the single authoritative base price;
+  // this never overwrites it.
+  channelPrices SalesChannelMenuItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2219,7 +2225,8 @@ model SalesChannel {
 
   name String
 
-  channelEntries SalesChannelEntry[]
+  channelEntries   SalesChannelEntry[]
+  channelMenuItems SalesChannelMenuItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2406,9 +2413,49 @@ model SalesItemEntry {
   quantity     Decimal @db.Decimal(10, 2)
   amount       Decimal @db.Decimal(10, 2)
 
+  // Sprint 2B Prep — POS-REPORTED percentages, transcribed manually from
+  // the POS X/Z report's own %QT/%SALE columns for this item. Distinct
+  // from Sprint 2D's computed analytics percentages (which are derived by
+  // this system from raw amounts): these are values the POS itself
+  // printed, captured as-is, never recalculated or reconciled against
+  // anything else. Optional — not every entry comes from a POS report.
+  posQuantityPercent Decimal? @db.Decimal(5, 2)
+  posSalesPercent    Decimal? @db.Decimal(5, 2)
+
   createdAt DateTime @default(now())
 
   @@index([dailySalesRecordId])
   @@index([branchId])
+  @@index([menuItemId])
+}
+
+// Sprint 2B Prep — an OPTIONAL channel-specific price/availability override
+// for a MenuItem. Purely a reference/catalog table: it is never written
+// onto SalesItemEntry or any other historical sales row, only read as a
+// convenience default when a manager fills in the Daily Sales item-entry
+// form for a given channel (see item-entry-section.tsx). MenuItem.price
+// remains the one authoritative base price; a null `price` here means
+// "use the base price on this channel" rather than duplicating it.
+// restaurantId is denormalized (not derived via either FK), same posture
+// as every other Sales Foundation join/entry table.
+model SalesChannelMenuItem {
+  id             String @id @default(cuid())
+  restaurantId   String
+  salesChannelId String
+  menuItemId     String
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  salesChannel SalesChannel @relation(fields: [salesChannelId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  price     Decimal? @db.Decimal(10, 2)
+  available Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([salesChannelId, menuItemId])
+  @@index([restaurantId])
+  @@index([salesChannelId])
   @@index([menuItemId])
 }

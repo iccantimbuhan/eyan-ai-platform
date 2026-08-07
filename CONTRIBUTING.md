@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to Open Source AI Platform.
+Thank you for your interest in contributing to Eyan Platform.
 
 This project aims to provide a modern, self-hosted AI platform powered by local and cloud LLMs.
 

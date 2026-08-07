@@ -222,7 +222,29 @@ export interface SalesItemEntry {
   categoryName: string | null
   quantity: string
   amount: string
+  // POS-reported %QT/%SALE — transcribed as printed on the POS X/Z report.
+  // Never confuse with Sprint 2D's own computed analytics percentages.
+  // null when this entry wasn't sourced from a POS report.
+  posQuantityPercent: string | null
+  posSalesPercent: string | null
   createdAt: string
+}
+
+// Sprint 2B Prep — an optional per-channel price/availability override for
+// a MenuItem. price is null when this channel has no override (falls back
+// to the MenuItem's own base price). Never written onto SalesItemEntry or
+// any historical sales row — read-only convenience data for the Daily
+// Sales item-entry form.
+export interface SalesChannelMenuItem {
+  id: string
+  restaurantId: string
+  salesChannelId: string
+  channelName: string
+  menuItemId: string
+  price: string | null
+  available: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 // RAW INPUT — one business day's manually-entered sales record for one

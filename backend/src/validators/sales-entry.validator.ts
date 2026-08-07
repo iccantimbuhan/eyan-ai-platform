@@ -27,4 +27,15 @@ export const createItemEntryValidator = [
   body("categoryName").optional().isString(),
   body("quantity").isFloat({ gt: 0 }).withMessage("Quantity must be greater than zero."),
   body("amount").isFloat({ min: 0 }).withMessage("Amount must be zero or greater."),
+  // POS-reported %QT/%SALE — a percentage of the day's total, so 0-100 is
+  // the valid range; never confused with Sprint 2D's own computed
+  // analytics percentages, which aren't stored at all.
+  body("posQuantityPercent")
+    .optional({ nullable: true })
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("POS % Qty must be between 0 and 100."),
+  body("posSalesPercent")
+    .optional({ nullable: true })
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("POS % Sales must be between 0 and 100."),
 ];

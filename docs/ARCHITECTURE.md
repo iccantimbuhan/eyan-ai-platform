@@ -1,4 +1,4 @@
-# Open Source AI Platform Architecture
+# Eyan Platform Architecture
 
 Version: 1.0
 
@@ -6,7 +6,7 @@ Version: 1.0
 
 # Overview
 
-Open Source AI Platform is a modular AI chat application designed to support multiple Large Language Model (LLM) providers through a unified backend API.
+Eyan Platform is a modular AI chat application designed to support multiple Large Language Model (LLM) providers through a unified backend API.
 
 The project follows a layered architecture that separates presentation, business logic, and AI provider integrations.
 

@@ -55,6 +55,8 @@ export function mapItemEntryToResponse(row: ItemEntryRow): SalesItemEntryRespons
     categoryName: row.categoryName,
     quantity: row.quantity.toFixed(2),
     amount: row.amount.toFixed(2),
+    posQuantityPercent: row.posQuantityPercent ? row.posQuantityPercent.toFixed(2) : null,
+    posSalesPercent: row.posSalesPercent ? row.posSalesPercent.toFixed(2) : null,
     createdAt: row.createdAt,
   };
 }

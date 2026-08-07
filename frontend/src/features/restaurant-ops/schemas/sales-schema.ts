@@ -15,6 +15,20 @@ function optionalNonNegativeNumericString(message: string) {
     .refine((value) => !value || (!Number.isNaN(Number(value)) && Number(value) >= 0), { message })
 }
 
+// POS-reported %QT/%SALE — a percentage, so 0-100 is the valid range.
+// Distinct from Sprint 2D's own computed analytics percentages, which
+// aren't a form field at all (they're derived, never entered).
+function optionalPercentString(message: string) {
+  return z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (value) => !value || (!Number.isNaN(Number(value)) && Number(value) >= 0 && Number(value) <= 100),
+      { message }
+    )
+}
+
 export const salesSourceOptions = ['MANUAL', 'POS_REPORT'] as const
 export const posReportTypeOptions = ['Z_REPORT', 'X_REPORT'] as const
 
@@ -109,6 +123,8 @@ export const itemEntrySchema = z.object({
       message: 'Quantity must be greater than 0.',
     }),
   amount: nonNegativeNumericString('Amount must be zero or greater.'),
+  posQuantityPercent: optionalPercentString('POS % Qty must be between 0 and 100.'),
+  posSalesPercent: optionalPercentString('POS % Sales must be between 0 and 100.'),
 })
 
 export type ItemEntryFormValues = z.infer<typeof itemEntrySchema>
@@ -119,4 +135,6 @@ export const defaultItemEntryValues: ItemEntryFormValues = {
   categoryName: '',
   quantity: '',
   amount: '',
+  posQuantityPercent: '',
+  posSalesPercent: '',
 }
