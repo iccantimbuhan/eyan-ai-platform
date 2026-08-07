@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useCreateSalesPaymentMethod, useSalesPaymentMethods } from '../../../hooks/use-sales-reference'
+import {
+  useCreatePosSource,
+  useCreateSalesPaymentMethod,
+  usePosSources,
+  useSalesPaymentMethods,
+} from '../../../hooks/use-sales-reference'
 import { useCreatePaymentMethodEntry, useDeletePaymentMethodEntry } from '../../../hooks/use-sales'
 import {
   defaultPaymentMethodEntryValues,
@@ -21,12 +26,23 @@ type PaymentMethodEntrySectionProps = {
   entries: SalesPaymentMethodEntry[]
 }
 
+const NO_POS_SOURCE = '__none__'
+
+// POS Source / Sales Channel Flexibility, extended to Payment Methods —
+// mirrors ChannelEntrySection's optional POS Source select exactly. A
+// single-POS restaurant never touches it; a restaurant reporting via
+// multiple POS terminals (e.g. POS 1: Cash/Card/Wolt, POS 2: Wolt/Bolt)
+// can tag each line, and the same payment method (e.g. "Wolt") can be
+// entered separately under each POS source on the same business day.
 export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: PaymentMethodEntrySectionProps) {
   const { data: methods } = useSalesPaymentMethods(restaurantId)
+  const { data: posSources } = usePosSources(restaurantId)
   const createMethod = useCreateSalesPaymentMethod(restaurantId)
+  const createPosSource = useCreatePosSource(restaurantId)
   const createEntry = useCreatePaymentMethodEntry()
   const deleteEntry = useDeletePaymentMethodEntry()
   const [newMethodName, setNewMethodName] = useState('')
+  const [newPosSourceName, setNewPosSourceName] = useState('')
 
   const form = useForm<PaymentMethodEntryFormValues>({
     resolver: zodResolver(paymentMethodEntrySchema),
@@ -42,6 +58,7 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
       salesId,
       salesPaymentMethodId: values.salesPaymentMethodId,
       amount: Number(values.amount),
+      posSourceId: values.posSourceId && values.posSourceId !== NO_POS_SOURCE ? values.posSourceId : undefined,
       transactionCount: values.transactionCount ? Number(values.transactionCount) : undefined,
     })
     form.reset(defaultPaymentMethodEntryValues)
@@ -52,6 +69,13 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
     const method = await createMethod.mutateAsync(newMethodName.trim())
     form.setValue('salesPaymentMethodId', method.id)
     setNewMethodName('')
+  }
+
+  async function addNewPosSource() {
+    if (!newPosSourceName.trim()) return
+    const posSource = await createPosSource.mutateAsync(newPosSourceName.trim())
+    form.setValue('posSourceId', posSource.id)
+    setNewPosSourceName('')
   }
 
   return (
@@ -66,6 +90,7 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
             <div key={entry.id} className='flex items-center justify-between rounded-md border px-3 py-2'>
               <span className='text-sm'>
                 {entry.paymentMethodName}: &euro;{entry.amount}
+                {entry.posSourceName ? ` (${entry.posSourceName})` : ''}
                 {entry.transactionCount !== null ? ` (${entry.transactionCount} tx)` : ''}
               </span>
               <Button
@@ -83,15 +108,15 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='flex items-end gap-2'>
+        <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-wrap items-end gap-2'>
           <FormField
             control={form.control}
             name='salesPaymentMethodId'
             render={({ field }) => (
-              <FormItem className='flex-1'>
+              <FormItem className='min-w-[140px] flex-1'>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label='Payment method'>
                       <SelectValue placeholder='Payment method' />
                     </SelectTrigger>
                   </FormControl>
@@ -99,6 +124,31 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
                     {(methods ?? []).map((method) => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='posSourceId'
+            render={({ field }) => (
+              <FormItem className='w-36'>
+                <Select value={field.value || NO_POS_SOURCE} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger aria-label='POS source'>
+                      <SelectValue placeholder='POS (optional)' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value={NO_POS_SOURCE}>No POS source</SelectItem>
+                    {(posSources ?? []).map((posSource) => (
+                      <SelectItem key={posSource.id} value={posSource.id}>
+                        {posSource.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -140,15 +190,30 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
         </form>
       </Form>
 
-      <div className='flex items-end gap-2'>
+      <div className='flex flex-wrap items-end gap-2'>
         <Input
           placeholder='New payment method name (e.g. Cash Guard)'
           value={newMethodName}
           onChange={(e) => setNewMethodName(e.target.value)}
-          className='flex-1'
+          className='min-w-[160px] flex-1'
         />
         <Button type='button' variant='outline' size='sm' onClick={addNewMethod} disabled={createMethod.isPending}>
           Add Payment Method
+        </Button>
+        <Input
+          placeholder='New POS source (e.g. POS 1)'
+          value={newPosSourceName}
+          onChange={(e) => setNewPosSourceName(e.target.value)}
+          className='min-w-[160px] flex-1'
+        />
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          onClick={addNewPosSource}
+          disabled={createPosSource.isPending}
+        >
+          Add POS Source
         </Button>
       </div>
     </div>

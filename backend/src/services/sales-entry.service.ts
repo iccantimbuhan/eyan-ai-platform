@@ -80,9 +80,15 @@ export class SalesChannelEntryService {
       }
     }
 
-    const existing = await this.repository.findByRecordAndChannel(dailySalesRecordId, data.salesChannelId);
+    const existing = await this.repository.findByRecordAndChannel(
+      dailySalesRecordId,
+      data.salesChannelId,
+      data.posSourceId ?? null
+    );
     if (existing) {
-      throw new SalesEntryAlreadyExistsError("This channel already has an entry on this sales record.");
+      throw new SalesEntryAlreadyExistsError(
+        "This channel already has an entry on this sales record for this POS source."
+      );
     }
 
     const entry = await this.repository.create({
@@ -112,7 +118,8 @@ export class SalesPaymentMethodEntryService {
   constructor(
     private readonly repository: SalesPaymentMethodEntryRepository = salesPaymentMethodEntryRepository,
     private readonly recordRepository: DailySalesRecordRepository = dailySalesRecordRepository,
-    private readonly paymentMethodRepository: SalesPaymentMethodRepository = defaultSalesPaymentMethodRepository
+    private readonly paymentMethodRepository: SalesPaymentMethodRepository = defaultSalesPaymentMethodRepository,
+    private readonly posSourceRepository: PosSourceRepository = defaultPosSourceRepository
   ) {}
 
   async create(dailySalesRecordId: string, data: CreateSalesPaymentMethodEntryDto) {
@@ -125,18 +132,29 @@ export class SalesPaymentMethodEntryService {
       );
     }
 
+    if (data.posSourceId) {
+      const posSource = await this.posSourceRepository.findById(data.posSourceId);
+      if (!posSource || posSource.restaurantId !== record.restaurantId) {
+        throw new SalesScopeMismatchError("This POS source does not belong to the given branch's restaurant.");
+      }
+    }
+
     const existing = await this.repository.findByRecordAndMethod(
       dailySalesRecordId,
-      data.salesPaymentMethodId
+      data.salesPaymentMethodId,
+      data.posSourceId ?? null
     );
     if (existing) {
-      throw new SalesEntryAlreadyExistsError("This payment method already has an entry on this sales record.");
+      throw new SalesEntryAlreadyExistsError(
+        "This payment method already has an entry on this sales record for this POS source."
+      );
     }
 
     const entry = await this.repository.create({
       dailySalesRecordId,
       branchId: record.branchId,
       salesPaymentMethodId: data.salesPaymentMethodId,
+      posSourceId: data.posSourceId ?? null,
       amount: data.amount,
       transactionCount: data.transactionCount ?? null,
     });

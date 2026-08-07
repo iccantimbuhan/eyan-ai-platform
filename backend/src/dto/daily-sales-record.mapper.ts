@@ -69,6 +69,8 @@ export function mapDailySalesRecordToResponse(
       id: entry.id,
       salesPaymentMethodId: entry.salesPaymentMethodId,
       paymentMethodName: entry.salesPaymentMethod.name,
+      posSourceId: entry.posSourceId,
+      posSourceName: entry.posSource ? entry.posSource.name : null,
       amount: entry.amount.toFixed(2),
       transactionCount: entry.transactionCount,
       createdAt: entry.createdAt,

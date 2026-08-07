@@ -2357,7 +2357,14 @@ model SalesChannelEntry {
 
   createdAt DateTime @default(now())
 
-  @@unique([dailySalesRecordId, salesChannelId])
+  // Widened to include posSourceId so the same channel can be split across
+  // multiple POS sources on the same business day (e.g. Wolt reported
+  // partly by POS 1 and partly by POS 2) — a channel is no longer limited
+  // to one entry per day, total. The service layer's duplicate check
+  // handles the posSourceId: null case explicitly (Postgres treats NULL as
+  // distinct in a unique index, so this constraint alone would not catch a
+  // duplicate no-POS entry — see SalesChannelEntryService.create).
+  @@unique([dailySalesRecordId, salesChannelId, posSourceId])
   @@index([dailySalesRecordId])
   @@index([branchId])
   @@index([posSourceId])
@@ -2380,7 +2387,8 @@ model PosSource {
 
   name String
 
-  channelEntries SalesChannelEntry[]
+  channelEntries       SalesChannelEntry[]
+  paymentMethodEntries SalesPaymentMethodEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2390,23 +2398,31 @@ model PosSource {
 }
 
 model SalesPaymentMethodEntry {
-  id                   String @id @default(cuid())
+  id                   String  @id @default(cuid())
   dailySalesRecordId   String
   branchId             String
   salesPaymentMethodId String
+  posSourceId          String?
 
   dailySalesRecord   DailySalesRecord   @relation(fields: [dailySalesRecordId], references: [id], onDelete: Cascade)
   branch             Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
   salesPaymentMethod SalesPaymentMethod @relation(fields: [salesPaymentMethodId], references: [id], onDelete: Cascade)
+  // Optional — which POS terminal reported this payment method's amount for
+  // this day. Mirrors SalesChannelEntry.posSourceId exactly: a per-entry,
+  // per-day fact, never a fixed mapping on SalesPaymentMethod itself.
+  posSource          PosSource?         @relation(fields: [posSourceId], references: [id], onDelete: SetNull)
 
   amount           Decimal @db.Decimal(10, 2)
   transactionCount Int?
 
   createdAt DateTime @default(now())
 
-  @@unique([dailySalesRecordId, salesPaymentMethodId])
+  // Widened to include posSourceId — see SalesChannelEntry's identical
+  // comment above; same NULL-safe duplicate-check requirement applies.
+  @@unique([dailySalesRecordId, salesPaymentMethodId, posSourceId])
   @@index([dailySalesRecordId])
   @@index([branchId])
+  @@index([posSourceId])
 }
 
 model SalesCategoryEntry {

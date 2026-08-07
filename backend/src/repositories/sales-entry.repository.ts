@@ -17,9 +17,16 @@ export class SalesChannelEntryRepository {
     });
   }
 
-  async findByRecordAndChannel(dailySalesRecordId: string, salesChannelId: string) {
-    return prisma.salesChannelEntry.findUnique({
-      where: { dailySalesRecordId_salesChannelId: { dailySalesRecordId, salesChannelId } },
+  // findFirst, not findUnique on the compound key, because the unique
+  // constraint is now (dailySalesRecordId, salesChannelId, posSourceId) —
+  // Postgres treats NULL as distinct in a unique index, so a findUnique
+  // equality lookup with posSourceId: null would not reliably catch a
+  // duplicate no-POS entry. A plain `where` equality match (Prisma renders
+  // `posSourceId: null` as `IS NULL`) is correct for both the tagged and
+  // untagged case.
+  async findByRecordAndChannel(dailySalesRecordId: string, salesChannelId: string, posSourceId: string | null) {
+    return prisma.salesChannelEntry.findFirst({
+      where: { dailySalesRecordId, salesChannelId, posSourceId },
     });
   }
 
@@ -45,13 +52,15 @@ export class SalesPaymentMethodEntryRepository {
   async findById(id: string) {
     return prisma.salesPaymentMethodEntry.findUnique({
       where: { id },
-      include: { salesPaymentMethod: true },
+      include: { salesPaymentMethod: true, posSource: true },
     });
   }
 
-  async findByRecordAndMethod(dailySalesRecordId: string, salesPaymentMethodId: string) {
-    return prisma.salesPaymentMethodEntry.findUnique({
-      where: { dailySalesRecordId_salesPaymentMethodId: { dailySalesRecordId, salesPaymentMethodId } },
+  // findFirst — same NULL-safety reasoning as SalesChannelEntryRepository's
+  // findByRecordAndChannel above.
+  async findByRecordAndMethod(dailySalesRecordId: string, salesPaymentMethodId: string, posSourceId: string | null) {
+    return prisma.salesPaymentMethodEntry.findFirst({
+      where: { dailySalesRecordId, salesPaymentMethodId, posSourceId },
     });
   }
 
@@ -59,10 +68,13 @@ export class SalesPaymentMethodEntryRepository {
     dailySalesRecordId: string;
     branchId: string;
     salesPaymentMethodId: string;
+    // POS Source / Sales Channel Flexibility — optional per-entry POS
+    // terminal, mirrors SalesChannelEntry.posSourceId exactly.
+    posSourceId?: string | null;
     amount: Prisma.Decimal | string | number;
     transactionCount?: number | null;
   }) {
-    return prisma.salesPaymentMethodEntry.create({ data, include: { salesPaymentMethod: true } });
+    return prisma.salesPaymentMethodEntry.create({ data, include: { salesPaymentMethod: true, posSource: true } });
   }
 
   async delete(id: string) {

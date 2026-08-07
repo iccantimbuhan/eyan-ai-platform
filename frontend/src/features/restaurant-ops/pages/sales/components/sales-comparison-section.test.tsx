@@ -26,6 +26,8 @@ function weeklySummary(overrides: Partial<WeeklySalesSummary> = {}): WeeklySales
     posSourceTotals: [],
     channelsByPosSource: [],
     paymentMethodTotals: [],
+    paymentMethodPosSourceTotals: [],
+    paymentMethodsByPosSource: [],
     categoryTotals: [],
     topItems: [],
     ...overrides,

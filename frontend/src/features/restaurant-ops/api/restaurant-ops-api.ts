@@ -656,7 +656,7 @@ export async function deleteChannelEntry(salesId: string, entryId: string) {
 
 export async function createPaymentMethodEntry(
   salesId: string,
-  payload: { salesPaymentMethodId: string; amount: number; transactionCount?: number }
+  payload: { salesPaymentMethodId: string; amount: number; posSourceId?: string; transactionCount?: number }
 ): Promise<SalesPaymentMethodEntry> {
   const { data } = await api.post<ApiResponse<SalesPaymentMethodEntry>>(
     `/sales/${salesId}/payment-method-entries`,

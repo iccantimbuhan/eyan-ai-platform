@@ -183,13 +183,15 @@ export function useCreatePaymentMethodEntry() {
       salesId,
       salesPaymentMethodId,
       amount,
+      posSourceId,
       transactionCount,
     }: {
       salesId: string
       salesPaymentMethodId: string
       amount: number
+      posSourceId?: string
       transactionCount?: number
-    }) => createPaymentMethodEntry(salesId, { salesPaymentMethodId, amount, transactionCount }),
+    }) => createPaymentMethodEntry(salesId, { salesPaymentMethodId, amount, posSourceId, transactionCount }),
 
     onSuccess: async () => {
       toast.success('Payment method entry recorded.')

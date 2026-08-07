@@ -53,6 +53,30 @@ export interface PaymentMethodTotalDto {
   percentOfPaymentMethodEntriesTotal: string | null;
 }
 
+// POS Source / Sales Channel Flexibility, extended to Payment Methods —
+// sales by POS terminal for the payment-method dimension, same shape as
+// PosSourceTotalDto. Deliberately a SEPARATE figure from PosSourceTotalDto
+// (channels) — a POS's channel total and its payment-method total are
+// independent facts about that POS, never summed together, mirroring
+// ADR-0039 Decision 2's channel-vs-payment-method separation at the
+// whole-day level.
+export interface PaymentMethodPosSourceTotalDto {
+  posSourceId: string | null;
+  posSourceName: string | null;
+  amount: string;
+  transactionCount: number;
+  percentOfPaymentMethodEntriesTotal: string | null;
+}
+
+// Answers "sales by POS + payment method combination" — one row per POS
+// source (including the unassigned bucket), each with its own
+// payment-method breakdown. Mirrors PosSourceChannelBreakdownDto.
+export interface PosSourcePaymentMethodBreakdownDto {
+  posSourceId: string | null;
+  posSourceName: string | null;
+  paymentMethods: PaymentMethodTotalDto[];
+}
+
 export interface CategoryTotalDto {
   salesCategoryId: string;
   categoryName: string;
@@ -115,6 +139,8 @@ export interface WeeklySalesSummaryDto {
   posSourceTotals: PosSourceTotalDto[];
   channelsByPosSource: PosSourceChannelBreakdownDto[];
   paymentMethodTotals: PaymentMethodTotalDto[];
+  paymentMethodPosSourceTotals: PaymentMethodPosSourceTotalDto[];
+  paymentMethodsByPosSource: PosSourcePaymentMethodBreakdownDto[];
   categoryTotals: CategoryTotalDto[];
   topItems: TopItemDto[];
 }

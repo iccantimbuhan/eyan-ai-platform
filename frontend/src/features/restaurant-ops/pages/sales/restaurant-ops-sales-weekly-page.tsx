@@ -206,6 +206,8 @@ export function RestaurantOpsSalesWeeklyPage() {
           <PosSourcePerformanceSection
             posSourceTotals={summary.posSourceTotals}
             channelsByPosSource={summary.channelsByPosSource}
+            paymentMethodPosSourceTotals={summary.paymentMethodPosSourceTotals}
+            paymentMethodsByPosSource={summary.paymentMethodsByPosSource}
           />
 
           <div className='grid gap-4 lg:grid-cols-2'>

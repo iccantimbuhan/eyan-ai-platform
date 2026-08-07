@@ -16,6 +16,9 @@ export const createChannelEntryValidator = [
 export const createPaymentMethodEntryValidator = [
   body("salesPaymentMethodId").notEmpty().withMessage("Payment method is required."),
   body("amount").isFloat({ min: 0 }).withMessage("Amount must be zero or greater."),
+  // POS Source / Sales Channel Flexibility — optional, which POS terminal
+  // reported this payment method's amount for this day.
+  body("posSourceId").optional({ nullable: true }).isString(),
   body("transactionCount").optional().isInt({ min: 0 }).withMessage("Transaction count must be zero or greater."),
 ];
 

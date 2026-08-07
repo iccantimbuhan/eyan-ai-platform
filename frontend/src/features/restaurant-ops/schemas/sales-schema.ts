@@ -96,6 +96,9 @@ export const defaultChannelEntryValues: ChannelEntryFormValues = {
 export const paymentMethodEntrySchema = z.object({
   salesPaymentMethodId: z.string().trim().min(1, 'Payment method is required.'),
   amount: nonNegativeNumericString('Amount must be zero or greater.'),
+  // POS Source / Sales Channel Flexibility, extended to Payment Methods —
+  // optional; a single-POS restaurant never needs to touch this.
+  posSourceId: z.string().trim().optional(),
   transactionCount: z
     .string()
     .trim()
@@ -110,6 +113,7 @@ export type PaymentMethodEntryFormValues = z.infer<typeof paymentMethodEntrySche
 export const defaultPaymentMethodEntryValues: PaymentMethodEntryFormValues = {
   salesPaymentMethodId: '',
   amount: '',
+  posSourceId: '',
   transactionCount: '',
 }
 

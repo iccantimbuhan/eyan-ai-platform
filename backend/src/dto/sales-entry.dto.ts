@@ -11,6 +11,10 @@ export interface CreateSalesChannelEntryDto {
 export interface CreateSalesPaymentMethodEntryDto {
   salesPaymentMethodId: string;
   amount: number | string;
+  // POS Source / Sales Channel Flexibility — optional, which POS terminal
+  // reported this payment method's amount for this day. Mirrors
+  // CreateSalesChannelEntryDto.posSourceId exactly.
+  posSourceId?: string;
   transactionCount?: number;
 }
 

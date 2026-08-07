@@ -10,7 +10,7 @@ type ChannelEntryRow = Prisma.SalesChannelEntryGetPayload<{
   include: { salesChannel: true; posSource: true };
 }>;
 type PaymentMethodEntryRow = Prisma.SalesPaymentMethodEntryGetPayload<{
-  include: { salesPaymentMethod: true };
+  include: { salesPaymentMethod: true; posSource: true };
 }>;
 type CategoryEntryRow = Prisma.SalesCategoryEntryGetPayload<{ include: { salesCategory: true } }>;
 type ItemEntryRow = Prisma.SalesItemEntryGetPayload<object>;
@@ -35,6 +35,8 @@ export function mapPaymentMethodEntryToResponse(
     id: row.id,
     salesPaymentMethodId: row.salesPaymentMethodId,
     paymentMethodName: row.salesPaymentMethod.name,
+    posSourceId: row.posSourceId,
+    posSourceName: row.posSource ? row.posSource.name : null,
     amount: row.amount.toFixed(2),
     transactionCount: row.transactionCount,
     createdAt: row.createdAt,

@@ -44,6 +44,10 @@ export interface SalesPaymentMethodEntryResponseDto {
   id: string;
   salesPaymentMethodId: string;
   paymentMethodName: string;
+  // POS Source / Sales Channel Flexibility — mirrors
+  // SalesChannelEntryResponseDto.posSourceId/posSourceName exactly.
+  posSourceId: string | null;
+  posSourceName: string | null;
   amount: string;
   transactionCount: number | null;
   createdAt: Date;

@@ -38,12 +38,20 @@ function channelEntry(
   };
 }
 
-function paymentMethodEntry(id: string, name: string, amount: string, transactionCount: number | null = null) {
+function paymentMethodEntry(
+  id: string,
+  name: string,
+  amount: string,
+  transactionCount: number | null = null,
+  posSource: { id: string; name: string } | null = null
+) {
   return {
     salesPaymentMethodId: id,
     salesPaymentMethod: { name },
     amount: new Prisma.Decimal(amount),
     transactionCount,
+    posSourceId: posSource?.id ?? null,
+    posSource: posSource ? { name: posSource.name } : null,
   };
 }
 
@@ -396,6 +404,107 @@ describe("SalesAggregationService.getWeeklySummary", () => {
       expect(summary.posSourceTotals).toEqual([]);
       expect(summary.channelsByPosSource).toEqual([]);
       expect(summary.channelTotals).toEqual([]);
+    });
+  });
+
+  describe("POS Source / Sales Channel Flexibility, extended to Payment Methods — paymentMethodPosSourceTotals and paymentMethodsByPosSource", () => {
+    it("buckets entries with no posSourceId under the 'unassigned' bucket, never dropping them", async () => {
+      const records = [record({ paymentMethodEntries: [paymentMethodEntry("cash-id", "Cash", "300.00")] })];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.paymentMethodPosSourceTotals).toEqual([
+        {
+          posSourceId: null,
+          posSourceName: null,
+          amount: "300.00",
+          transactionCount: 0,
+          percentOfPaymentMethodEntriesTotal: "100.0",
+        },
+      ]);
+      expect(summary.paymentMethodsByPosSource).toEqual([
+        {
+          posSourceId: null,
+          posSourceName: null,
+          paymentMethods: [expect.objectContaining({ salesPaymentMethodId: "cash-id", amount: "300.00" })],
+        },
+      ]);
+    });
+
+    it("splits sales by POS source when payment-method entries carry different posSourceIds — POS 1: Cash/Card/Wolt, POS 2: Wolt/Bolt", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const pos2 = { id: "pos-2", name: "POS 2" };
+      const records = [
+        record({
+          paymentMethodEntries: [
+            paymentMethodEntry("cash-id", "Cash", "200.00", 20, pos1),
+            paymentMethodEntry("card-id", "Card", "220.30", 20, pos1),
+            paymentMethodEntry("wolt-id", "Wolt", "486.49", 25, pos2),
+            paymentMethodEntry("bolt-id", "Bolt", "281.58", 15, pos2),
+          ],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      const pos1Total = summary.paymentMethodPosSourceTotals.find((p) => p.posSourceId === "pos-1");
+      const pos2Total = summary.paymentMethodPosSourceTotals.find((p) => p.posSourceId === "pos-2");
+      expect(pos1Total).toMatchObject({ posSourceName: "POS 1", amount: "420.30", transactionCount: 40 });
+      expect(pos2Total).toMatchObject({ posSourceName: "POS 2", amount: "768.07", transactionCount: 40 });
+
+      const pos1Bucket = summary.paymentMethodsByPosSource.find((b) => b.posSourceId === "pos-1");
+      expect(pos1Bucket?.paymentMethods.map((m) => m.salesPaymentMethodId).sort()).toEqual(["card-id", "cash-id"]);
+    });
+
+    it("sums the same payment method across multiple POS sources into one paymentMethodTotals row, while still separating them per POS source — the same 'Wolt' payment method under both POS 1 and POS 2", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const pos2 = { id: "pos-2", name: "POS 2" };
+      const records = [
+        record({ paymentMethodEntries: [paymentMethodEntry("wolt-id", "Wolt", "100.00", null, pos1)] }),
+        record({ paymentMethodEntries: [paymentMethodEntry("wolt-id", "Wolt", "50.00", null, pos2)] }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      const wolt = summary.paymentMethodTotals.find((m) => m.salesPaymentMethodId === "wolt-id");
+      expect(wolt?.amount).toBe("150.00");
+
+      const pos1Wolt = summary.paymentMethodsByPosSource.find((b) => b.posSourceId === "pos-1")?.paymentMethods[0];
+      const pos2Wolt = summary.paymentMethodsByPosSource.find((b) => b.posSourceId === "pos-2")?.paymentMethods[0];
+      expect(pos1Wolt?.amount).toBe("100.00");
+      expect(pos2Wolt?.amount).toBe("50.00");
+    });
+
+    it("keeps payment-method POS totals entirely separate from channel POS totals (never merged into one combined POS figure)", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const records = [
+        record({
+          channelEntries: [channelEntry("wolt-id", "Wolt", "486.49", pos1)],
+          paymentMethodEntries: [paymentMethodEntry("cash-id", "Cash", "200.00", null, pos1)],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      const channelPos1 = summary.posSourceTotals.find((p) => p.posSourceId === "pos-1");
+      const paymentMethodPos1 = summary.paymentMethodPosSourceTotals.find((p) => p.posSourceId === "pos-1");
+      expect(channelPos1?.amount).toBe("486.49");
+      expect(paymentMethodPos1?.amount).toBe("200.00");
+    });
+
+    it("produces no paymentMethodPosSourceTotals rows for a restaurant that never uses POS sources (regression)", async () => {
+      const records = [record({ paymentMethodEntries: [] })];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.paymentMethodPosSourceTotals).toEqual([]);
+      expect(summary.paymentMethodsByPosSource).toEqual([]);
+      expect(summary.paymentMethodTotals).toEqual([]);
     });
   });
 

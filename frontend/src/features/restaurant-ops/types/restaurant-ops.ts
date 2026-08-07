@@ -208,6 +208,10 @@ export interface SalesPaymentMethodEntry {
   id: string
   salesPaymentMethodId: string
   paymentMethodName: string
+  // POS Source / Sales Channel Flexibility, extended to Payment Methods —
+  // mirrors SalesChannelEntry.posSourceId/posSourceName exactly.
+  posSourceId: string | null
+  posSourceName: string | null
   amount: string
   transactionCount: number | null
   createdAt: string
@@ -340,6 +344,25 @@ export interface PaymentMethodTotal {
   percentOfPaymentMethodEntriesTotal: string | null
 }
 
+// POS Source / Sales Channel Flexibility, extended to Payment Methods —
+// mirrors PosSourceTotal/PosSourceChannelBreakdown exactly, kept as a
+// SEPARATE figure from the channel dimension (never merged into one
+// combined POS total — a POS's channel total and its payment-method total
+// are independent facts, per ADR-0039).
+export interface PaymentMethodPosSourceTotal {
+  posSourceId: string | null
+  posSourceName: string | null
+  amount: string
+  transactionCount: number
+  percentOfPaymentMethodEntriesTotal: string | null
+}
+
+export interface PosSourcePaymentMethodBreakdown {
+  posSourceId: string | null
+  posSourceName: string | null
+  paymentMethods: PaymentMethodTotal[]
+}
+
 export interface CategoryTotal {
   salesCategoryId: string
   categoryName: string
@@ -392,6 +415,8 @@ export interface WeeklySalesSummary {
   posSourceTotals: PosSourceTotal[]
   channelsByPosSource: PosSourceChannelBreakdown[]
   paymentMethodTotals: PaymentMethodTotal[]
+  paymentMethodPosSourceTotals: PaymentMethodPosSourceTotal[]
+  paymentMethodsByPosSource: PosSourcePaymentMethodBreakdown[]
   categoryTotals: CategoryTotal[]
   topItems: TopItem[]
 }

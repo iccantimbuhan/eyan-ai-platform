@@ -9,8 +9,10 @@ import type {
   CategoryTotalDto,
   ChannelTotalDto,
   DailySalesTotalDto,
+  PaymentMethodPosSourceTotalDto,
   PaymentMethodTotalDto,
   PosSourceChannelBreakdownDto,
+  PosSourcePaymentMethodBreakdownDto,
   PosSourceTotalDto,
   SalesComparisonDto,
   SalesComparisonEntryDto,
@@ -149,6 +151,23 @@ export class SalesAggregationService {
       string,
       { paymentMethodName: string; amount: Prisma.Decimal; transactionCount: number }
     >();
+    // POS Source / Sales Channel Flexibility, extended to Payment Methods —
+    // same dual-tracking shape as posSourceTotals/channelsByPosSourceTotals
+    // above, kept as a SEPARATE pair of maps (never merged with the channel
+    // ones) so a POS's channel total is never summed with its payment-method
+    // total — the two remain independent facts, per ADR-0039 Decision 2.
+    const paymentMethodPosSourceTotals = new Map<
+      string,
+      { posSourceId: string | null; posSourceName: string | null; amount: Prisma.Decimal; transactionCount: number }
+    >();
+    const paymentMethodsByPosSourceTotals = new Map<
+      string,
+      {
+        posSourceId: string | null;
+        posSourceName: string | null;
+        paymentMethods: Map<string, { paymentMethodName: string; amount: Prisma.Decimal; transactionCount: number }>;
+      }
+    >();
     const categoryTotals = new Map<
       string,
       { categoryName: string; quantity: Prisma.Decimal | null; amount: Prisma.Decimal }
@@ -232,6 +251,39 @@ export class SalesAggregationService {
           existing.transactionCount += entry.transactionCount ?? 0;
         } else {
           paymentMethodTotals.set(entry.salesPaymentMethodId, {
+            paymentMethodName: entry.salesPaymentMethod.name,
+            amount: new Prisma.Decimal(entry.amount),
+            transactionCount: entry.transactionCount ?? 0,
+          });
+        }
+
+        const posSourceKey = entry.posSourceId ?? UNASSIGNED_POS_SOURCE_KEY;
+        const posSourceName = entry.posSource ? entry.posSource.name : null;
+
+        const existingPosSource = paymentMethodPosSourceTotals.get(posSourceKey);
+        if (existingPosSource) {
+          existingPosSource.amount = existingPosSource.amount.plus(entry.amount);
+          existingPosSource.transactionCount += entry.transactionCount ?? 0;
+        } else {
+          paymentMethodPosSourceTotals.set(posSourceKey, {
+            posSourceId: entry.posSourceId,
+            posSourceName,
+            amount: new Prisma.Decimal(entry.amount),
+            transactionCount: entry.transactionCount ?? 0,
+          });
+        }
+
+        let posSourceBucket = paymentMethodsByPosSourceTotals.get(posSourceKey);
+        if (!posSourceBucket) {
+          posSourceBucket = { posSourceId: entry.posSourceId, posSourceName, paymentMethods: new Map() };
+          paymentMethodsByPosSourceTotals.set(posSourceKey, posSourceBucket);
+        }
+        const existingBucketMethod = posSourceBucket.paymentMethods.get(entry.salesPaymentMethodId);
+        if (existingBucketMethod) {
+          existingBucketMethod.amount = existingBucketMethod.amount.plus(entry.amount);
+          existingBucketMethod.transactionCount += entry.transactionCount ?? 0;
+        } else {
+          posSourceBucket.paymentMethods.set(entry.salesPaymentMethodId, {
             paymentMethodName: entry.salesPaymentMethod.name,
             amount: new Prisma.Decimal(entry.amount),
             transactionCount: entry.transactionCount ?? 0,
@@ -341,6 +393,30 @@ export class SalesAggregationService {
       })
     );
 
+    const paymentMethodPosSourceTotalsDto: PaymentMethodPosSourceTotalDto[] = Array.from(
+      paymentMethodPosSourceTotals.values()
+    ).map((value) => ({
+      posSourceId: value.posSourceId,
+      posSourceName: value.posSourceName,
+      amount: value.amount.toFixed(2),
+      transactionCount: value.transactionCount,
+      percentOfPaymentMethodEntriesTotal: percentOfBasis(value.amount, paymentMethodEntriesTotal),
+    }));
+
+    const paymentMethodsByPosSourceDto: PosSourcePaymentMethodBreakdownDto[] = Array.from(
+      paymentMethodsByPosSourceTotals.values()
+    ).map((bucket) => ({
+      posSourceId: bucket.posSourceId,
+      posSourceName: bucket.posSourceName,
+      paymentMethods: Array.from(bucket.paymentMethods.entries()).map(([salesPaymentMethodId, value]) => ({
+        salesPaymentMethodId,
+        paymentMethodName: value.paymentMethodName,
+        amount: value.amount.toFixed(2),
+        transactionCount: value.transactionCount,
+        percentOfPaymentMethodEntriesTotal: percentOfBasis(value.amount, paymentMethodEntriesTotal),
+      })),
+    }));
+
     const categoryTotalsDto: CategoryTotalDto[] = Array.from(categoryTotals.entries()).map(
       ([salesCategoryId, value]) => ({
         salesCategoryId,
@@ -388,6 +464,8 @@ export class SalesAggregationService {
       posSourceTotals: posSourceTotalsDto,
       channelsByPosSource: channelsByPosSourceDto,
       paymentMethodTotals: paymentMethodTotalsDto,
+      paymentMethodPosSourceTotals: paymentMethodPosSourceTotalsDto,
+      paymentMethodsByPosSource: paymentMethodsByPosSourceDto,
       categoryTotals: categoryTotalsDto,
       topItems,
     };

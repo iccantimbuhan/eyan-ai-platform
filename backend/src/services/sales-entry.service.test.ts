@@ -74,6 +74,50 @@ describe("SalesChannelEntryService", () => {
     expect(entries.create).not.toHaveBeenCalled();
   });
 
+  it("create() passes posSourceId (or null when omitted) into the duplicate check", async () => {
+    const entries = entryRepository();
+    const service = new SalesChannelEntryService(
+      entries as never,
+      recordRepository() as never,
+      channelRepository() as never,
+      posSourceRepository() as never
+    );
+
+    await service.create("sales-1", { salesChannelId: "channel-1", amount: 100 });
+    expect(entries.findByRecordAndChannel).toHaveBeenCalledWith("sales-1", "channel-1", null);
+
+    await service.create("sales-1", { salesChannelId: "channel-1", amount: 100, posSourceId: "pos-1" });
+    expect(entries.findByRecordAndChannel).toHaveBeenCalledWith("sales-1", "channel-1", "pos-1");
+  });
+
+  it("create() allows the same channel to be entered under a different POS source on the same day", async () => {
+    // Mirrors the DB's NULL-safe duplicate scoping: only a matching
+    // (channel, POS) pair is a real duplicate — POS 1 already has an
+    // entry, POS 2 does not, so the same channel can still be split
+    // across both terminals on the same business day.
+    const findByRecordAndChannel = vi.fn((_recordId: string, _channelId: string, posSourceId: string | null) =>
+      Promise.resolve(posSourceId === "pos-1" ? { id: "existing" } : null)
+    );
+    const entries = entryRepository({ findByRecordAndChannel });
+    const service = new SalesChannelEntryService(
+      entries as never,
+      recordRepository() as never,
+      channelRepository() as never,
+      posSourceRepository() as never
+    );
+
+    await expect(
+      service.create("sales-1", { salesChannelId: "channel-1", amount: 420.3, posSourceId: "pos-1" })
+    ).rejects.toThrow(SalesEntryAlreadyExistsError);
+
+    await expect(
+      service.create("sales-1", { salesChannelId: "channel-1", amount: 486.49, posSourceId: "pos-2" })
+    ).resolves.toBeDefined();
+    expect(entries.create).toHaveBeenCalledWith(
+      expect.objectContaining({ salesChannelId: "channel-1", posSourceId: "pos-2" })
+    );
+  });
+
   it("create() persists a valid entry", async () => {
     const entries = entryRepository();
     const service = new SalesChannelEntryService(entries as never, recordRepository() as never, channelRepository() as never);
@@ -156,6 +200,13 @@ describe("SalesPaymentMethodEntryService", () => {
     };
   }
 
+  function posSourceRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findById: vi.fn().mockResolvedValue({ id: "pos-1", restaurantId: "rest-1", name: "POS 1" }),
+      ...overrides,
+    };
+  }
+
   function entryRepository(overrides: Partial<Record<string, unknown>> = {}) {
     return {
       findByRecordAndMethod: vi.fn().mockResolvedValue(null),
@@ -198,9 +249,85 @@ describe("SalesPaymentMethodEntryService", () => {
       dailySalesRecordId: "sales-1",
       branchId: "branch-1",
       salesPaymentMethodId: "method-1",
+      posSourceId: null,
       amount: 213.2,
       transactionCount: 12,
     });
+  });
+
+  it("create() persists posSourceId when provided", async () => {
+    const entries = entryRepository();
+    const service = new SalesPaymentMethodEntryService(
+      entries as never,
+      recordRepository() as never,
+      paymentMethodRepository() as never,
+      posSourceRepository() as never
+    );
+
+    await service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 213.2, posSourceId: "pos-1" });
+
+    expect(entries.create).toHaveBeenCalledWith({
+      dailySalesRecordId: "sales-1",
+      branchId: "branch-1",
+      salesPaymentMethodId: "method-1",
+      posSourceId: "pos-1",
+      amount: 213.2,
+      transactionCount: null,
+    });
+  });
+
+  it("create() rejects a posSourceId that belongs to a different restaurant", async () => {
+    const entries = entryRepository();
+    const service = new SalesPaymentMethodEntryService(
+      entries as never,
+      recordRepository() as never,
+      paymentMethodRepository() as never,
+      posSourceRepository({
+        findById: vi.fn().mockResolvedValue({ id: "pos-1", restaurantId: "rest-OTHER" }),
+      }) as never
+    );
+
+    await expect(
+      service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 100, posSourceId: "pos-1" })
+    ).rejects.toThrow(SalesScopeMismatchError);
+    expect(entries.create).not.toHaveBeenCalled();
+  });
+
+  it("create() rejects a duplicate (method, POS) pair but allows the same method under a different POS source on the same day", async () => {
+    // Mirrors the DB's NULL-safe duplicate scoping — e.g. "Wolt" reported
+    // as a payment method under both POS 1 and POS 2 on the same day.
+    const findByRecordAndMethod = vi.fn((_recordId: string, _methodId: string, posSourceId: string | null) =>
+      Promise.resolve(posSourceId === "pos-1" ? { id: "existing" } : null)
+    );
+    const entries = entryRepository({ findByRecordAndMethod });
+    const service = new SalesPaymentMethodEntryService(
+      entries as never,
+      recordRepository() as never,
+      paymentMethodRepository() as never,
+      posSourceRepository() as never
+    );
+
+    await expect(
+      service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 100, posSourceId: "pos-1" })
+    ).rejects.toThrow(SalesEntryAlreadyExistsError);
+
+    await expect(
+      service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 150, posSourceId: "pos-2" })
+    ).resolves.toBeDefined();
+    expect(entries.create).toHaveBeenCalledWith(
+      expect.objectContaining({ salesPaymentMethodId: "method-1", posSourceId: "pos-2" })
+    );
+  });
+
+  it("create() rejects a duplicate entry when both are unassigned (posSourceId omitted twice)", async () => {
+    const findByRecordAndMethod = vi.fn().mockResolvedValue({ id: "existing" });
+    const entries = entryRepository({ findByRecordAndMethod });
+    const service = new SalesPaymentMethodEntryService(entries as never, recordRepository() as never, paymentMethodRepository() as never);
+
+    await expect(
+      service.create("sales-1", { salesPaymentMethodId: "method-1", amount: 100 })
+    ).rejects.toThrow(SalesEntryAlreadyExistsError);
+    expect(findByRecordAndMethod).toHaveBeenCalledWith("sales-1", "method-1", null);
   });
 });
 
