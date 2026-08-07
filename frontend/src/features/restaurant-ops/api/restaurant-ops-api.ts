@@ -531,6 +531,28 @@ export async function createSalesCategory(
   return data.data
 }
 
+// POS Source / Sales Channel Flexibility — a fourth Restaurant-scoped
+// reference list, same create+list shape as the three above. Deliberately
+// no endpoint linking it to a SalesChannel; that relationship is captured
+// per channel entry instead (see createChannelEntry's posSourceId below).
+export async function getPosSources(restaurantId: string): Promise<SalesReference[]> {
+  const { data } = await api.get<ApiResponse<SalesReference[]>>(
+    `/restaurants/${restaurantId}/sales-pos-sources`
+  )
+  return data.data
+}
+
+export async function createPosSource(
+  restaurantId: string,
+  payload: { name: string }
+): Promise<SalesReference> {
+  const { data } = await api.post<ApiResponse<SalesReference>>(
+    `/restaurants/${restaurantId}/sales-pos-sources`,
+    payload
+  )
+  return data.data
+}
+
 export interface CreateDailySalesRecordPayload {
   businessDate: string
   source: SalesSource
@@ -618,7 +640,7 @@ export async function updateDailySalesRecord(
 
 export async function createChannelEntry(
   salesId: string,
-  payload: { salesChannelId: string; amount: number }
+  payload: { salesChannelId: string; amount: number; posSourceId?: string; transactionCount?: number }
 ): Promise<SalesChannelEntry> {
   const { data } = await api.post<ApiResponse<SalesChannelEntry>>(
     `/sales/${salesId}/channel-entries`,

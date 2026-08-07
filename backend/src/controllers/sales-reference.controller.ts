@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import {
+  posSourceService,
   salesChannelService,
   salesCategoryService,
   salesPaymentMethodService,
@@ -45,5 +46,17 @@ export class SalesCategoryController {
   static async create(req: Request, res: Response) {
     const row = await salesCategoryService.create(getParam(req, "restaurantId"), req.body);
     return ApiResponse.success(res, row, 201, "Sales category created successfully.");
+  }
+}
+
+export class PosSourceController {
+  static async list(req: Request, res: Response) {
+    const rows = await posSourceService.list(getParam(req, "restaurantId"));
+    return ApiResponse.success(res, rows, 200, "POS sources retrieved successfully.");
+  }
+
+  static async create(req: Request, res: Response) {
+    const row = await posSourceService.create(getParam(req, "restaurantId"), req.body);
+    return ApiResponse.success(res, row, 201, "POS source created successfully.");
   }
 }

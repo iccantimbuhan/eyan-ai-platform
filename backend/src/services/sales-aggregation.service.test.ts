@@ -21,8 +21,21 @@ function record(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
-function channelEntry(salesChannelId: string, channelName: string, amount: string) {
-  return { salesChannelId, salesChannel: { name: channelName }, amount: new Prisma.Decimal(amount) };
+function channelEntry(
+  salesChannelId: string,
+  channelName: string,
+  amount: string,
+  posSource: { id: string; name: string } | null = null,
+  transactionCount: number | null = null
+) {
+  return {
+    salesChannelId,
+    salesChannel: { name: channelName },
+    amount: new Prisma.Decimal(amount),
+    posSourceId: posSource?.id ?? null,
+    posSource: posSource ? { name: posSource.name } : null,
+    transactionCount,
+  };
 }
 
 function paymentMethodEntry(id: string, name: string, amount: string, transactionCount: number | null = null) {
@@ -305,6 +318,84 @@ describe("SalesAggregationService.getWeeklySummary", () => {
       expect(wolt?.activeDays).toBe(2);
       expect(wolt?.amount).toBe("550.00");
       expect(wolt?.averageAmountPerActiveDay).toBe("275.00");
+    });
+  });
+
+  describe("POS Source / Sales Channel Flexibility — posSourceTotals and channelsByPosSource", () => {
+    it("buckets entries with no posSourceId under the 'unassigned' bucket, never dropping them", async () => {
+      const records = [record({ channelEntries: [channelEntry("wolt-id", "Wolt", "300.00")] })];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.posSourceTotals).toEqual([
+        {
+          posSourceId: null,
+          posSourceName: null,
+          amount: "300.00",
+          transactionCount: 0,
+          percentOfChannelEntriesTotal: "100.0",
+        },
+      ]);
+      expect(summary.channelsByPosSource).toEqual([
+        { posSourceId: null, posSourceName: null, channels: [expect.objectContaining({ salesChannelId: "wolt-id", amount: "300.00" })] },
+      ]);
+    });
+
+    it("splits sales by POS source when channel entries carry different posSourceIds — Example B (multiple POS terminals)", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const pos2 = { id: "pos-2", name: "POS 2" };
+      const records = [
+        record({
+          channelEntries: [
+            channelEntry("mypos-id", "MyPOS / In-house", "420.30", pos1, 40),
+            channelEntry("wolt-id", "Wolt", "486.49", pos2, 25),
+            channelEntry("bolt-id", "Bolt", "281.58", pos2, 15),
+          ],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      const pos1Total = summary.posSourceTotals.find((p) => p.posSourceId === "pos-1");
+      const pos2Total = summary.posSourceTotals.find((p) => p.posSourceId === "pos-2");
+      expect(pos1Total).toMatchObject({ posSourceName: "POS 1", amount: "420.30", transactionCount: 40 });
+      expect(pos2Total).toMatchObject({ posSourceName: "POS 2", amount: "768.07", transactionCount: 40 });
+
+      const pos2Bucket = summary.channelsByPosSource.find((b) => b.posSourceId === "pos-2");
+      expect(pos2Bucket?.channels.map((c) => c.salesChannelId).sort()).toEqual(["bolt-id", "wolt-id"]);
+    });
+
+    it("sums the same channel across multiple POS sources into one channelTotals row, while still separating them per POS source", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const pos2 = { id: "pos-2", name: "POS 2" };
+      const records = [
+        record({ channelEntries: [channelEntry("wolt-id", "Wolt", "100.00", pos1)] }),
+        record({ channelEntries: [channelEntry("wolt-id", "Wolt", "50.00", pos2)] }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      const wolt = summary.channelTotals.find((c) => c.salesChannelId === "wolt-id");
+      expect(wolt?.amount).toBe("150.00");
+
+      const pos1Wolt = summary.channelsByPosSource.find((b) => b.posSourceId === "pos-1")?.channels[0];
+      const pos2Wolt = summary.channelsByPosSource.find((b) => b.posSourceId === "pos-2")?.channels[0];
+      expect(pos1Wolt?.amount).toBe("100.00");
+      expect(pos2Wolt?.amount).toBe("50.00");
+    });
+
+    it("produces no posSourceTotals rows for a restaurant that never uses POS sources (Example C regression)", async () => {
+      const records = [record({ channelEntries: [] })];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.posSourceTotals).toEqual([]);
+      expect(summary.channelsByPosSource).toEqual([]);
+      expect(summary.channelTotals).toEqual([]);
     });
   });
 

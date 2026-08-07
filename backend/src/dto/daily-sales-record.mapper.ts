@@ -59,7 +59,10 @@ export function mapDailySalesRecordToResponse(
       id: entry.id,
       salesChannelId: entry.salesChannelId,
       channelName: entry.salesChannel.name,
+      posSourceId: entry.posSourceId,
+      posSourceName: entry.posSource ? entry.posSource.name : null,
       amount: entry.amount.toFixed(2),
+      transactionCount: entry.transactionCount,
       createdAt: entry.createdAt,
     })),
     paymentMethods: row.paymentMethodEntries.map((entry) => ({

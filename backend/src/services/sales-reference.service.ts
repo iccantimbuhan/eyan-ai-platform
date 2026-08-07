@@ -1,4 +1,6 @@
 import {
+  posSourceRepository,
+  PosSourceRepository,
   salesChannelRepository,
   SalesChannelRepository,
   salesCategoryRepository,
@@ -71,6 +73,28 @@ export class SalesCategoryService {
   }
 }
 
+// POS Source / Sales Channel Flexibility — a fourth master list, same
+// create/list/duplicate-name shape as the three above.
+export class PosSourceService {
+  constructor(private readonly repository: PosSourceRepository = posSourceRepository) {}
+
+  async list(restaurantId: string) {
+    const rows = await this.repository.findManyByRestaurantId(restaurantId);
+    return rows.map(mapSalesReferenceToResponse);
+  }
+
+  async create(restaurantId: string, data: CreateSalesReferenceDto) {
+    const existing = await this.repository.findByRestaurantIdAndName(restaurantId, data.name);
+    if (existing) {
+      throw new SalesReferenceAlreadyExistsError();
+    }
+
+    const row = await this.repository.create({ restaurantId, name: data.name });
+    return mapSalesReferenceToResponse(row);
+  }
+}
+
 export const salesChannelService = new SalesChannelService();
 export const salesPaymentMethodService = new SalesPaymentMethodService();
 export const salesCategoryService = new SalesCategoryService();
+export const posSourceService = new PosSourceService();

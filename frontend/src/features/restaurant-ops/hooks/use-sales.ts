@@ -132,8 +132,19 @@ export function useCreateChannelEntry() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ salesId, salesChannelId, amount }: { salesId: string; salesChannelId: string; amount: number }) =>
-      createChannelEntry(salesId, { salesChannelId, amount }),
+    mutationFn: ({
+      salesId,
+      salesChannelId,
+      amount,
+      posSourceId,
+      transactionCount,
+    }: {
+      salesId: string
+      salesChannelId: string
+      amount: number
+      posSourceId?: string
+      transactionCount?: number
+    }) => createChannelEntry(salesId, { salesChannelId, amount, posSourceId, transactionCount }),
 
     onSuccess: async () => {
       toast.success('Channel entry recorded.')

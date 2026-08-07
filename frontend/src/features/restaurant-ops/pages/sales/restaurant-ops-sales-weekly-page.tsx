@@ -11,6 +11,7 @@ import { useTenantStore } from '@/stores/tenant-store'
 import { useActiveTenant } from '../../hooks/use-active-tenant'
 import { useSalesComparison, useWeeklySalesSummary } from '../../hooks/use-sales'
 import { ChannelPerformanceSection } from './components/channel-performance-section'
+import { PosSourcePerformanceSection } from './components/pos-source-performance-section'
 import { ReconciliationCard } from './components/reconciliation-card'
 import { SalesComparisonSection } from './components/sales-comparison-section'
 import { SalesCoverageCard } from './components/sales-coverage-card'
@@ -201,6 +202,11 @@ export function RestaurantOpsSalesWeeklyPage() {
           <SalesTrendChart dailySales={summary.dailySales} />
 
           <ChannelPerformanceSection channelTotals={summary.channelTotals} />
+
+          <PosSourcePerformanceSection
+            posSourceTotals={summary.posSourceTotals}
+            channelsByPosSource={summary.channelsByPosSource}
+          />
 
           <div className='grid gap-4 lg:grid-cols-2'>
             <ListCard

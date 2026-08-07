@@ -10,6 +10,8 @@ import type {
   ChannelTotalDto,
   DailySalesTotalDto,
   PaymentMethodTotalDto,
+  PosSourceChannelBreakdownDto,
+  PosSourceTotalDto,
   SalesComparisonDto,
   SalesComparisonEntryDto,
   SalesDataCoverageDto,
@@ -17,6 +19,14 @@ import type {
   TopItemDto,
   WeeklySalesSummaryDto,
 } from "../dto/sales-aggregation.dto.js";
+
+// Key for the "no POS source specified" bucket — always present in
+// posSourceTotals/channelsByPosSource (even when empty-of-entries it's
+// simply omitted, never a phantom zero row), so single-POS restaurants that
+// never set posSourceId still see their full channelEntriesTotal reflected
+// somewhere. Distinct from any real PosSource id (cuid), so it can never
+// collide with one.
+const UNASSIGNED_POS_SOURCE_KEY = "unassigned";
 
 const TOP_ITEMS_LIMIT = 10;
 
@@ -120,6 +130,21 @@ export class SalesAggregationService {
       string,
       { channelName: string; amount: Prisma.Decimal; activeDays: number }
     >();
+    const posSourceTotals = new Map<
+      string,
+      { posSourceId: string | null; posSourceName: string | null; amount: Prisma.Decimal; transactionCount: number }
+    >();
+    // Nested: POS source bucket key -> its own channelId -> amount/activeDays,
+    // the same shape channelTotals uses one level up. Answers "sales by POS
+    // + channel combination" without assuming a channel belongs to one POS.
+    const channelsByPosSourceTotals = new Map<
+      string,
+      {
+        posSourceId: string | null;
+        posSourceName: string | null;
+        channels: Map<string, { channelName: string; amount: Prisma.Decimal; activeDays: number }>;
+      }
+    >();
     const paymentMethodTotals = new Map<
       string,
       { paymentMethodName: string; amount: Prisma.Decimal; transactionCount: number }
@@ -160,6 +185,39 @@ export class SalesAggregationService {
           existing.activeDays += 1;
         } else {
           channelTotals.set(entry.salesChannelId, {
+            channelName: entry.salesChannel.name,
+            amount: new Prisma.Decimal(entry.amount),
+            activeDays: 1,
+          });
+        }
+
+        const posSourceKey = entry.posSourceId ?? UNASSIGNED_POS_SOURCE_KEY;
+        const posSourceName = entry.posSource ? entry.posSource.name : null;
+
+        const existingPosSource = posSourceTotals.get(posSourceKey);
+        if (existingPosSource) {
+          existingPosSource.amount = existingPosSource.amount.plus(entry.amount);
+          existingPosSource.transactionCount += entry.transactionCount ?? 0;
+        } else {
+          posSourceTotals.set(posSourceKey, {
+            posSourceId: entry.posSourceId,
+            posSourceName,
+            amount: new Prisma.Decimal(entry.amount),
+            transactionCount: entry.transactionCount ?? 0,
+          });
+        }
+
+        let posSourceBucket = channelsByPosSourceTotals.get(posSourceKey);
+        if (!posSourceBucket) {
+          posSourceBucket = { posSourceId: entry.posSourceId, posSourceName, channels: new Map() };
+          channelsByPosSourceTotals.set(posSourceKey, posSourceBucket);
+        }
+        const existingBucketChannel = posSourceBucket.channels.get(entry.salesChannelId);
+        if (existingBucketChannel) {
+          existingBucketChannel.amount = existingBucketChannel.amount.plus(entry.amount);
+          existingBucketChannel.activeDays += 1;
+        } else {
+          posSourceBucket.channels.set(entry.salesChannelId, {
             channelName: entry.salesChannel.name,
             amount: new Prisma.Decimal(entry.amount),
             activeDays: 1,
@@ -250,6 +308,29 @@ export class SalesAggregationService {
       })
     );
 
+    const posSourceTotalsDto: PosSourceTotalDto[] = Array.from(posSourceTotals.values()).map((value) => ({
+      posSourceId: value.posSourceId,
+      posSourceName: value.posSourceName,
+      amount: value.amount.toFixed(2),
+      transactionCount: value.transactionCount,
+      percentOfChannelEntriesTotal: percentOfBasis(value.amount, channelEntriesTotal),
+    }));
+
+    const channelsByPosSourceDto: PosSourceChannelBreakdownDto[] = Array.from(
+      channelsByPosSourceTotals.values()
+    ).map((bucket) => ({
+      posSourceId: bucket.posSourceId,
+      posSourceName: bucket.posSourceName,
+      channels: Array.from(bucket.channels.entries()).map(([salesChannelId, value]) => ({
+        salesChannelId,
+        channelName: value.channelName,
+        amount: value.amount.toFixed(2),
+        percentOfChannelEntriesTotal: percentOfBasis(value.amount, channelEntriesTotal),
+        activeDays: value.activeDays,
+        averageAmountPerActiveDay: averageOrNull(value.amount, value.activeDays),
+      })),
+    }));
+
     const paymentMethodTotalsDto: PaymentMethodTotalDto[] = Array.from(paymentMethodTotals.entries()).map(
       ([salesPaymentMethodId, value]) => ({
         salesPaymentMethodId,
@@ -304,6 +385,8 @@ export class SalesAggregationService {
       reconciliation,
       dailySales,
       channelTotals: channelTotalsDto,
+      posSourceTotals: posSourceTotalsDto,
+      channelsByPosSource: channelsByPosSourceDto,
       paymentMethodTotals: paymentMethodTotalsDto,
       categoryTotals: categoryTotalsDto,
       topItems,

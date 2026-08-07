@@ -13,6 +13,8 @@ import {
   SalesPaymentMethodEntryRepository,
 } from "../repositories/sales-entry.repository.js";
 import {
+  posSourceRepository as defaultPosSourceRepository,
+  PosSourceRepository,
   salesChannelRepository as defaultSalesChannelRepository,
   SalesChannelRepository,
   salesCategoryRepository as defaultSalesCategoryRepository,
@@ -59,7 +61,8 @@ export class SalesChannelEntryService {
   constructor(
     private readonly repository: SalesChannelEntryRepository = salesChannelEntryRepository,
     private readonly recordRepository: DailySalesRecordRepository = dailySalesRecordRepository,
-    private readonly channelRepository: SalesChannelRepository = defaultSalesChannelRepository
+    private readonly channelRepository: SalesChannelRepository = defaultSalesChannelRepository,
+    private readonly posSourceRepository: PosSourceRepository = defaultPosSourceRepository
   ) {}
 
   async create(dailySalesRecordId: string, data: CreateSalesChannelEntryDto) {
@@ -68,6 +71,13 @@ export class SalesChannelEntryService {
     const channel = await this.channelRepository.findById(data.salesChannelId);
     if (!channel || channel.restaurantId !== record.restaurantId) {
       throw new SalesScopeMismatchError("This sales channel does not belong to the given branch's restaurant.");
+    }
+
+    if (data.posSourceId) {
+      const posSource = await this.posSourceRepository.findById(data.posSourceId);
+      if (!posSource || posSource.restaurantId !== record.restaurantId) {
+        throw new SalesScopeMismatchError("This POS source does not belong to the given branch's restaurant.");
+      }
     }
 
     const existing = await this.repository.findByRecordAndChannel(dailySalesRecordId, data.salesChannelId);
@@ -79,7 +89,9 @@ export class SalesChannelEntryService {
       dailySalesRecordId,
       branchId: record.branchId,
       salesChannelId: data.salesChannelId,
+      posSourceId: data.posSourceId ?? null,
       amount: data.amount,
+      transactionCount: data.transactionCount ?? null,
     });
 
     return mapChannelEntryToResponse(entry);

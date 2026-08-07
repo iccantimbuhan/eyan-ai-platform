@@ -11,7 +11,10 @@ import type { Prisma } from "../generated/prisma/client.js";
 
 export class SalesChannelEntryRepository {
   async findById(id: string) {
-    return prisma.salesChannelEntry.findUnique({ where: { id }, include: { salesChannel: true } });
+    return prisma.salesChannelEntry.findUnique({
+      where: { id },
+      include: { salesChannel: true, posSource: true },
+    });
   }
 
   async findByRecordAndChannel(dailySalesRecordId: string, salesChannelId: string) {
@@ -24,9 +27,13 @@ export class SalesChannelEntryRepository {
     dailySalesRecordId: string;
     branchId: string;
     salesChannelId: string;
+    // POS Source / Sales Channel Flexibility — optional per-entry POS
+    // terminal, never a fixed channel-to-POS mapping (see schema comment).
+    posSourceId?: string | null;
     amount: Prisma.Decimal | string | number;
+    transactionCount?: number | null;
   }) {
-    return prisma.salesChannelEntry.create({ data, include: { salesChannel: true } });
+    return prisma.salesChannelEntry.create({ data, include: { salesChannel: true, posSource: true } });
   }
 
   async delete(id: string) {

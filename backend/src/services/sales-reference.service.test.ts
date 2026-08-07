@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { SalesCategoryService, SalesChannelService, SalesPaymentMethodService } from "./sales-reference.service.js";
+import {
+  PosSourceService,
+  SalesCategoryService,
+  SalesChannelService,
+  SalesPaymentMethodService,
+} from "./sales-reference.service.js";
 import { SalesReferenceAlreadyExistsError } from "../errors/sales.error.js";
 
 function referenceRow(overrides: Partial<Record<string, unknown>> = {}) {
@@ -30,6 +35,7 @@ describe.each([
   ["SalesChannelService", SalesChannelService],
   ["SalesPaymentMethodService", SalesPaymentMethodService],
   ["SalesCategoryService", SalesCategoryService],
+  ["PosSourceService", PosSourceService],
 ] as const)("%s", (_name, ServiceClass) => {
   it("list() delegates to the repository by restaurantId", async () => {
     const repository = createRepository();

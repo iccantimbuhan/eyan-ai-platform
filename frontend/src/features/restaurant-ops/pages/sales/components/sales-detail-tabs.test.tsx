@@ -49,8 +49,8 @@ describe('SalesDetailTabs', () => {
   it('renders channel entries with their name and amount', async () => {
     const rec = record({
       channels: [
-        { id: 'c1', salesChannelId: 'wolt-id', channelName: 'Wolt', amount: '229.05', createdAt: '2026-08-03T00:00:00.000Z' },
-        { id: 'c2', salesChannelId: 'bolt-id', channelName: 'Bolt', amount: '152.25', createdAt: '2026-08-03T00:00:00.000Z' },
+        { id: 'c1', salesChannelId: 'wolt-id', channelName: 'Wolt', posSourceId: null, posSourceName: null, amount: '229.05', transactionCount: null, createdAt: '2026-08-03T00:00:00.000Z' },
+        { id: 'c2', salesChannelId: 'bolt-id', channelName: 'Bolt', posSourceId: null, posSourceName: null, amount: '152.25', transactionCount: null, createdAt: '2026-08-03T00:00:00.000Z' },
       ],
     })
 

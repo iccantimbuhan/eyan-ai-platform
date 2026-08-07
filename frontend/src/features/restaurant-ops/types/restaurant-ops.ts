@@ -193,7 +193,14 @@ export interface SalesChannelEntry {
   id: string
   salesChannelId: string
   channelName: string
+  // POS Source / Sales Channel Flexibility — optional, which POS terminal
+  // reported this line. null in the common single-POS case, or when the
+  // assigned POS source was later deleted. Never a fixed channel-to-POS
+  // mapping — see PosSource below.
+  posSourceId: string | null
+  posSourceName: string | null
   amount: string
+  transactionCount: number | null
   createdAt: string
 }
 
@@ -305,6 +312,26 @@ export interface ChannelTotal {
   averageAmountPerActiveDay: string | null
 }
 
+// POS Source / Sales Channel Flexibility — sales by POS terminal. Both id
+// and name are null for the "unassigned" bucket (entries with no
+// posSourceId — the common single-POS case), which is always present
+// alongside real POS sources rather than dropped.
+export interface PosSourceTotal {
+  posSourceId: string | null
+  posSourceName: string | null
+  amount: string
+  transactionCount: number
+  percentOfChannelEntriesTotal: string | null
+}
+
+// Answers "sales by POS + channel combination" — one row per POS source
+// (including the unassigned bucket), each with its own channel breakdown.
+export interface PosSourceChannelBreakdown {
+  posSourceId: string | null
+  posSourceName: string | null
+  channels: ChannelTotal[]
+}
+
 export interface PaymentMethodTotal {
   salesPaymentMethodId: string
   paymentMethodName: string
@@ -362,6 +389,8 @@ export interface WeeklySalesSummary {
   reconciliation: SalesReconciliation
   dailySales: DailySalesTotal[]
   channelTotals: ChannelTotal[]
+  posSourceTotals: PosSourceTotal[]
+  channelsByPosSource: PosSourceChannelBreakdown[]
   paymentMethodTotals: PaymentMethodTotal[]
   categoryTotals: CategoryTotal[]
   topItems: TopItem[]

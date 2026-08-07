@@ -10,6 +10,7 @@ import { SupplierController } from "../../controllers/supplier.controller.js";
 import { IngredientController } from "../../controllers/ingredient.controller.js";
 import { RecipeController } from "../../controllers/recipe.controller.js";
 import {
+  PosSourceController,
   SalesCategoryController,
   SalesChannelController,
   SalesPaymentMethodController,
@@ -276,6 +277,32 @@ router.post(
   requireRestaurantAccess(),
   requireTenantRole(...SALES_WRITE_ROLES),
   SalesCategoryController.create
+);
+
+// POS Source / Sales Channel Flexibility — the physical/software POS
+// terminal or report source, kept as its own Restaurant-scoped master list
+// alongside Channel/Payment Method/Category. Deliberately never linked to
+// SalesChannel here; the relationship between a POS source and the
+// channels it reports is captured per SalesChannelEntry (see
+// sales-entry.routes and PosSourceId on that model), so one restaurant can
+// have a single POS covering every channel while another splits channels
+// across multiple POS terminals, with no fixed mapping either way.
+router.get(
+  "/:restaurantId/sales-pos-sources",
+  restaurantIdParamValidator,
+  validate,
+  requireRestaurantAccess(),
+  PosSourceController.list
+);
+
+router.post(
+  "/:restaurantId/sales-pos-sources",
+  restaurantIdParamValidator,
+  createSalesReferenceValidator,
+  validate,
+  requireRestaurantAccess(),
+  requireTenantRole(...SALES_WRITE_ROLES),
+  PosSourceController.create
 );
 
 // Sprint 2B Prep — every channel-specific MenuItem price/availability

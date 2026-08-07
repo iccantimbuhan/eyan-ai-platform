@@ -6,7 +6,9 @@ import type {
   SalesPaymentMethodEntryResponseDto,
 } from "./daily-sales-record.dto.js";
 
-type ChannelEntryRow = Prisma.SalesChannelEntryGetPayload<{ include: { salesChannel: true } }>;
+type ChannelEntryRow = Prisma.SalesChannelEntryGetPayload<{
+  include: { salesChannel: true; posSource: true };
+}>;
 type PaymentMethodEntryRow = Prisma.SalesPaymentMethodEntryGetPayload<{
   include: { salesPaymentMethod: true };
 }>;
@@ -18,7 +20,10 @@ export function mapChannelEntryToResponse(row: ChannelEntryRow): SalesChannelEnt
     id: row.id,
     salesChannelId: row.salesChannelId,
     channelName: row.salesChannel.name,
+    posSourceId: row.posSourceId,
+    posSourceName: row.posSource ? row.posSource.name : null,
     amount: row.amount.toFixed(2),
+    transactionCount: row.transactionCount,
     createdAt: row.createdAt,
   };
 }

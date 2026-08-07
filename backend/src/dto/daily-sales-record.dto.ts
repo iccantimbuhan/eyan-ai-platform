@@ -30,7 +30,13 @@ export interface SalesChannelEntryResponseDto {
   id: string;
   salesChannelId: string;
   channelName: string;
+  // POS Source / Sales Channel Flexibility — optional, which POS terminal
+  // reported this line. null when not specified (the common single-POS
+  // case) or the assigned POS source was later deleted.
+  posSourceId: string | null;
+  posSourceName: string | null;
   amount: string;
+  transactionCount: number | null;
   createdAt: Date;
 }
 

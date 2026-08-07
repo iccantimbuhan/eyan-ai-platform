@@ -1787,6 +1787,7 @@ model Restaurant {
   salesCategories       SalesCategory[]
   dailySalesRecords     DailySalesRecord[]
   salesChannelMenuItems SalesChannelMenuItem[]
+  posSources            PosSource[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2335,22 +2336,57 @@ model DailySalesRecord {
 }
 
 model SalesChannelEntry {
-  id                 String @id @default(cuid())
+  id                 String  @id @default(cuid())
   dailySalesRecordId String
   branchId           String
   salesChannelId     String
+  posSourceId        String?
 
   dailySalesRecord DailySalesRecord @relation(fields: [dailySalesRecordId], references: [id], onDelete: Cascade)
   branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
   salesChannel     SalesChannel     @relation(fields: [salesChannelId], references: [id], onDelete: Cascade)
+  // Optional — which POS terminal reported this channel's amount for this
+  // day. A channel is never permanently tied to one POS (see PosSource
+  // below): this is a per-entry, per-day fact, not a fixed mapping.
+  // onDelete: SetNull so deleting/renaming a POS source can never corrupt
+  // a historical channel entry, same posture as SalesItemEntry.menuItemId.
+  posSource        PosSource?       @relation(fields: [posSourceId], references: [id], onDelete: SetNull)
 
-  amount Decimal @db.Decimal(10, 2)
+  amount           Decimal @db.Decimal(10, 2)
+  transactionCount Int?
 
   createdAt DateTime @default(now())
 
   @@unique([dailySalesRecordId, salesChannelId])
   @@index([dailySalesRecordId])
   @@index([branchId])
+  @@index([posSourceId])
+}
+
+// POS Source / Sales Channel Flexibility — the physical/software POS
+// terminal or report source (e.g. "POS 1", "POS 2", "Square"), kept
+// deliberately independent of SalesChannel (Wolt/Bolt/MyPOS/In-house —
+// where the order originated). A restaurant may run one POS covering every
+// channel, multiple POS terminals each covering a different subset of
+// channels, or a single POS/single-channel setup — the relationship is
+// captured per SalesChannelEntry (see posSourceId above), never as a fixed
+// mapping on either master list. Restaurant-scoped configurable vocabulary,
+// same posture as SalesChannel/SalesPaymentMethod/SalesCategory.
+model PosSource {
+  id           String @id @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  channelEntries SalesChannelEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
 }
 
 model SalesPaymentMethodEntry {

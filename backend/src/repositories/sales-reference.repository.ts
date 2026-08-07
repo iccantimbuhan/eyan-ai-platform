@@ -64,6 +64,30 @@ export class SalesCategoryRepository {
   }
 }
 
+// POS Source / Sales Channel Flexibility — a fourth Restaurant-scoped
+// master list, same shape as the three above. Deliberately no relationship
+// to SalesChannel here; the POS-to-channel relationship is captured
+// per-entry on SalesChannelEntry.posSourceId instead (see sales-entry
+// repository/service), never as a fixed mapping on either master list.
+export class PosSourceRepository {
+  async findById(id: string) {
+    return prisma.posSource.findUnique({ where: { id } });
+  }
+
+  async findManyByRestaurantId(restaurantId: string) {
+    return prisma.posSource.findMany({ where: { restaurantId }, orderBy: { name: "asc" } });
+  }
+
+  async findByRestaurantIdAndName(restaurantId: string, name: string) {
+    return prisma.posSource.findUnique({ where: { restaurantId_name: { restaurantId, name } } });
+  }
+
+  async create(data: { restaurantId: string; name: string }) {
+    return prisma.posSource.create({ data });
+  }
+}
+
 export const salesChannelRepository = new SalesChannelRepository();
 export const salesPaymentMethodRepository = new SalesPaymentMethodRepository();
 export const salesCategoryRepository = new SalesCategoryRepository();
+export const posSourceRepository = new PosSourceRepository();

@@ -21,6 +21,30 @@ export interface ChannelTotalDto {
   averageAmountPerActiveDay: string | null;
 }
 
+// POS Source / Sales Channel Flexibility — sales by POS terminal, grouped
+// the same way ChannelTotalDto groups by channel. posSourceId/posSourceName
+// are both null for the "unassigned" bucket (entries where the manager
+// didn't specify a POS source — the common single-POS case), which is
+// always included, never dropped, so totals still add up to
+// channelEntriesTotal.
+export interface PosSourceTotalDto {
+  posSourceId: string | null;
+  posSourceName: string | null;
+  amount: string;
+  transactionCount: number;
+  percentOfChannelEntriesTotal: string | null;
+}
+
+// Answers "sales by POS + channel combination" (one row per POS source,
+// each carrying its own channel breakdown) without assuming every channel
+// belongs to exactly one POS — a channel can appear under multiple POS
+// source buckets across different entries.
+export interface PosSourceChannelBreakdownDto {
+  posSourceId: string | null;
+  posSourceName: string | null;
+  channels: ChannelTotalDto[];
+}
+
 export interface PaymentMethodTotalDto {
   salesPaymentMethodId: string;
   paymentMethodName: string;
@@ -88,6 +112,8 @@ export interface WeeklySalesSummaryDto {
   reconciliation: SalesReconciliationDto;
   dailySales: DailySalesTotalDto[];
   channelTotals: ChannelTotalDto[];
+  posSourceTotals: PosSourceTotalDto[];
+  channelsByPosSource: PosSourceChannelBreakdownDto[];
   paymentMethodTotals: PaymentMethodTotalDto[];
   categoryTotals: CategoryTotalDto[];
   topItems: TopItemDto[];

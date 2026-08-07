@@ -6,7 +6,7 @@ import type { PosReportType, SalesSource } from "../generated/prisma/enums.js";
 // order. Used for single-record detail, daily lookup, and weekly
 // aggregation (which needs every line across the date range to group by).
 const fullInclude = {
-  channelEntries: { include: { salesChannel: true }, orderBy: { createdAt: "asc" } },
+  channelEntries: { include: { salesChannel: true, posSource: true }, orderBy: { createdAt: "asc" } },
   paymentMethodEntries: { include: { salesPaymentMethod: true }, orderBy: { createdAt: "asc" } },
   categoryEntries: { include: { salesCategory: true }, orderBy: { createdAt: "asc" } },
   itemEntries: { orderBy: { createdAt: "asc" } },

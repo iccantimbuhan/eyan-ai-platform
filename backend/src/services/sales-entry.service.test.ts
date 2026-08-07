@@ -25,6 +25,13 @@ describe("SalesChannelEntryService", () => {
     };
   }
 
+  function posSourceRepository(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      findById: vi.fn().mockResolvedValue({ id: "pos-1", restaurantId: "rest-1", name: "POS 1" }),
+      ...overrides,
+    };
+  }
+
   function entryRepository(overrides: Partial<Record<string, unknown>> = {}) {
     return {
       findByRecordAndChannel: vi.fn().mockResolvedValue(null),
@@ -77,8 +84,48 @@ describe("SalesChannelEntryService", () => {
       dailySalesRecordId: "sales-1",
       branchId: "branch-1",
       salesChannelId: "channel-1",
+      posSourceId: null,
       amount: 229.05,
+      transactionCount: null,
     });
+  });
+
+  it("create() persists posSourceId and transactionCount when provided", async () => {
+    const entries = entryRepository();
+    const service = new SalesChannelEntryService(
+      entries as never,
+      recordRepository() as never,
+      channelRepository() as never,
+      posSourceRepository() as never
+    );
+
+    await service.create("sales-1", { salesChannelId: "channel-1", amount: 229.05, posSourceId: "pos-1", transactionCount: 12 });
+
+    expect(entries.create).toHaveBeenCalledWith({
+      dailySalesRecordId: "sales-1",
+      branchId: "branch-1",
+      salesChannelId: "channel-1",
+      posSourceId: "pos-1",
+      amount: 229.05,
+      transactionCount: 12,
+    });
+  });
+
+  it("create() rejects a posSourceId that belongs to a different restaurant", async () => {
+    const entries = entryRepository();
+    const service = new SalesChannelEntryService(
+      entries as never,
+      recordRepository() as never,
+      channelRepository() as never,
+      posSourceRepository({
+        findById: vi.fn().mockResolvedValue({ id: "pos-1", restaurantId: "rest-OTHER" }),
+      }) as never
+    );
+
+    await expect(
+      service.create("sales-1", { salesChannelId: "channel-1", amount: 100, posSourceId: "pos-1" })
+    ).rejects.toThrow(SalesScopeMismatchError);
+    expect(entries.create).not.toHaveBeenCalled();
   });
 
   it("delete() 404s when the entry does not belong to the given sales record", async () => {

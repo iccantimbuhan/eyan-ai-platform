@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
+  createPosSource,
   createSalesCategory,
   createSalesChannel,
   createSalesPaymentMethod,
   deleteSalesChannelMenuItem,
+  getPosSources,
   getSalesCategories,
   getSalesChannelMenuItems,
   getSalesChannels,
@@ -87,6 +89,33 @@ export function useCreateSalesCategory(restaurantId: string) {
 
     onError: () => {
       toast.error('Failed to add sales category.')
+    },
+  })
+}
+
+// POS Source / Sales Channel Flexibility — a fourth Restaurant-scoped
+// reference list, same create+list shape as the three above.
+export function usePosSources(restaurantId: string) {
+  return useQuery({
+    queryKey: ['pos-sources', restaurantId],
+    queryFn: () => getPosSources(restaurantId),
+    enabled: Boolean(restaurantId),
+  })
+}
+
+export function useCreatePosSource(restaurantId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (name: string) => createPosSource(restaurantId, { name }),
+
+    onSuccess: async () => {
+      toast.success('POS source added.')
+      await queryClient.invalidateQueries({ queryKey: ['pos-sources', restaurantId] })
+    },
+
+    onError: () => {
+      toast.error('Failed to add POS source.')
     },
   })
 }

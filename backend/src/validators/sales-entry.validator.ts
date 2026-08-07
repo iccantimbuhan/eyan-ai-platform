@@ -7,6 +7,10 @@ export const entryIdParamValidator = [
 export const createChannelEntryValidator = [
   body("salesChannelId").notEmpty().withMessage("Sales channel is required."),
   body("amount").isFloat({ min: 0 }).withMessage("Amount must be zero or greater."),
+  // POS Source / Sales Channel Flexibility — optional, which POS terminal
+  // reported this channel's amount for this day.
+  body("posSourceId").optional({ nullable: true }).isString(),
+  body("transactionCount").optional().isInt({ min: 0 }).withMessage("Transaction count must be zero or greater."),
 ];
 
 export const createPaymentMethodEntryValidator = [

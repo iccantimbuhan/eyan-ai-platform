@@ -72,11 +72,26 @@ export const defaultDailySalesHeaderValues: DailySalesHeaderFormValues = {
 export const channelEntrySchema = z.object({
   salesChannelId: z.string().trim().min(1, 'Channel is required.'),
   amount: nonNegativeNumericString('Amount must be zero or greater.'),
+  // POS Source / Sales Channel Flexibility — optional; a single-POS
+  // restaurant never needs to touch this.
+  posSourceId: z.string().trim().optional(),
+  transactionCount: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || (Number.isInteger(Number(value)) && Number(value) >= 0), {
+      message: 'Transaction count must be a whole number, zero or greater.',
+    }),
 })
 
 export type ChannelEntryFormValues = z.infer<typeof channelEntrySchema>
 
-export const defaultChannelEntryValues: ChannelEntryFormValues = { salesChannelId: '', amount: '' }
+export const defaultChannelEntryValues: ChannelEntryFormValues = {
+  salesChannelId: '',
+  amount: '',
+  posSourceId: '',
+  transactionCount: '',
+}
 
 export const paymentMethodEntrySchema = z.object({
   salesPaymentMethodId: z.string().trim().min(1, 'Payment method is required.'),
