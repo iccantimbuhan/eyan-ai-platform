@@ -63,6 +63,9 @@ function toHeaderValues(record?: DailySalesRecord | null, date?: Date): DailySal
     // Read off the computed cashReconciliation block (mirrors the record's
     // own discountPosSourceId exactly), empty string = "All POS sources".
     discountPosSourceId: record.cashReconciliation.discountPosSourceId ?? '',
+    // ADR-0043 second amendment — how much of discountsTotal reduces
+    // physical cash. Empty string = "not configured".
+    cashDiscountTotal: record.cashDiscountTotal ?? '',
     vouchersCount: record.vouchersCount?.toString() ?? '',
     notes: record.notes ?? '',
   }
@@ -117,6 +120,11 @@ export function DailySalesDialog({
       // intentional value here, distinct from "leave unchanged" (undefined
       // everywhere else in this payload) — the manager actively chose it.
       discountPosSourceId: values.discountPosSourceId ? values.discountPosSourceId : null,
+      // ADR-0043 second amendment — explicit null ("not configured") is a
+      // real, intentional value here too, same reasoning as
+      // discountPosSourceId above: a manager can deliberately clear this
+      // back to "the full discount reduces cash" (legacy behavior).
+      cashDiscountTotal: values.cashDiscountTotal ? Number(values.cashDiscountTotal) : null,
       vouchersCount: values.vouchersCount ? Number(values.vouchersCount) : undefined,
       notes: values.notes || undefined,
     }
@@ -256,7 +264,7 @@ export function DailySalesDialog({
               )}
             />
 
-            <div className='grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-4'>
               <FormField
                 control={form.control}
                 name='discountsTotal'
@@ -268,6 +276,25 @@ export function DailySalesDialog({
                     </FormControl>
                     <p className='text-xs text-muted-foreground'>
                       Never subtracted from Total Sales &mdash; used only by Cash Reconciliation below.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='cashDiscountTotal'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cash Discount (optional)</FormLabel>
+                    <FormControl>
+                      <Input inputMode='decimal' placeholder='0.00' {...field} />
+                    </FormControl>
+                    <p className='text-xs text-muted-foreground'>
+                      How much of Manual Discounts Today reduces physical cash. Leave blank if the whole
+                      amount does (default) &mdash; only fill this in if your POS reports one combined
+                      discount covering both cash and electronic/card payments.
                     </p>
                     <FormMessage />
                   </FormItem>

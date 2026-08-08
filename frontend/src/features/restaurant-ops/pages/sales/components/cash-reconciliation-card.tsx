@@ -99,7 +99,7 @@ export function CashReconciliationCard({ cashReconciliation, paymentMethods }: C
                 {isDiscountedBucket && (
                   <>
                     <div className='mt-1 flex items-center justify-between'>
-                      <span className='text-muted-foreground'>Manual Discounts Today</span>
+                      <span className='text-muted-foreground'>Cash Discount Applied</span>
                       <span className='font-medium'>&minus;&euro;{bucket.discountApplied}</span>
                     </div>
                     <div className='mt-1 flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 font-semibold'>
@@ -115,8 +115,14 @@ export function CashReconciliationCard({ cashReconciliation, paymentMethods }: C
 
         {cashReconciliation.discountPosSourceId === null && hasDiscountToday && (
           <div className='flex items-center justify-between border-t pt-3'>
-            <span className='text-muted-foreground'>Manual Discounts Today (all POS sources)</span>
-            <span className='font-medium'>&minus;&euro;{cashReconciliation.manualDiscounts}</span>
+            <span className='text-muted-foreground'>
+              {cashReconciliation.cashDiscountTotal !== null
+                ? 'Cash Discount Today (all POS sources)'
+                : 'Manual Discounts Today (all POS sources)'}
+            </span>
+            <span className='font-medium'>
+              &minus;&euro;{cashReconciliation.cashDiscountTotal ?? cashReconciliation.manualDiscounts}
+            </span>
           </div>
         )}
 
@@ -141,8 +147,24 @@ export function CashReconciliationCard({ cashReconciliation, paymentMethods }: C
 
         {cardEntries.length > 0 && (
           <div className='space-y-1 border-t pt-3 text-xs text-muted-foreground'>
-            <div className='flex items-center justify-between'>
-              <span>Card / Electronic (not physical cash)</span>
+            <p className='mb-1 text-xs font-medium tracking-wide uppercase'>
+              Electronic / Card Payments (not physical cash)
+            </p>
+            {cardEntries.map((entry) => (
+              <div key={entry.id} className='flex items-center justify-between'>
+                <span>{entry.paymentMethodName}</span>
+                <span>&euro;{entry.amount}</span>
+              </div>
+            ))}
+            {cashReconciliation.electronicDiscountTotal !== null &&
+              Number(cashReconciliation.electronicDiscountTotal) !== 0 && (
+                <div className='flex items-center justify-between'>
+                  <span>Electronic Discount</span>
+                  <span>&minus;&euro;{cashReconciliation.electronicDiscountTotal}</span>
+                </div>
+              )}
+            <div className='flex items-center justify-between border-t pt-1'>
+              <span>Card / Electronic Total</span>
               <span>&euro;{cashReconciliation.cardElectronicTotal}</span>
             </div>
             <div className='flex items-center justify-between'>

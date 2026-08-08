@@ -2327,6 +2327,16 @@ model DailySalesRecord {
   // inferred or auto-calculated from POS data. See ADR-0043.
   actualCashCounted Decimal? @db.Decimal(10, 2)
 
+  // Restaurant-specific split of discountsTotal's cash-reducing portion
+  // (ADR-0043 second amendment) — some restaurants' POS can't record a
+  // discount against the actual amount received, so staff enter one
+  // combined discountsTotal covering both physical-cash and electronic/card
+  // discounts together. Null means "not configured": the entire
+  // discountsTotal reduces physical cash, i.e. the exact pre-existing
+  // behavior every record already has. Never inferred, derived, or
+  // backfilled — only ever an explicit manager entry.
+  cashDiscountTotal Decimal? @db.Decimal(10, 2)
+
   // Which POS source's physical cash discountsTotal reduces (ADR-0043
   // amendment — POS-scoped discount). Null means "all POS sources /
   // legacy global behavior": the discount reduces the combined cash basis

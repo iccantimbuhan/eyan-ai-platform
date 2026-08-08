@@ -288,6 +288,10 @@ export interface DailySalesRecord {
   // Manager-entered physical cash count for the whole day (ADR-0043). Null
   // until entered — never inferred from POS data.
   actualCashCounted: string | null
+  // Raw stored split of discountsTotal's cash-reducing portion (ADR-0043
+  // second amendment). Null means "not configured" — see cashReconciliation
+  // below for the computed effect.
+  cashDiscountTotal: string | null
   notes: string | null
   channels: SalesChannelEntry[]
   paymentMethods: SalesPaymentMethodEntry[]
@@ -328,6 +332,10 @@ export interface DailySalesTotal {
   // row rather than nested, matching this DTO's existing flat shape.
   discountsTotal: string
   physicalCashBasis: string
+  // Cash/electronic discount split for this day (ADR-0043 second
+  // amendment) — both null when not configured (legacy/global behavior).
+  cashDiscountTotal: string | null
+  electronicDiscountTotal: string | null
   expectedCash: string
   actualCashCounted: string | null
   discrepancy: string | null
@@ -456,9 +464,18 @@ export interface CashReconciliation {
   cardElectronicTotal: string
   totalPaymentMethods: string
   manualDiscounts: string
-  // Which POS source manualDiscounts is scoped to (ADR-0043 amendment).
-  // null means "all POS sources" — the discount reduces the combined cash
-  // basis across every POS source (legacy/global behavior).
+  // How much of manualDiscounts actually reduces physical cash (ADR-0043
+  // second amendment — cash/electronic discount split). null means "not
+  // configured" — the full manualDiscounts figure reduces cash, the exact
+  // pre-existing legacy behavior.
+  cashDiscountTotal: string | null
+  // manualDiscounts - cashDiscountTotal, informational only, only computed
+  // when cashDiscountTotal is configured (otherwise null). Never itself
+  // subtracted from physical cash.
+  electronicDiscountTotal: string | null
+  // Which POS source the cash-reducing discount is scoped to (ADR-0043
+  // amendment). null means "all POS sources" — the discount reduces the
+  // combined cash basis across every POS source (legacy/global behavior).
   discountPosSourceId: string | null
   discountPosSourceName: string | null
   cashByPosSource: CashPosSourceBreakdown[]

@@ -58,3 +58,43 @@ describe("updateDailySalesRecordValidator — actualCashCounted", () => {
     expect(result.isEmpty()).toBe(false);
   });
 });
+
+// cashDiscountTotal (ADR-0043 second amendment) — shape/sign checked here;
+// the cross-field "can't exceed discountsTotal" rule lives in the service
+// (see daily-sales-record.service.test.ts), same split as discountPosSourceId's
+// shape-vs-scope checks.
+describe("createDailySalesRecordValidator — cashDiscountTotal", () => {
+  const baseBody = { businessDate: "2026-08-03", source: "MANUAL", totalSales: 100 };
+
+  it("accepts a payload with no cashDiscountTotal at all (optional field, not-configured)", async () => {
+    const result = await run(createDailySalesRecordValidator, fakeRequest(baseBody));
+
+    expect(result.isEmpty()).toBe(true);
+  });
+
+  it("accepts a valid non-negative cashDiscountTotal", async () => {
+    const result = await run(createDailySalesRecordValidator, fakeRequest({ ...baseBody, cashDiscountTotal: 49.45 }));
+
+    expect(result.isEmpty()).toBe(true);
+  });
+
+  it("rejects a negative cashDiscountTotal", async () => {
+    const result = await run(createDailySalesRecordValidator, fakeRequest({ ...baseBody, cashDiscountTotal: -0.01 }));
+
+    expect(result.isEmpty()).toBe(false);
+  });
+});
+
+describe("updateDailySalesRecordValidator — cashDiscountTotal", () => {
+  it("accepts an explicit null (clearing back to not-configured)", async () => {
+    const result = await run(updateDailySalesRecordValidator, fakeRequest({ cashDiscountTotal: null }));
+
+    expect(result.isEmpty()).toBe(true);
+  });
+
+  it("rejects a negative cashDiscountTotal", async () => {
+    const result = await run(updateDailySalesRecordValidator, fakeRequest({ cashDiscountTotal: -5 }));
+
+    expect(result.isEmpty()).toBe(false);
+  });
+});

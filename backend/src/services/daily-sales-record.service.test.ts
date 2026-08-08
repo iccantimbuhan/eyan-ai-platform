@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DailySalesRecordService, truncateToUtcDate } from "./daily-sales-record.service.js";
 import { NotFoundError } from "../errors/auth.error.js";
-import { DailySalesRecordAlreadyExistsError, SalesScopeMismatchError } from "../errors/sales.error.js";
+import {
+  DailySalesRecordAlreadyExistsError,
+  InvalidCashDiscountError,
+  SalesScopeMismatchError,
+} from "../errors/sales.error.js";
 import { Prisma } from "../generated/prisma/client.js";
 
 function recordRow(overrides: Partial<Record<string, unknown>> = {}) {
@@ -22,6 +26,7 @@ function recordRow(overrides: Partial<Record<string, unknown>> = {}) {
     actualCashCounted: null,
     discountPosSourceId: null,
     discountPosSource: null,
+    cashDiscountTotal: null,
     notes: null,
     channelEntries: [],
     paymentMethodEntries: [],
@@ -675,6 +680,216 @@ describe("DailySalesRecordService", () => {
       expect(repository.update).toHaveBeenCalledWith(
         "sales-1",
         expect.objectContaining({ discountPosSourceId: "pos-1" })
+      );
+    });
+  });
+
+  describe("cash/electronic discount split (ADR-0043 second amendment)", () => {
+    // The exact worked scenario from the current restaurant's business
+    // problem: the POS can't record a discount against the actual amount
+    // received, so staff enter one combined discountsTotal (€61.35)
+    // covering both a cash portion (€49.45) and an electronic/card portion
+    // (€11.90). Only the cash portion may reduce physical cash.
+    function scenario(overrides: Partial<Record<string, unknown>> = {}) {
+      return recordRow({
+        discountsTotal: new Prisma.Decimal("61.35"),
+        cashDiscountTotal: new Prisma.Decimal("49.45"),
+        discountPosSourceId: "pos-1",
+        discountPosSource: { name: "POS 1" },
+        paymentMethodEntries: [
+          paymentMethodEntry({
+            id: "pme-1",
+            salesPaymentMethodId: "cash-draw-id",
+            salesPaymentMethod: { name: "Cash Draw", isCashEquivalent: true },
+            posSourceId: "pos-1",
+            posSource: { name: "POS 1" },
+            amount: new Prisma.Decimal("122.20"),
+          }),
+          paymentMethodEntry({
+            id: "pme-2",
+            salesPaymentMethodId: "trust-card-id",
+            salesPaymentMethod: { name: "Trust Pay/Card Payment", isCashEquivalent: false },
+            posSourceId: "pos-1",
+            posSource: { name: "POS 1" },
+            amount: new Prisma.Decimal("199.00"),
+          }),
+          paymentMethodEntry({
+            id: "pme-3",
+            salesPaymentMethodId: "bolt-cash-id",
+            salesPaymentMethod: { name: "Bolt Cash", isCashEquivalent: true },
+            posSourceId: "pos-2",
+            posSource: { name: "POS 2" },
+            amount: new Prisma.Decimal("251.98"),
+          }),
+        ],
+        ...overrides,
+      });
+    }
+
+    // Item 7 — the exact worked example, end to end: only the cash portion
+    // of the combined discount reduces physical cash; the electronic
+    // portion (attached to a non-cash payment method) is never subtracted.
+    it("applies only the cash-discount portion to physical cash, never the electronic portion — exact worked example", async () => {
+      const row = scenario({ actualCashCounted: new Prisma.Decimal("324.73") });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+      const cash = result.cashReconciliation;
+
+      expect(cash.physicalCashBasis).toBe("374.18"); // Cash Draw + Bolt Cash
+      expect(cash.cardElectronicTotal).toBe("199.00"); // Trust Pay/Card Payment
+      expect(cash.manualDiscounts).toBe("61.35");
+      expect(cash.cashDiscountTotal).toBe("49.45");
+      expect(cash.electronicDiscountTotal).toBe("11.90");
+
+      const pos1 = cash.cashByPosSource.find((b) => b.posSourceId === "pos-1");
+      expect(pos1).toMatchObject({ grossCashBasis: "122.20", discountApplied: "49.45", expectedCash: "72.75" });
+      const pos2 = cash.cashByPosSource.find((b) => b.posSourceId === "pos-2");
+      expect(pos2).toMatchObject({ grossCashBasis: "251.98", discountApplied: "0.00", expectedCash: "251.98" });
+
+      expect(cash.expectedCash).toBe("324.73"); // 72.75 + 251.98
+      expect(cash.discrepancy).toBe("0.00");
+      expect(cash.status).toBe("BALANCED");
+    });
+
+    // Item 5 — cash discount reduces physical cash.
+    it("reduces physical cash by exactly cashDiscountTotal, not the full discountsTotal", async () => {
+      const row = scenario();
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.expectedCash).toBe("324.73");
+    });
+
+    // Item 6 — electronic/card discount never touches physical cash, even
+    // though it is part of the same combined discountsTotal figure.
+    it("never subtracts the electronic-discount portion from physical cash", async () => {
+      const row = scenario();
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      // If the bug were present (subtracting the full 61.35), expectedCash
+      // would be 312.83, not 324.73.
+      expect(result.cashReconciliation.expectedCash).not.toBe("312.83");
+      expect(result.cashReconciliation.expectedCash).toBe("324.73");
+    });
+
+    // Item 17 — a legacy/not-configured record (cashDiscountTotal null)
+    // must not have any allocation invented for it; the full discountsTotal
+    // keeps reducing cash exactly as it always has.
+    it("treats cashDiscountTotal=null as not configured — full discountsTotal reduces cash, no invented split", async () => {
+      const row = scenario({ cashDiscountTotal: null });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+      const cash = result.cashReconciliation;
+
+      expect(cash.cashDiscountTotal).toBeNull();
+      expect(cash.electronicDiscountTotal).toBeNull();
+      // Legacy formula: physicalCashBasis (374.18) - full discountsTotal
+      // (61.35) applied to POS 1's bucket only.
+      expect(cash.expectedCash).toBe("312.83");
+      const pos1 = cash.cashByPosSource.find((b) => b.posSourceId === "pos-1");
+      expect(pos1?.discountApplied).toBe("61.35");
+    });
+
+    // Item 22 — a restaurant that never configures cashDiscountTotal is not
+    // forced into the split workflow; every field it never touches stays
+    // null, and the calculation is byte-for-byte the pre-existing formula.
+    it("is not forced into the cash/electronic split workflow when cashDiscountTotal is never set", async () => {
+      const row = recordRow({
+        discountsTotal: new Prisma.Decimal("10.00"),
+        paymentMethodEntries: [
+          paymentMethodEntry({ salesPaymentMethod: { name: "Cash", isCashEquivalent: true }, posSourceId: null, posSource: null, amount: new Prisma.Decimal("100.00") }),
+        ],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+      const cash = result.cashReconciliation;
+
+      expect(cash.cashDiscountTotal).toBeNull();
+      expect(cash.electronicDiscountTotal).toBeNull();
+      expect(cash.expectedCash).toBe("90.00");
+    });
+
+    // Item 21 — two independently configured restaurants never share
+    // hardcoded behavior; each one's own cashDiscountTotal (or lack of it)
+    // is the only thing that determines its calculation.
+    it("Restaurant A (split configured) and Restaurant B (not configured) compute independently from the same code path", async () => {
+      const restaurantASplit = scenario({ actualCashCounted: new Prisma.Decimal("324.73") });
+      const restaurantBNoSplit = recordRow({
+        discountsTotal: new Prisma.Decimal("15.00"),
+        paymentMethodEntries: [
+          paymentMethodEntry({ salesPaymentMethod: { name: "Cash Register", isCashEquivalent: true }, posSourceId: null, posSource: null, amount: new Prisma.Decimal("200.00") }),
+        ],
+      });
+
+      const serviceA = buildService({
+        repository: createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(restaurantASplit) }),
+      });
+      const serviceB = buildService({
+        repository: createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(restaurantBNoSplit) }),
+      });
+
+      const resultA = await serviceA.getDaily("branch-1", "2026-08-03");
+      const resultB = await serviceB.getDaily("branch-1", "2026-08-03");
+
+      expect(resultA.cashReconciliation.status).toBe("BALANCED");
+      expect(resultA.cashReconciliation.cashDiscountTotal).toBe("49.45");
+
+      expect(resultB.cashReconciliation.cashDiscountTotal).toBeNull();
+      expect(resultB.cashReconciliation.expectedCash).toBe("185.00"); // 200 - 15, legacy formula
+    });
+
+    it("create() rejects a cashDiscountTotal greater than discountsTotal", async () => {
+      const service = buildService();
+
+      await expect(
+        service.create(
+          "branch-1",
+          { businessDate: "2026-08-03", source: "MANUAL", totalSales: 100, discountsTotal: 20, cashDiscountTotal: 25 },
+          "user-1"
+        )
+      ).rejects.toThrow(InvalidCashDiscountError);
+    });
+
+    it("update() rejects a cashDiscountTotal greater than the record's existing discountsTotal when discountsTotal isn't also being changed", async () => {
+      const repository = createRepository({
+        findById: vi.fn().mockResolvedValue(recordRow({ discountsTotal: new Prisma.Decimal("20.00") })),
+      });
+      const service = buildService({ repository });
+
+      await expect(service.update("sales-1", { cashDiscountTotal: 25 })).rejects.toThrow(
+        InvalidCashDiscountError
+      );
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it("create()/update() accept a valid cashDiscountTotal at or below discountsTotal", async () => {
+      const repository = createRepository({
+        findById: vi.fn().mockResolvedValue(recordRow({ discountsTotal: new Prisma.Decimal("61.35") })),
+      });
+      const service = buildService({ repository });
+
+      await service.create(
+        "branch-1",
+        { businessDate: "2026-08-03", source: "MANUAL", totalSales: 100, discountsTotal: 61.35, cashDiscountTotal: 49.45 },
+        "user-1"
+      );
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ cashDiscountTotal: 49.45 }));
+
+      await service.update("sales-1", { cashDiscountTotal: 49.45 });
+      expect(repository.update).toHaveBeenCalledWith(
+        "sales-1",
+        expect.objectContaining({ cashDiscountTotal: 49.45 })
       );
     });
   });

@@ -16,6 +16,7 @@ function record(overrides: Partial<Record<string, unknown>> = {}) {
     actualCashCounted: null,
     discountPosSourceId: null,
     discountPosSource: null,
+    cashDiscountTotal: null,
     channelEntries: [],
     paymentMethodEntries: [],
     categoryEntries: [],
@@ -699,6 +700,60 @@ describe("SalesAggregationService.getWeeklySummary", () => {
         daysCounted: 1,
         daysShort: 1,
         daysBalanced: 0,
+        daysOver: 0,
+      });
+    });
+
+    // Item 19 — the cash/electronic discount split (ADR-0043 second
+    // amendment) must produce identical figures whether read from the
+    // single-record calculation or the weekly rollup, since both call the
+    // exact same shared computeCashReconciliation function. Same worked
+    // scenario as daily-sales-record.service.test.ts's own split test.
+    it("applies the cash/electronic discount split identically to the single-record calculation, including the weekly rollup total", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const pos2 = { id: "pos-2", name: "POS 2" };
+      const records = [
+        record({
+          discountsTotal: new Prisma.Decimal("61.35"),
+          cashDiscountTotal: new Prisma.Decimal("49.45"),
+          discountPosSourceId: "pos-1",
+          discountPosSource: { name: "POS 1" },
+          actualCashCounted: new Prisma.Decimal("324.73"),
+          paymentMethodEntries: [
+            paymentMethodEntry("cash-draw-id", "Cash Draw", "122.20", null, pos1, true),
+            paymentMethodEntry("trust-card-id", "Trust Pay/Card Payment", "199.00", null, pos1, false),
+            paymentMethodEntry("bolt-cash-id", "Bolt Cash", "251.98", null, pos2, true),
+          ],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.dailySales[0]).toMatchObject({
+        discountsTotal: "61.35",
+        physicalCashBasis: "374.18",
+        cashDiscountTotal: "49.45",
+        electronicDiscountTotal: "11.90",
+        expectedCash: "324.73",
+        actualCashCounted: "324.73",
+        discrepancy: "0.00",
+        status: "BALANCED",
+      });
+
+      // Weekly rollup's totalExpectedCash is accumulated from this exact
+      // per-day figure — never re-derived from totalPhysicalCashBasis minus
+      // the raw (un-split) discountsTotal, which would silently ignore the
+      // electronic-discount portion (the bug this amendment fixes at the
+      // weekly level too).
+      expect(summary.cashReconciliationSummary).toMatchObject({
+        totalPhysicalCashBasis: "374.18",
+        totalExpectedCash: "324.73",
+        totalActualCashCounted: "324.73",
+        totalDiscrepancy: "0.00",
+        daysCounted: 1,
+        daysBalanced: 1,
+        daysShort: 0,
         daysOver: 0,
       });
     });

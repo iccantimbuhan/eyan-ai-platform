@@ -50,6 +50,10 @@ export const dailySalesHeaderSchema = z.object({
   // Which POS source discountsTotal applies to (ADR-0043 amendment) — empty
   // string maps to "All POS sources" / null at submit time.
   discountPosSourceId: z.string().trim().optional(),
+  // How much of discountsTotal reduces physical cash (ADR-0043 second
+  // amendment) — leave blank if not using the cash/electronic split; empty
+  // string maps to "not configured" / null at submit time.
+  cashDiscountTotal: optionalNonNegativeNumericString('Cash discount must be zero or greater.'),
   vouchersCount: z
     .string()
     .trim()
@@ -73,6 +77,7 @@ export const defaultDailySalesHeaderValues: DailySalesHeaderFormValues = {
   vouchersAmount: '',
   actualCashCounted: '',
   discountPosSourceId: '',
+  cashDiscountTotal: '',
   vouchersCount: '',
   notes: '',
 }

@@ -8,7 +8,12 @@ import {
   PosSourceRepository,
 } from "../repositories/sales-reference.repository.js";
 import { NotFoundError } from "../errors/auth.error.js";
-import { DailySalesRecordAlreadyExistsError, SalesScopeMismatchError } from "../errors/sales.error.js";
+import {
+  DailySalesRecordAlreadyExistsError,
+  InvalidCashDiscountError,
+  SalesScopeMismatchError,
+} from "../errors/sales.error.js";
+import { Prisma } from "../generated/prisma/client.js";
 import {
   mapDailySalesRecordToListItem,
   mapDailySalesRecordToResponse,
@@ -43,6 +48,20 @@ export class DailySalesRecordService {
     const posSource = await this.posSourceRepository.findById(discountPosSourceId);
     if (!posSource || posSource.restaurantId !== restaurantId) {
       throw new SalesScopeMismatchError("This POS source does not belong to the given branch's restaurant.");
+    }
+  }
+
+  // cashDiscountTotal (ADR-0043 second amendment) is meant to be
+  // discountsTotal's cash-only portion, so it can never exceed the total it
+  // is a portion of. undefined means "not being set/changed" — skipped.
+  private assertCashDiscountWithinTotal(
+    cashDiscountTotal: number | string | null | undefined,
+    discountsTotal: number | string
+  ) {
+    if (cashDiscountTotal === null || cashDiscountTotal === undefined) return;
+
+    if (new Prisma.Decimal(cashDiscountTotal).greaterThan(new Prisma.Decimal(discountsTotal))) {
+      throw new InvalidCashDiscountError();
     }
   }
 
@@ -86,6 +105,7 @@ export class DailySalesRecordService {
     }
 
     await this.assertDiscountPosSourceScope(data.discountPosSourceId, branch.restaurantId);
+    this.assertCashDiscountWithinTotal(data.cashDiscountTotal, data.discountsTotal ?? 0);
 
     const row = await this.repository.create({
       branchId,
@@ -101,6 +121,7 @@ export class DailySalesRecordService {
       vouchersCount: data.vouchersCount ?? null,
       actualCashCounted: data.actualCashCounted ?? null,
       discountPosSourceId: data.discountPosSourceId ?? null,
+      cashDiscountTotal: data.cashDiscountTotal ?? null,
       notes: data.notes ?? null,
       createdById,
     });
@@ -112,6 +133,14 @@ export class DailySalesRecordService {
     const existing = await this.getById(id);
 
     await this.assertDiscountPosSourceScope(data.discountPosSourceId, existing.restaurantId);
+    // Effective post-update value of each field: the incoming change if
+    // provided, otherwise whatever the record already has — so a partial
+    // update that only touches cashDiscountTotal is still checked against
+    // the record's real (possibly unchanged) discountsTotal, and vice versa.
+    const effectiveDiscountsTotal = data.discountsTotal ?? existing.discountsTotal;
+    const effectiveCashDiscountTotal =
+      data.cashDiscountTotal !== undefined ? data.cashDiscountTotal : existing.cashDiscountTotal;
+    this.assertCashDiscountWithinTotal(effectiveCashDiscountTotal, effectiveDiscountsTotal);
 
     const row = await this.repository.update(id, {
       source: data.source,
@@ -124,6 +153,7 @@ export class DailySalesRecordService {
       vouchersCount: data.vouchersCount,
       actualCashCounted: data.actualCashCounted,
       discountPosSourceId: data.discountPosSourceId,
+      cashDiscountTotal: data.cashDiscountTotal,
       notes: data.notes,
     });
 

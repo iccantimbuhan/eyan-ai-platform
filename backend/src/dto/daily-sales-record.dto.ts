@@ -18,6 +18,11 @@ export interface CreateDailySalesRecordDto {
   // Omitted/undefined and null are both accepted; null (or omitted) means
   // "all POS sources" — the legacy/global discount behavior.
   discountPosSourceId?: string | null;
+  // How much of discountsTotal actually reduces physical cash (ADR-0043
+  // second amendment — cash/electronic discount split). Omitted/undefined
+  // and null are both accepted; null (or omitted) means "not configured" —
+  // the entire discountsTotal reduces cash, the legacy/global behavior.
+  cashDiscountTotal?: number | string | null;
   notes?: string;
 }
 
@@ -32,6 +37,7 @@ export interface UpdateDailySalesRecordDto {
   vouchersCount?: number | null;
   actualCashCounted?: number | string | null;
   discountPosSourceId?: string | null;
+  cashDiscountTotal?: number | string | null;
   notes?: string | null;
 }
 
@@ -107,6 +113,11 @@ export interface DailySalesRecordResponseDto {
   // Manager-entered physical cash count for the whole day (ADR-0043). Null
   // until entered — never inferred from POS data.
   actualCashCounted: string | null;
+  // Raw stored split of discountsTotal's cash-reducing portion (ADR-0043
+  // second amendment). Null means "not configured" — see cashReconciliation
+  // below for the computed effect. Mirrors discountsTotal's own "raw field
+  // at top level + reused inside cashReconciliation" convention.
+  cashDiscountTotal: string | null;
   notes: string | null;
   channels: SalesChannelEntryResponseDto[];
   paymentMethods: SalesPaymentMethodEntryResponseDto[];

@@ -41,18 +41,30 @@ function computeReconciliation(row: DailySalesRecordWithLines): SalesReconciliat
 }
 
 // Pure, Decimal-safe cash reconciliation (ADR-0043, amended for POS-scoped
-// discounts) — shared by the single-record mapper below and
-// SalesAggregationService's per-day rollup, so the two never drift. Never
-// mutates anything; totalSales is untouched.
+// discounts and again for the cash/electronic discount split) — shared by
+// the single-record mapper below and SalesAggregationService's per-day
+// rollup, so the two never drift. Never mutates anything; totalSales is
+// untouched.
 //
-// discountPosSourceId/discountPosSource identify which POS source
-// discountsTotal is scoped to (DailySalesRecord.discountPosSourceId).
+// discountPosSourceId/discountPosSource identify which POS source the
+// cash-reducing discount is scoped to (DailySalesRecord.discountPosSourceId).
 // null means "all POS sources" — the legacy/global behavior every record
-// created before this amendment already has, preserved exactly: the
-// overall expectedCash formula (physicalCashBasis - discountsTotal) is
-// IDENTICAL whether or not a POS scope is set, because summing gross cash
-// across every bucket and then subtracting one flat discount produces the
-// same total regardless of which bucket "owns" that subtraction for
+// created before that amendment already has, preserved exactly.
+//
+// cashDiscountTotal identifies how much of discountsTotal actually reduces
+// physical cash (DailySalesRecord.cashDiscountTotal, second amendment).
+// null means "not configured" — the entire discountsTotal reduces cash,
+// which is the exact pre-existing formula, so every record created before
+// this second amendment computes an identical result with zero backfill.
+// When configured, only cashDiscountTotal (never the full discountsTotal)
+// is subtracted from physical cash — the remainder is the electronic/card
+// discount, surfaced separately as electronicDiscountTotal, never
+// subtracted from cash.
+//
+// The overall expectedCash formula (physicalCashBasis - cashReducingDiscount)
+// is IDENTICAL whether or not a POS scope is set, because summing gross
+// cash across every bucket and then subtracting one flat discount produces
+// the same total regardless of which bucket "owns" that subtraction for
 // display purposes. Only the per-bucket breakdown (cashByPosSource) changes
 // with the scope — this is deliberately display/audit information, never a
 // second source of truth for the total.
@@ -61,8 +73,18 @@ export function computeCashReconciliation(
   discountsTotal: Prisma.Decimal,
   actualCashCounted: Prisma.Decimal | null,
   discountPosSourceId: string | null,
-  discountPosSource: { name: string } | null
+  discountPosSource: { name: string } | null,
+  cashDiscountTotal: Prisma.Decimal | null = null
 ): CashReconciliationDto {
+  const hasCashDiscountConfigured = cashDiscountTotal !== null;
+  // The amount that actually reduces physical cash — the manager-configured
+  // cash-only split when present, otherwise the full discountsTotal
+  // (unchanged pre-existing behavior).
+  const cashReducingDiscount = hasCashDiscountConfigured ? cashDiscountTotal : discountsTotal;
+  const electronicDiscountTotal = hasCashDiscountConfigured
+    ? discountsTotal.minus(cashDiscountTotal)
+    : null;
+
   let physicalCashBasis = new Prisma.Decimal(0);
   let cardElectronicTotal = new Prisma.Decimal(0);
 
@@ -116,7 +138,7 @@ export function computeCashReconciliation(
     })
     .map((bucket) => {
       const isDiscountedBucket = discountPosSourceId !== null && bucket.posSourceId === discountPosSourceId;
-      const discountApplied = isDiscountedBucket ? discountsTotal : new Prisma.Decimal(0);
+      const discountApplied = isDiscountedBucket ? cashReducingDiscount : new Prisma.Decimal(0);
       return {
         posSourceId: bucket.posSourceId,
         posSourceName: bucket.posSourceName,
@@ -126,7 +148,7 @@ export function computeCashReconciliation(
       };
     });
 
-  const expectedCash = physicalCashBasis.minus(discountsTotal);
+  const expectedCash = physicalCashBasis.minus(cashReducingDiscount);
   // == null (not !== null) deliberately catches both null and undefined —
   // real Prisma rows always send an explicit null for an unset nullable
   // column, but this function is also called with hand-built fixtures in
@@ -150,6 +172,8 @@ export function computeCashReconciliation(
     cardElectronicTotal: cardElectronicTotal.toFixed(2),
     totalPaymentMethods: physicalCashBasis.plus(cardElectronicTotal).toFixed(2),
     manualDiscounts: discountsTotal.toFixed(2),
+    cashDiscountTotal: hasCashDiscountConfigured ? cashDiscountTotal.toFixed(2) : null,
+    electronicDiscountTotal: electronicDiscountTotal !== null ? electronicDiscountTotal.toFixed(2) : null,
     discountPosSourceId,
     discountPosSourceName: discountPosSource ? discountPosSource.name : null,
     cashByPosSource,
@@ -187,6 +211,7 @@ export function mapDailySalesRecordToResponse(
     vouchersAmount: row.vouchersAmount.toFixed(2),
     vouchersCount: row.vouchersCount,
     actualCashCounted: row.actualCashCounted ? row.actualCashCounted.toFixed(2) : null,
+    cashDiscountTotal: row.cashDiscountTotal ? row.cashDiscountTotal.toFixed(2) : null,
     notes: row.notes,
     channels: row.channelEntries.map((entry) => ({
       id: entry.id,
@@ -234,7 +259,8 @@ export function mapDailySalesRecordToResponse(
       row.discountsTotal,
       row.actualCashCounted,
       row.discountPosSourceId,
-      row.discountPosSource
+      row.discountPosSource,
+      row.cashDiscountTotal
     ),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

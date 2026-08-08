@@ -14,6 +14,12 @@ export interface DailySalesTotalDto {
   // match this DTO's existing flat per-day shape.
   discountsTotal: string; // "Manual Discounts Today" for this day
   physicalCashBasis: string;
+  // Cash/electronic discount split for this day (ADR-0043 second
+  // amendment) — both null when not configured (legacy/global behavior:
+  // discountsTotal in full reduces cash). See CashReconciliationDto for the
+  // full explanation.
+  cashDiscountTotal: string | null;
+  electronicDiscountTotal: string | null;
   expectedCash: string;
   actualCashCounted: string | null;
   discrepancy: string | null;
@@ -170,21 +176,45 @@ export interface CashPosSourceBreakdownDto {
 //                          amendment; equals the sum of
 //                          cashByPosSource[].grossCashBasis)
 //   cardElectronicTotal = sum of the remaining (non-cash) entries
-//   manualDiscounts     = DailySalesRecord.discountsTotal, reused as-is
+//   manualDiscounts     = DailySalesRecord.discountsTotal, reused as-is —
+//                          the FULL manager-entered discount figure,
+//                          unchanged in meaning, still never subtracted
+//                          from totalSales
+//   cashDiscountTotal   = DailySalesRecord.cashDiscountTotal, reused as-is
+//                          (ADR-0043 second amendment). null means "not
+//                          configured" — this restaurant hasn't split its
+//                          discount into cash vs electronic portions, so
+//                          the FULL manualDiscounts figure reduces cash,
+//                          exactly as before this amendment (backward
+//                          compatible, zero invented allocation). When set,
+//                          this — not manualDiscounts — is the amount that
+//                          actually reduces physical cash.
+//   electronicDiscountTotal = manualDiscounts - cashDiscountTotal, computed
+//                          only when cashDiscountTotal is configured
+//                          (otherwise null) — informational only (shown
+//                          next to Card/Electronic payment methods), never
+//                          a second stored source of truth, never itself
+//                          subtracted from physical cash.
 //   discountPosSourceId = DailySalesRecord.discountPosSourceId, reused
-//                          as-is — null means the discount reduces the
-//                          combined physicalCashBasis across every POS
-//                          source (legacy/global behavior, unchanged from
-//                          before this amendment); non-null means the
-//                          discount reduces ONLY that one POS source's
-//                          gross cash, every other POS source's expected
-//                          cash equals its own gross cash untouched
+//                          as-is — null means the cash-reducing discount
+//                          (cashDiscountTotal if configured, else
+//                          manualDiscounts) reduces the combined
+//                          physicalCashBasis across every POS source
+//                          (legacy/global behavior, unchanged from before
+//                          the POS-scope amendment); non-null means it
+//                          reduces ONLY that one POS source's gross cash,
+//                          every other POS source's expected cash equals
+//                          its own gross cash untouched
 //   cashByPosSource      = per-POS-source breakdown carrying the above
 //                          rule out per bucket (see CashPosSourceBreakdownDto)
+//                          — discountApplied there is the cash-reducing
+//                          amount (cashDiscountTotal if configured, else
+//                          manualDiscounts), never the electronic portion
 //   expectedCash         = sum of cashByPosSource[].expectedCash (equals
-//                          physicalCashBasis - manualDiscounts exactly
-//                          when discountPosSourceId is null, since then
-//                          there is effectively one combined bucket)
+//                          physicalCashBasis minus the cash-reducing
+//                          discount exactly when discountPosSourceId is
+//                          null, since then there is effectively one
+//                          combined bucket)
 //   discrepancy          = actualCashCounted - expectedCash (null until a
 //                          manager enters actualCashCounted)
 export interface CashReconciliationDto {
@@ -192,6 +222,8 @@ export interface CashReconciliationDto {
   cardElectronicTotal: string;
   totalPaymentMethods: string; // physicalCashBasis + cardElectronicTotal
   manualDiscounts: string;
+  cashDiscountTotal: string | null;
+  electronicDiscountTotal: string | null;
   discountPosSourceId: string | null;
   discountPosSourceName: string | null;
   cashByPosSource: CashPosSourceBreakdownDto[];

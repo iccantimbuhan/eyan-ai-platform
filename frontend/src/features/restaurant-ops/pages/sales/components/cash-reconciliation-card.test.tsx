@@ -24,6 +24,8 @@ function cashReconciliation(overrides: Partial<CashReconciliation> = {}): CashRe
     cardElectronicTotal: '0.00',
     totalPaymentMethods: '0.00',
     manualDiscounts: '0.00',
+    cashDiscountTotal: null,
+    electronicDiscountTotal: null,
     discountPosSourceId: null,
     discountPosSourceName: null,
     cashByPosSource: [],
@@ -123,6 +125,78 @@ describe('CashReconciliationCard', () => {
     await expect.element(screen.getByText('Physical Cash — Not assigned to a POS source')).toBeInTheDocument()
     await expect.element(screen.getByText('Manual Discounts Today (all POS sources)')).toBeInTheDocument()
     await expect.element(screen.getByText('€90.00')).toBeInTheDocument()
+  })
+
+  // ADR-0043 second amendment — the current restaurant's exact worked
+  // example: a combined discount split into a cash portion (reduces
+  // physical cash) and an electronic portion (shown next to the card
+  // payment method, never subtracted from cash).
+  it('shows only the cash-discount portion reducing cash, and the electronic portion next to card/electronic payments', async () => {
+    const paymentMethods = [
+      entry({
+        id: 'pm-1',
+        paymentMethodName: 'Cash Draw',
+        posSourceId: 'pos-1',
+        posSourceName: 'POS 1',
+        amount: '122.20',
+        isCashEquivalent: true,
+      }),
+      entry({
+        id: 'pm-2',
+        paymentMethodName: 'Trust Pay/Card Payment',
+        posSourceId: 'pos-1',
+        posSourceName: 'POS 1',
+        amount: '199.00',
+        isCashEquivalent: false,
+      }),
+      entry({
+        id: 'pm-3',
+        paymentMethodName: 'Bolt Cash',
+        posSourceId: 'pos-2',
+        posSourceName: 'POS 2',
+        amount: '251.98',
+        isCashEquivalent: true,
+      }),
+    ]
+
+    const cash = cashReconciliation({
+      physicalCashBasis: '374.18',
+      cardElectronicTotal: '199.00',
+      totalPaymentMethods: '573.18',
+      manualDiscounts: '61.35',
+      cashDiscountTotal: '49.45',
+      electronicDiscountTotal: '11.90',
+      discountPosSourceId: 'pos-1',
+      discountPosSourceName: 'POS 1',
+      cashByPosSource: [
+        { posSourceId: 'pos-1', posSourceName: 'POS 1', grossCashBasis: '122.20', discountApplied: '49.45', expectedCash: '72.75' },
+        { posSourceId: 'pos-2', posSourceName: 'POS 2', grossCashBasis: '251.98', discountApplied: '0.00', expectedCash: '251.98' },
+      ],
+      expectedCash: '324.73',
+      actualCashCounted: '324.73',
+      discrepancy: '0.00',
+      status: 'BALANCED',
+    })
+
+    const screen = await render(
+      <CashReconciliationCard cashReconciliation={cash} paymentMethods={paymentMethods} />
+    )
+
+    // Only the cash-discount portion (€49.45) shows as reducing POS 1's cash
+    // — never the full combined €61.35.
+    await expect.element(screen.getByText('Cash Discount Applied')).toBeInTheDocument()
+    await expect.element(screen.getByText('−€49.45')).toBeInTheDocument()
+    await expect.element(screen.getByText('€72.75')).toBeInTheDocument()
+
+    // The electronic portion (€11.90) is shown separately, next to the
+    // card/electronic payment method, never subtracted from cash.
+    await expect.element(screen.getByText('Trust Pay/Card Payment')).toBeInTheDocument()
+    await expect.element(screen.getByText('Electronic Discount')).toBeInTheDocument()
+    await expect.element(screen.getByText('−€11.90')).toBeInTheDocument()
+
+    await expect.element(screen.getByText('€324.73').first()).toBeInTheDocument()
+    await expect.element(screen.getByText('€0.00')).toBeInTheDocument()
+    await expect.element(screen.getByText('Balanced')).toBeInTheDocument()
   })
 
   it('shows the empty state when no payment methods are classified as physical cash', async () => {

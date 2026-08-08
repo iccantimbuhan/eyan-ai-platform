@@ -39,6 +39,13 @@ export const createDailySalesRecordValidator = [
   // Existence + restaurant-scope is checked in the service, same as every
   // other client-supplied master-list FK — this only checks shape.
   body("discountPosSourceId").optional({ nullable: true }).isString(),
+  // How much of discountsTotal reduces physical cash (ADR-0043 second
+  // amendment) — cross-field check against discountsTotal happens in the
+  // service, same pattern as discountPosSourceId's scope check.
+  body("cashDiscountTotal")
+    .optional({ nullable: true })
+    .isFloat({ min: 0 })
+    .withMessage("Cash discount must be zero or greater."),
 
   body("notes").optional().isString(),
 ];
@@ -60,6 +67,10 @@ export const updateDailySalesRecordValidator = [
     .isFloat({ min: 0 })
     .withMessage("Actual cash counted must be zero or greater."),
   body("discountPosSourceId").optional({ nullable: true }).isString(),
+  body("cashDiscountTotal")
+    .optional({ nullable: true })
+    .isFloat({ min: 0 })
+    .withMessage("Cash discount must be zero or greater."),
   body("notes").optional({ nullable: true }).isString(),
 ];
 

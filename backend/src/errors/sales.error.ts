@@ -36,3 +36,13 @@ export class SalesReferenceAlreadyExistsError extends ApiError {
     this.name = "SalesReferenceAlreadyExistsError";
   }
 }
+
+// DailySalesRecord.cashDiscountTotal (ADR-0043 second amendment) can't
+// exceed discountsTotal — it's meant to be that figure's cash-only portion,
+// never a larger, unrelated amount.
+export class InvalidCashDiscountError extends ApiError {
+  constructor(message = "Cash discount cannot be greater than total discounts.") {
+    super(400, message);
+    this.name = "InvalidCashDiscountError";
+  }
+}

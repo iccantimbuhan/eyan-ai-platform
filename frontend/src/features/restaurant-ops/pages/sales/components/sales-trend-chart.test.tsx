@@ -11,6 +11,8 @@ function day(date: string, totalSales: string): DailySalesTotal {
     channelEntriesTotal: '0.00',
     discountsTotal: '0.00',
     physicalCashBasis: '0.00',
+    cashDiscountTotal: null,
+    electronicDiscountTotal: null,
     expectedCash: '0.00',
     actualCashCounted: null,
     discrepancy: null,

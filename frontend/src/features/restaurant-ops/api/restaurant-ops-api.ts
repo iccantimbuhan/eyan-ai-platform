@@ -583,6 +583,10 @@ export interface CreateDailySalesRecordPayload {
   // Which POS source discountsTotal is scoped to (ADR-0043 amendment).
   // null (or omitted) means "all POS sources" — the legacy/global behavior.
   discountPosSourceId?: string | null
+  // How much of discountsTotal reduces physical cash (ADR-0043 second
+  // amendment). null (or omitted) means "not configured" — the full
+  // discountsTotal reduces cash, the legacy/global behavior.
+  cashDiscountTotal?: number | null
   notes?: string
 }
 

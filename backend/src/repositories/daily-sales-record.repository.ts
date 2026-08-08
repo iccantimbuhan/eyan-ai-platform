@@ -35,6 +35,7 @@ export interface CreateDailySalesRecordData {
   vouchersCount?: number | null;
   actualCashCounted?: Prisma.Decimal | string | number | null;
   discountPosSourceId?: string | null;
+  cashDiscountTotal?: Prisma.Decimal | string | number | null;
   notes?: string | null;
   createdById: string;
 }
@@ -50,6 +51,7 @@ export interface UpdateDailySalesRecordData {
   vouchersCount?: number | null;
   actualCashCounted?: Prisma.Decimal | string | number | null;
   discountPosSourceId?: string | null;
+  cashDiscountTotal?: Prisma.Decimal | string | number | null;
   notes?: string | null;
 }
 

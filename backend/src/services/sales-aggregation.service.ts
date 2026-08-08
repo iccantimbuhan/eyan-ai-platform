@@ -131,6 +131,10 @@ export class SalesAggregationService {
     // for why totalActualCashCounted/totalDiscrepancy only accumulate over
     // counted days rather than every day in range.
     let totalPhysicalCashBasis = new Prisma.Decimal(0);
+    // Accumulated from each day's own dayCash.expectedCash (not derived from
+    // totalPhysicalCashBasis - discountsTotal, which would silently ignore
+    // the cash/electronic discount split — see ADR-0043 second amendment).
+    let totalExpectedCash = new Prisma.Decimal(0);
     let totalActualCashCounted = new Prisma.Decimal(0);
     let totalDiscrepancy = new Prisma.Decimal(0);
     let daysCounted = 0;
@@ -211,7 +215,8 @@ export class SalesAggregationService {
         record.discountsTotal,
         record.actualCashCounted,
         record.discountPosSourceId,
-        record.discountPosSource
+        record.discountPosSource,
+        record.cashDiscountTotal
       );
 
       dailySales.push({
@@ -221,6 +226,8 @@ export class SalesAggregationService {
         channelEntriesTotal: dayChannelTotal.toFixed(2),
         discountsTotal: dayCash.manualDiscounts,
         physicalCashBasis: dayCash.physicalCashBasis,
+        cashDiscountTotal: dayCash.cashDiscountTotal,
+        electronicDiscountTotal: dayCash.electronicDiscountTotal,
         expectedCash: dayCash.expectedCash,
         actualCashCounted: dayCash.actualCashCounted,
         discrepancy: dayCash.discrepancy,
@@ -228,6 +235,7 @@ export class SalesAggregationService {
       });
 
       totalPhysicalCashBasis = totalPhysicalCashBasis.plus(dayCash.physicalCashBasis);
+      totalExpectedCash = totalExpectedCash.plus(dayCash.expectedCash);
       if (dayCash.actualCashCounted !== null && dayCash.discrepancy !== null) {
         totalActualCashCounted = totalActualCashCounted.plus(dayCash.actualCashCounted);
         totalDiscrepancy = totalDiscrepancy.plus(dayCash.discrepancy);
@@ -497,7 +505,7 @@ export class SalesAggregationService {
     const cashReconciliationSummary: CashReconciliationSummaryDto = {
       totalManualDiscounts: discountsTotal.toFixed(2),
       totalPhysicalCashBasis: totalPhysicalCashBasis.toFixed(2),
-      totalExpectedCash: totalPhysicalCashBasis.minus(discountsTotal).toFixed(2),
+      totalExpectedCash: totalExpectedCash.toFixed(2),
       totalActualCashCounted: totalActualCashCounted.toFixed(2),
       totalDiscrepancy: totalDiscrepancy.toFixed(2),
       daysCounted,
