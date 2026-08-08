@@ -86,6 +86,32 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
     <div className='space-y-3'>
       <p className='text-sm font-medium'>Payment Methods</p>
 
+      {(methods ?? []).length > 0 && (
+        <div className='space-y-1.5 rounded-md border p-3'>
+          <p className='text-xs font-medium text-muted-foreground'>
+            Physical cash classification — used by Cash Reconciliation to tell physical cash apart from card/
+            electronic payment methods.
+          </p>
+          <div className='flex flex-wrap gap-x-4 gap-y-2'>
+            {(methods ?? []).map((method) => (
+              <div key={method.id} className='flex items-center gap-2'>
+                <Checkbox
+                  id={`cash-equivalent-${method.id}`}
+                  checked={method.isCashEquivalent}
+                  disabled={updateMethod.isPending}
+                  onCheckedChange={(checked) =>
+                    updateMethod.mutate({ id: method.id, isCashEquivalent: checked === true })
+                  }
+                />
+                <Label htmlFor={`cash-equivalent-${method.id}`} className='text-sm font-normal'>
+                  {method.name} is physical cash
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className='space-y-2'>
         {entries.length === 0 ? (
           <p className='text-sm text-muted-foreground'>No payment method entries yet.</p>
@@ -220,32 +246,6 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
           Add POS Source
         </Button>
       </div>
-
-      {(methods ?? []).length > 0 && (
-        <div className='space-y-1.5 rounded-md border p-3'>
-          <p className='text-xs font-medium text-muted-foreground'>
-            Physical cash classification — used by Cash Reconciliation to tell physical cash apart from card/
-            electronic payment methods.
-          </p>
-          <div className='flex flex-wrap gap-x-4 gap-y-2'>
-            {(methods ?? []).map((method) => (
-              <div key={method.id} className='flex items-center gap-2'>
-                <Checkbox
-                  id={`cash-equivalent-${method.id}`}
-                  checked={method.isCashEquivalent}
-                  disabled={updateMethod.isPending}
-                  onCheckedChange={(checked) =>
-                    updateMethod.mutate({ id: method.id, isCashEquivalent: checked === true })
-                  }
-                />
-                <Label htmlFor={`cash-equivalent-${method.id}`} className='text-sm font-normal'>
-                  {method.name} is physical cash
-                </Label>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
