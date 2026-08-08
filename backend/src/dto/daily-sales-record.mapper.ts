@@ -4,7 +4,11 @@ import type {
   DailySalesRecordListItemDto,
   DailySalesRecordResponseDto,
 } from "./daily-sales-record.dto.js";
-import type { SalesReconciliationDto } from "./sales-aggregation.dto.js";
+import type {
+  CashReconciliationDto,
+  CashReconciliationStatus,
+  SalesReconciliationDto,
+} from "./sales-aggregation.dto.js";
 
 // Same reconciliation shape/reasoning as SalesAggregationService's weekly
 // summary, computed for this one record — real Prisma.Decimal arithmetic,
@@ -25,6 +29,56 @@ function computeReconciliation(row: DailySalesRecordWithLines): SalesReconciliat
       ? row.totalSales.minus(row.posReportedTotal!).toFixed(2)
       : null,
     varianceVsChannelEntriesTotal: row.totalSales.minus(channelEntriesTotal).toFixed(2),
+  };
+}
+
+// Pure, Decimal-safe cash reconciliation (ADR-0043) — shared by the
+// single-record mapper below and SalesAggregationService's per-day rollup,
+// so the two never drift. Never mutates anything; totalSales is untouched.
+export function computeCashReconciliation(
+  paymentMethodEntries: DailySalesRecordWithLines["paymentMethodEntries"],
+  discountsTotal: Prisma.Decimal,
+  actualCashCounted: Prisma.Decimal | null
+): CashReconciliationDto {
+  let physicalCashBasis = new Prisma.Decimal(0);
+  let cardElectronicTotal = new Prisma.Decimal(0);
+
+  for (const entry of paymentMethodEntries) {
+    if (entry.salesPaymentMethod.isCashEquivalent) {
+      physicalCashBasis = physicalCashBasis.plus(entry.amount);
+    } else {
+      cardElectronicTotal = cardElectronicTotal.plus(entry.amount);
+    }
+  }
+
+  const expectedCash = physicalCashBasis.minus(discountsTotal);
+  // == null (not !== null) deliberately catches both null and undefined —
+  // real Prisma rows always send an explicit null for an unset nullable
+  // column, but this function is also called with hand-built fixtures in
+  // tests that may simply omit the field.
+  const hasActualCashCounted = actualCashCounted != null;
+  const discrepancy = hasActualCashCounted ? actualCashCounted.minus(expectedCash) : null;
+
+  let status: CashReconciliationStatus;
+  if (!hasActualCashCounted || discrepancy === null) {
+    status = "NOT_COUNTED";
+  } else if (discrepancy.isZero()) {
+    status = "BALANCED";
+  } else if (discrepancy.isNegative()) {
+    status = "SHORT";
+  } else {
+    status = "OVER";
+  }
+
+  return {
+    physicalCashBasis: physicalCashBasis.toFixed(2),
+    cardElectronicTotal: cardElectronicTotal.toFixed(2),
+    totalPaymentMethods: physicalCashBasis.plus(cardElectronicTotal).toFixed(2),
+    manualDiscounts: discountsTotal.toFixed(2),
+    expectedCash: expectedCash.toFixed(2),
+    actualCashCounted: hasActualCashCounted ? actualCashCounted.toFixed(2) : null,
+    discrepancy: discrepancy !== null ? discrepancy.toFixed(2) : null,
+    status,
   };
 }
 
@@ -54,6 +108,7 @@ export function mapDailySalesRecordToResponse(
     discountsTotal: row.discountsTotal.toFixed(2),
     vouchersAmount: row.vouchersAmount.toFixed(2),
     vouchersCount: row.vouchersCount,
+    actualCashCounted: row.actualCashCounted ? row.actualCashCounted.toFixed(2) : null,
     notes: row.notes,
     channels: row.channelEntries.map((entry) => ({
       id: entry.id,
@@ -73,6 +128,7 @@ export function mapDailySalesRecordToResponse(
       posSourceName: entry.posSource ? entry.posSource.name : null,
       amount: entry.amount.toFixed(2),
       transactionCount: entry.transactionCount,
+      isCashEquivalent: entry.salesPaymentMethod.isCashEquivalent,
       createdAt: entry.createdAt,
     })),
     categories: row.categoryEntries.map((entry) => ({
@@ -95,6 +151,7 @@ export function mapDailySalesRecordToResponse(
       createdAt: entry.createdAt,
     })),
     reconciliation: computeReconciliation(row),
+    cashReconciliation: computeCashReconciliation(row.paymentMethodEntries, row.discountsTotal, row.actualCashCounted),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

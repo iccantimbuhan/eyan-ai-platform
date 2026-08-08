@@ -39,6 +39,7 @@ export function mapPaymentMethodEntryToResponse(
     posSourceName: row.posSource ? row.posSource.name : null,
     amount: row.amount.toFixed(2),
     transactionCount: row.transactionCount,
+    isCashEquivalent: row.salesPaymentMethod.isCashEquivalent,
     createdAt: row.createdAt,
   };
 }

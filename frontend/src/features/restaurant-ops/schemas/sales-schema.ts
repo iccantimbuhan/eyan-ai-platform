@@ -44,6 +44,9 @@ export const dailySalesHeaderSchema = z.object({
   totalSales: nonNegativeNumericString('Total sales must be zero or greater.'),
   discountsTotal: optionalNonNegativeNumericString('Discounts total must be zero or greater.'),
   vouchersAmount: optionalNonNegativeNumericString('Vouchers amount must be zero or greater.'),
+  // Manager-entered physical cash count for the whole day (ADR-0043) — used
+  // only by Cash Reconciliation, never by totalSales.
+  actualCashCounted: optionalNonNegativeNumericString('Actual cash counted must be zero or greater.'),
   vouchersCount: z
     .string()
     .trim()
@@ -65,6 +68,7 @@ export const defaultDailySalesHeaderValues: DailySalesHeaderFormValues = {
   totalSales: '',
   discountsTotal: '',
   vouchersAmount: '',
+  actualCashCounted: '',
   vouchersCount: '',
   notes: '',
 }

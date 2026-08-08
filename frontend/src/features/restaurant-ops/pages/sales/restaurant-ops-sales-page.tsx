@@ -12,6 +12,7 @@ import { useActiveTenant } from '../../hooks/use-active-tenant'
 import { useDialogState } from '../../hooks/use-dialog-state'
 import { useDailySales } from '../../hooks/use-sales'
 import { canWriteSales } from '../../lib/tenant-role-labels'
+import { CashReconciliationCard } from './components/cash-reconciliation-card'
 import { DailySalesDialog } from './components/daily-sales-dialog'
 import { ReconciliationCard } from './components/reconciliation-card'
 import { SalesDetailTabs } from './components/sales-detail-tabs'
@@ -122,6 +123,10 @@ export function RestaurantOpsSalesPage() {
         ) : (
           <div className='space-y-6'>
             <SalesSummaryCards record={record} />
+            <CashReconciliationCard
+              cashReconciliation={record.cashReconciliation}
+              paymentMethods={record.paymentMethods}
+            />
             <ReconciliationCard reconciliation={record.reconciliation} />
             <SalesDetailTabs record={record} />
           </div>

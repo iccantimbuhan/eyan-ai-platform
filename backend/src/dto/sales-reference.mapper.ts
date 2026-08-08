@@ -1,4 +1,4 @@
-import type { SalesReferenceResponseDto } from "./sales-reference.dto.js";
+import type { SalesPaymentMethodResponseDto, SalesReferenceResponseDto } from "./sales-reference.dto.js";
 
 interface SalesReferenceRow {
   id: string;
@@ -18,5 +18,16 @@ export function mapSalesReferenceToResponse(row: SalesReferenceRow): SalesRefere
     name: row.name,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+  };
+}
+
+// SalesPaymentMethod-specific — adds isCashEquivalent (ADR-0043) on top of
+// the shared shape.
+export function mapSalesPaymentMethodToResponse(
+  row: SalesReferenceRow & { isCashEquivalent: boolean }
+): SalesPaymentMethodResponseDto {
+  return {
+    ...mapSalesReferenceToResponse(row),
+    isCashEquivalent: row.isCashEquivalent,
   };
 }

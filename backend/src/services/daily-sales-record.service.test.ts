@@ -19,6 +19,7 @@ function recordRow(overrides: Partial<Record<string, unknown>> = {}) {
     discountsTotal: new Prisma.Decimal("0.00"),
     vouchersAmount: new Prisma.Decimal("0.00"),
     vouchersCount: null,
+    actualCashCounted: null,
     notes: null,
     channelEntries: [],
     paymentMethodEntries: [],
@@ -180,6 +181,197 @@ describe("DailySalesRecordService", () => {
       expect(result.reconciliation.posReportedTotal).toBeNull();
       expect(result.reconciliation.posReportedRecordCount).toBe(0);
       expect(result.reconciliation.varianceVsPosReportedTotal).toBeNull();
+    });
+  });
+
+  describe("cash reconciliation on a single record (ADR-0043) — never touches totalSales", () => {
+    function paymentMethodEntry(overrides: Partial<Record<string, unknown>> = {}) {
+      return {
+        id: "pme-1",
+        salesPaymentMethodId: "cash-draw-id",
+        salesPaymentMethod: { name: "Cash Draw", isCashEquivalent: true },
+        posSourceId: "pos-1",
+        posSource: { name: "POS 1" },
+        amount: new Prisma.Decimal("466.70"),
+        transactionCount: null,
+        createdAt: new Date(2026, 0, 1),
+        ...overrides,
+      };
+    }
+
+    // Cash Draw (POS 1) €466.70 + Bolt Cash (POS 2) €599.60 are physical
+    // cash; Trust/Card Payment (POS 1) €264.50 is not (isCashEquivalent:
+    // false) and must be excluded from physicalCashBasis even though it's
+    // on the same POS source as a cash method — the exact mistake spec §10
+    // warns against ("do not simply say Physical Cash = €80 because €30
+    // was paid electronically").
+    it("aggregates physical cash across multiple POS sources and excludes card/electronic entirely", async () => {
+      const row = recordRow({
+        discountsTotal: new Prisma.Decimal("2.35"),
+        actualCashCounted: new Prisma.Decimal("1328.45"),
+        paymentMethodEntries: [
+          paymentMethodEntry({
+            id: "pme-1",
+            salesPaymentMethodId: "cash-draw-id",
+            salesPaymentMethod: { name: "Cash Draw", isCashEquivalent: true },
+            posSourceId: "pos-1",
+            posSource: { name: "POS 1" },
+            amount: new Prisma.Decimal("466.70"),
+          }),
+          paymentMethodEntry({
+            id: "pme-2",
+            salesPaymentMethodId: "trust-card-id",
+            salesPaymentMethod: { name: "Trust/Card Payment", isCashEquivalent: false },
+            posSourceId: "pos-1",
+            posSource: { name: "POS 1" },
+            amount: new Prisma.Decimal("264.50"),
+          }),
+          paymentMethodEntry({
+            id: "pme-3",
+            salesPaymentMethodId: "bolt-cash-id",
+            salesPaymentMethod: { name: "Bolt Cash", isCashEquivalent: true },
+            posSourceId: "pos-2",
+            posSource: { name: "POS 2" },
+            amount: new Prisma.Decimal("599.60"),
+          }),
+        ],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.physicalCashBasis).toBe("1066.30");
+      expect(result.cashReconciliation.cardElectronicTotal).toBe("264.50");
+      expect(result.cashReconciliation.totalPaymentMethods).toBe("1330.80");
+      expect(result.cashReconciliation.manualDiscounts).toBe("2.35");
+      expect(result.cashReconciliation.expectedCash).toBe("1063.95");
+      expect(result.cashReconciliation.actualCashCounted).toBe("1328.45");
+      // Actual cash counted (€1,328.45) reflects ALL cash across both POS
+      // sources, matching the spec's own combined worked example.
+      expect(result.cashReconciliation.discrepancy).toBe("264.50");
+      expect(result.cashReconciliation.status).toBe("OVER");
+      // totalSales is never touched by any of the above.
+      expect(result.totalSales).toBe("1226.55");
+    });
+
+    it("is BALANCED when actual cash counted exactly matches expected cash", async () => {
+      const row = recordRow({
+        discountsTotal: new Prisma.Decimal("10.00"),
+        actualCashCounted: new Prisma.Decimal("70.00"),
+        paymentMethodEntries: [
+          paymentMethodEntry({ salesPaymentMethod: { name: "Cash", isCashEquivalent: true }, amount: new Prisma.Decimal("50.00") }),
+          paymentMethodEntry({ id: "pme-2", salesPaymentMethod: { name: "Bolt Cash", isCashEquivalent: true }, amount: new Prisma.Decimal("30.00") }),
+        ],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.physicalCashBasis).toBe("80.00");
+      expect(result.cashReconciliation.expectedCash).toBe("70.00");
+      expect(result.cashReconciliation.discrepancy).toBe("0.00");
+      expect(result.cashReconciliation.status).toBe("BALANCED");
+    });
+
+    it("is SHORT when actual cash counted is below expected cash", async () => {
+      const row = recordRow({
+        discountsTotal: new Prisma.Decimal("0.00"),
+        actualCashCounted: new Prisma.Decimal("95.00"),
+        paymentMethodEntries: [paymentMethodEntry({ amount: new Prisma.Decimal("100.00") })],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.discrepancy).toBe("-5.00");
+      expect(result.cashReconciliation.status).toBe("SHORT");
+    });
+
+    it("is OVER when actual cash counted exceeds expected cash", async () => {
+      const row = recordRow({
+        discountsTotal: new Prisma.Decimal("0.00"),
+        actualCashCounted: new Prisma.Decimal("105.00"),
+        paymentMethodEntries: [paymentMethodEntry({ amount: new Prisma.Decimal("100.00") })],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.discrepancy).toBe("5.00");
+      expect(result.cashReconciliation.status).toBe("OVER");
+    });
+
+    it("is NOT_COUNTED — distinct from BALANCED — when no manager has entered actualCashCounted yet", async () => {
+      const row = recordRow({
+        actualCashCounted: null,
+        paymentMethodEntries: [paymentMethodEntry({ amount: new Prisma.Decimal("100.00") })],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.actualCashCounted).toBeNull();
+      expect(result.cashReconciliation.discrepancy).toBeNull();
+      expect(result.cashReconciliation.status).toBe("NOT_COUNTED");
+    });
+
+    it("excludes non-cash payment methods from physicalCashBasis entirely, even with no cash methods at all", async () => {
+      const row = recordRow({
+        paymentMethodEntries: [
+          paymentMethodEntry({ salesPaymentMethod: { name: "Trust/Card Payment", isCashEquivalent: false }, amount: new Prisma.Decimal("300.00") }),
+        ],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.physicalCashBasis).toBe("0.00");
+      expect(result.cashReconciliation.cardElectronicTotal).toBe("300.00");
+      expect(result.cashReconciliation.expectedCash).toBe("0.00");
+    });
+
+    // Classification must come entirely from isCashEquivalent, never from
+    // the payment method's name — "Trust/Card Payment" contains the word
+    // "Card" but must still count as physical cash once a manager has
+    // configured it that way. This is the mirror image of the test above
+    // (same name, opposite flag, opposite result) — proof the outcome
+    // tracks the flag, not the string.
+    it("counts 'Trust/Card Payment' as physical cash when a manager has configured isCashEquivalent true, despite its name", async () => {
+      const row = recordRow({
+        paymentMethodEntries: [
+          paymentMethodEntry({ salesPaymentMethod: { name: "Trust/Card Payment", isCashEquivalent: true }, amount: new Prisma.Decimal("300.00") }),
+        ],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.cashReconciliation.physicalCashBasis).toBe("300.00");
+      expect(result.cashReconciliation.cardElectronicTotal).toBe("0.00");
+      expect(result.cashReconciliation.expectedCash).toBe("300.00");
+    });
+
+    it("reuses discountsTotal as-is for manualDiscounts, without altering totalSales", async () => {
+      const row = recordRow({
+        totalSales: new Prisma.Decimal("500.00"),
+        discountsTotal: new Prisma.Decimal("12.50"),
+        paymentMethodEntries: [paymentMethodEntry({ amount: new Prisma.Decimal("100.00") })],
+      });
+      const repository = createRepository({ findByBranchAndDate: vi.fn().mockResolvedValue(row) });
+      const service = buildService({ repository });
+
+      const result = await service.getDaily("branch-1", "2026-08-03");
+
+      expect(result.discountsTotal).toBe("12.50");
+      expect(result.cashReconciliation.manualDiscounts).toBe("12.50");
+      expect(result.totalSales).toBe("500.00");
     });
   });
 });

@@ -1,3 +1,7 @@
+// BALANCED/SHORT/OVER only apply once a manager has entered a cash count;
+// NOT_COUNTED is a distinct state, never treated as BALANCED (ADR-0043).
+export type CashReconciliationStatus = "BALANCED" | "SHORT" | "OVER" | "NOT_COUNTED";
+
 export interface DailySalesTotalDto {
   date: string; // "YYYY-MM-DD"
   totalSales: string;
@@ -5,6 +9,15 @@ export interface DailySalesTotalDto {
   // reconcile with it (ADR-0039 Decision 2/3; see reconciliation below).
   posReportedTotal: string | null;
   channelEntriesTotal: string;
+  // Cash reconciliation for this one day (ADR-0043) — same formula as
+  // CashReconciliationDto, flattened onto this row rather than nested, to
+  // match this DTO's existing flat per-day shape.
+  discountsTotal: string; // "Manual Discounts Today" for this day
+  physicalCashBasis: string;
+  expectedCash: string;
+  actualCashCounted: string | null;
+  discrepancy: string | null;
+  status: CashReconciliationStatus;
 }
 
 // Every breakdown percentage is a share of that breakdown's OWN recorded
@@ -48,6 +61,11 @@ export interface PosSourceChannelBreakdownDto {
 export interface PaymentMethodTotalDto {
   salesPaymentMethodId: string;
   paymentMethodName: string;
+  // Catalog-level classification (ADR-0043) — lets a consumer split this
+  // breakdown into Physical Cash vs Card/Electronic without a second
+  // lookup. Always the same for a given salesPaymentMethodId within a
+  // response since it's read straight off the catalog row, never per-entry.
+  isCashEquivalent: boolean;
   amount: string;
   transactionCount: number;
   percentOfPaymentMethodEntriesTotal: string | null;
@@ -121,6 +139,54 @@ export interface SalesReconciliationDto {
   varianceVsChannelEntriesTotal: string; // totalSales - channelEntriesTotal
 }
 
+// A distinct, separately-surfaced calculation from SalesReconciliationDto
+// above (ADR-0043) — that one compares totalSales/posReportedTotal/channel
+// entries and never touches payment methods or cash; this one is entirely
+// about physical cash on hand and never touches totalSales. The two are
+// deliberately never merged into one object, mirroring the UI requirement
+// that Total Sales, Expected Cash, and Actual Cash Counted stay visually
+// distinct numbers.
+//
+//   physicalCashBasis   = sum of payment-method entries where
+//                          salesPaymentMethod.isCashEquivalent is true
+//                          (any POS source, summed together)
+//   cardElectronicTotal = sum of the remaining (non-cash) entries
+//   manualDiscounts     = DailySalesRecord.discountsTotal, reused as-is
+//   expectedCash        = physicalCashBasis - manualDiscounts
+//   discrepancy         = actualCashCounted - expectedCash (null until a
+//                          manager enters actualCashCounted)
+export interface CashReconciliationDto {
+  physicalCashBasis: string;
+  cardElectronicTotal: string;
+  totalPaymentMethods: string; // physicalCashBasis + cardElectronicTotal
+  manualDiscounts: string;
+  expectedCash: string;
+  actualCashCounted: string | null;
+  discrepancy: string | null;
+  status: CashReconciliationStatus;
+}
+
+// Weekly rollup of the per-day cash reconciliation figures in dailySales[]
+// (ADR-0043). totalExpectedCash sums every day in range (it never depends
+// on a cash count existing). totalActualCashCounted and totalDiscrepancy
+// sum ONLY days that have a count (daysCounted) — deliberately not
+// `totalActualCashCounted - totalExpectedCash`, which would fold every
+// NOT_COUNTED day's expected cash into an apparent shortfall it never
+// actually represents. totalDiscrepancy is the "cumulative discrepancy"
+// the manager/accountant tracks day over day.
+export interface CashReconciliationSummaryDto {
+  totalManualDiscounts: string;
+  totalPhysicalCashBasis: string;
+  totalExpectedCash: string;
+  totalActualCashCounted: string; // sum over counted days only
+  totalDiscrepancy: string; // sum of each counted day's own discrepancy
+  daysCounted: number;
+  daysBalanced: number;
+  daysShort: number;
+  daysOver: number;
+  daysNotCounted: number;
+}
+
 // A calculated summary — every field here is derived on read from
 // DailySalesRecord/entry rows in the given range, never persisted (spec
 // §13: RAW INPUT vs CALCULATED SUMMARY).
@@ -134,6 +200,7 @@ export interface WeeklySalesSummaryDto {
   vouchersCount: number;
   coverage: SalesDataCoverageDto;
   reconciliation: SalesReconciliationDto;
+  cashReconciliationSummary: CashReconciliationSummaryDto;
   dailySales: DailySalesTotalDto[];
   channelTotals: ChannelTotalDto[];
   posSourceTotals: PosSourceTotalDto[];

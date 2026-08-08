@@ -19,6 +19,7 @@ import type {
   SalesChannelEntry,
   SalesItemEntry,
   SalesPaymentMethodEntry,
+  SalesPaymentMethodReference,
   SalesReference,
   SalesSource,
   StaffMember,
@@ -495,8 +496,8 @@ export async function createSalesChannel(
   return data.data
 }
 
-export async function getSalesPaymentMethods(restaurantId: string): Promise<SalesReference[]> {
-  const { data } = await api.get<ApiResponse<SalesReference[]>>(
+export async function getSalesPaymentMethods(restaurantId: string): Promise<SalesPaymentMethodReference[]> {
+  const { data } = await api.get<ApiResponse<SalesPaymentMethodReference[]>>(
     `/restaurants/${restaurantId}/sales-payment-methods`
   )
   return data.data
@@ -504,10 +505,24 @@ export async function getSalesPaymentMethods(restaurantId: string): Promise<Sale
 
 export async function createSalesPaymentMethod(
   restaurantId: string,
-  payload: { name: string }
-): Promise<SalesReference> {
-  const { data } = await api.post<ApiResponse<SalesReference>>(
+  payload: { name: string; isCashEquivalent?: boolean }
+): Promise<SalesPaymentMethodReference> {
+  const { data } = await api.post<ApiResponse<SalesPaymentMethodReference>>(
     `/restaurants/${restaurantId}/sales-payment-methods`,
+    payload
+  )
+  return data.data
+}
+
+// ADR-0043 — the only reference-list update in this sprint: retroactively
+// flags an existing payment method as physical cash.
+export async function updateSalesPaymentMethod(
+  restaurantId: string,
+  id: string,
+  payload: { isCashEquivalent: boolean }
+): Promise<SalesPaymentMethodReference> {
+  const { data } = await api.patch<ApiResponse<SalesPaymentMethodReference>>(
+    `/restaurants/${restaurantId}/sales-payment-methods/${id}`,
     payload
   )
   return data.data
@@ -563,6 +578,8 @@ export interface CreateDailySalesRecordPayload {
   discountsTotal?: number
   vouchersAmount?: number
   vouchersCount?: number
+  // Manager-entered physical cash count for the whole day (ADR-0043).
+  actualCashCounted?: number
   notes?: string
 }
 

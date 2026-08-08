@@ -31,6 +31,10 @@ export const createDailySalesRecordValidator = [
   body("discountsTotal").optional().isFloat({ min: 0 }).withMessage("Discounts total must be zero or greater."),
   body("vouchersAmount").optional().isFloat({ min: 0 }).withMessage("Vouchers amount must be zero or greater."),
   body("vouchersCount").optional().isInt({ min: 0 }).withMessage("Vouchers count must be zero or greater."),
+  body("actualCashCounted")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Actual cash counted must be zero or greater."),
 
   body("notes").optional().isString(),
 ];
@@ -47,6 +51,10 @@ export const updateDailySalesRecordValidator = [
   body("discountsTotal").optional().isFloat({ min: 0 }).withMessage("Discounts total must be zero or greater."),
   body("vouchersAmount").optional().isFloat({ min: 0 }).withMessage("Vouchers amount must be zero or greater."),
   body("vouchersCount").optional({ nullable: true }).isInt({ min: 0 }),
+  body("actualCashCounted")
+    .optional({ nullable: true })
+    .isFloat({ min: 0 })
+    .withMessage("Actual cash counted must be zero or greater."),
   body("notes").optional({ nullable: true }).isString(),
 ];
 

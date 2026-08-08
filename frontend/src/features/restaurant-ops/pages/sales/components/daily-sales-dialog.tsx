@@ -53,6 +53,7 @@ function toHeaderValues(record?: DailySalesRecord | null, date?: Date): DailySal
     totalSales: record.totalSales,
     discountsTotal: record.discountsTotal,
     vouchersAmount: record.vouchersAmount,
+    actualCashCounted: record.actualCashCounted ?? '',
     vouchersCount: record.vouchersCount?.toString() ?? '',
     notes: record.notes ?? '',
   }
@@ -101,6 +102,7 @@ export function DailySalesDialog({
       totalSales: Number(values.totalSales),
       discountsTotal: values.discountsTotal ? Number(values.discountsTotal) : undefined,
       vouchersAmount: values.vouchersAmount ? Number(values.vouchersAmount) : undefined,
+      actualCashCounted: values.actualCashCounted ? Number(values.actualCashCounted) : undefined,
       vouchersCount: values.vouchersCount ? Number(values.vouchersCount) : undefined,
       notes: values.notes || undefined,
     }
@@ -240,21 +242,43 @@ export function DailySalesDialog({
               )}
             />
 
-            <div className='grid grid-cols-3 gap-3'>
+            <div className='grid grid-cols-2 gap-3 rounded-md border p-3'>
               <FormField
                 control={form.control}
                 name='discountsTotal'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Discounts</FormLabel>
+                    <FormLabel>Manual Discounts Today</FormLabel>
                     <FormControl>
                       <Input inputMode='decimal' placeholder='0.00' {...field} />
                     </FormControl>
+                    <p className='text-xs text-muted-foreground'>
+                      Never subtracted from Total Sales &mdash; used only by Cash Reconciliation below.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name='actualCashCounted'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Actual Cash Counted</FormLabel>
+                    <FormControl>
+                      <Input inputMode='decimal' placeholder='0.00' {...field} />
+                    </FormControl>
+                    <p className='text-xs text-muted-foreground'>
+                      Physical cash counted at closing for the whole day.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className='grid grid-cols-2 gap-3'>
               <FormField
                 control={form.control}
                 name='vouchersAmount'

@@ -2249,6 +2249,12 @@ model SalesPaymentMethod {
 
   name String
 
+  // Cash-reconciliation classification — catalog-level, applies to every
+  // entry referencing this payment method regardless of posSourceId.
+  // Default false so existing rows (and any newly created method a manager
+  // hasn't classified yet) never silently count toward physical cash.
+  isCashEquivalent Boolean @default(false)
+
   paymentMethodEntries SalesPaymentMethodEntry[]
 
   createdAt DateTime @default(now())
@@ -2309,9 +2315,17 @@ model DailySalesRecord {
   posReportedTotal Decimal?       @db.Decimal(10, 2)
 
   totalSales     Decimal @db.Decimal(10, 2)
+  // Reused as "Manual Discounts Today" for cash reconciliation — never
+  // subtracted from totalSales (totalSales stays the source of truth),
+  // only used to compute Expected Cash. See ADR-0043.
   discountsTotal Decimal @default(0) @db.Decimal(10, 2)
   vouchersAmount Decimal @default(0) @db.Decimal(10, 2)
   vouchersCount  Int?
+
+  // Manager-entered physical cash count at closing, for the whole business
+  // day (not per POS source). Null until a manager enters it — never
+  // inferred or auto-calculated from POS data. See ADR-0043.
+  actualCashCounted Decimal? @db.Decimal(10, 2)
 
   notes String?
 

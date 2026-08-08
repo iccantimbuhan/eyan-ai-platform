@@ -3,9 +3,10 @@ import {
   DailySalesRecordRepository,
 } from "../repositories/daily-sales-record.repository.js";
 import { truncateToUtcDate } from "./daily-sales-record.service.js";
-import { formatBusinessDate } from "../dto/daily-sales-record.mapper.js";
+import { computeCashReconciliation, formatBusinessDate } from "../dto/daily-sales-record.mapper.js";
 import { Prisma } from "../generated/prisma/client.js";
 import type {
+  CashReconciliationSummaryDto,
   CategoryTotalDto,
   ChannelTotalDto,
   DailySalesTotalDto,
@@ -126,6 +127,18 @@ export class SalesAggregationService {
     let posReportedTotal = new Prisma.Decimal(0);
     let posReportedRecordCount = 0;
 
+    // Cash reconciliation rollup (ADR-0043) — see CashReconciliationSummaryDto
+    // for why totalActualCashCounted/totalDiscrepancy only accumulate over
+    // counted days rather than every day in range.
+    let totalPhysicalCashBasis = new Prisma.Decimal(0);
+    let totalActualCashCounted = new Prisma.Decimal(0);
+    let totalDiscrepancy = new Prisma.Decimal(0);
+    let daysCounted = 0;
+    let daysBalanced = 0;
+    let daysShort = 0;
+    let daysOver = 0;
+    let daysNotCounted = 0;
+
     const dailySales: DailySalesTotalDto[] = [];
 
     const channelTotals = new Map<
@@ -149,7 +162,7 @@ export class SalesAggregationService {
     >();
     const paymentMethodTotals = new Map<
       string,
-      { paymentMethodName: string; amount: Prisma.Decimal; transactionCount: number }
+      { paymentMethodName: string; isCashEquivalent: boolean; amount: Prisma.Decimal; transactionCount: number }
     >();
     // POS Source / Sales Channel Flexibility, extended to Payment Methods —
     // same dual-tracking shape as posSourceTotals/channelsByPosSourceTotals
@@ -165,7 +178,10 @@ export class SalesAggregationService {
       {
         posSourceId: string | null;
         posSourceName: string | null;
-        paymentMethods: Map<string, { paymentMethodName: string; amount: Prisma.Decimal; transactionCount: number }>;
+        paymentMethods: Map<
+          string,
+          { paymentMethodName: string; isCashEquivalent: boolean; amount: Prisma.Decimal; transactionCount: number }
+        >;
       }
     >();
     const categoryTotals = new Map<
@@ -190,12 +206,45 @@ export class SalesAggregationService {
         new Prisma.Decimal(0)
       );
 
+      const dayCash = computeCashReconciliation(
+        record.paymentMethodEntries,
+        record.discountsTotal,
+        record.actualCashCounted
+      );
+
       dailySales.push({
         date: formatBusinessDate(record.businessDate),
         totalSales: record.totalSales.toFixed(2),
         posReportedTotal: record.posReportedTotal ? record.posReportedTotal.toFixed(2) : null,
         channelEntriesTotal: dayChannelTotal.toFixed(2),
+        discountsTotal: dayCash.manualDiscounts,
+        physicalCashBasis: dayCash.physicalCashBasis,
+        expectedCash: dayCash.expectedCash,
+        actualCashCounted: dayCash.actualCashCounted,
+        discrepancy: dayCash.discrepancy,
+        status: dayCash.status,
       });
+
+      totalPhysicalCashBasis = totalPhysicalCashBasis.plus(dayCash.physicalCashBasis);
+      if (dayCash.actualCashCounted !== null && dayCash.discrepancy !== null) {
+        totalActualCashCounted = totalActualCashCounted.plus(dayCash.actualCashCounted);
+        totalDiscrepancy = totalDiscrepancy.plus(dayCash.discrepancy);
+        daysCounted += 1;
+      }
+      switch (dayCash.status) {
+        case "BALANCED":
+          daysBalanced += 1;
+          break;
+        case "SHORT":
+          daysShort += 1;
+          break;
+        case "OVER":
+          daysOver += 1;
+          break;
+        case "NOT_COUNTED":
+          daysNotCounted += 1;
+          break;
+      }
 
       for (const entry of record.channelEntries) {
         const existing = channelTotals.get(entry.salesChannelId);
@@ -252,6 +301,7 @@ export class SalesAggregationService {
         } else {
           paymentMethodTotals.set(entry.salesPaymentMethodId, {
             paymentMethodName: entry.salesPaymentMethod.name,
+            isCashEquivalent: entry.salesPaymentMethod.isCashEquivalent,
             amount: new Prisma.Decimal(entry.amount),
             transactionCount: entry.transactionCount ?? 0,
           });
@@ -285,6 +335,7 @@ export class SalesAggregationService {
         } else {
           posSourceBucket.paymentMethods.set(entry.salesPaymentMethodId, {
             paymentMethodName: entry.salesPaymentMethod.name,
+            isCashEquivalent: entry.salesPaymentMethod.isCashEquivalent,
             amount: new Prisma.Decimal(entry.amount),
             transactionCount: entry.transactionCount ?? 0,
           });
@@ -387,6 +438,7 @@ export class SalesAggregationService {
       ([salesPaymentMethodId, value]) => ({
         salesPaymentMethodId,
         paymentMethodName: value.paymentMethodName,
+        isCashEquivalent: value.isCashEquivalent,
         amount: value.amount.toFixed(2),
         transactionCount: value.transactionCount,
         percentOfPaymentMethodEntriesTotal: percentOfBasis(value.amount, paymentMethodEntriesTotal),
@@ -411,6 +463,7 @@ export class SalesAggregationService {
       paymentMethods: Array.from(bucket.paymentMethods.entries()).map(([salesPaymentMethodId, value]) => ({
         salesPaymentMethodId,
         paymentMethodName: value.paymentMethodName,
+        isCashEquivalent: value.isCashEquivalent,
         amount: value.amount.toFixed(2),
         transactionCount: value.transactionCount,
         percentOfPaymentMethodEntriesTotal: percentOfBasis(value.amount, paymentMethodEntriesTotal),
@@ -439,6 +492,19 @@ export class SalesAggregationService {
       averageSalesPerRecordedDay: averageOrNull(totalSales, records.length),
     };
 
+    const cashReconciliationSummary: CashReconciliationSummaryDto = {
+      totalManualDiscounts: discountsTotal.toFixed(2),
+      totalPhysicalCashBasis: totalPhysicalCashBasis.toFixed(2),
+      totalExpectedCash: totalPhysicalCashBasis.minus(discountsTotal).toFixed(2),
+      totalActualCashCounted: totalActualCashCounted.toFixed(2),
+      totalDiscrepancy: totalDiscrepancy.toFixed(2),
+      daysCounted,
+      daysBalanced,
+      daysShort,
+      daysOver,
+      daysNotCounted,
+    };
+
     const reconciliation: SalesReconciliationDto = {
       totalSales: totalSales.toFixed(2),
       posReportedTotal: posReportedRecordCount > 0 ? posReportedTotal.toFixed(2) : null,
@@ -459,6 +525,7 @@ export class SalesAggregationService {
       vouchersCount,
       coverage,
       reconciliation,
+      cashReconciliationSummary,
       dailySales,
       channelTotals: channelTotalsDto,
       posSourceTotals: posSourceTotalsDto,

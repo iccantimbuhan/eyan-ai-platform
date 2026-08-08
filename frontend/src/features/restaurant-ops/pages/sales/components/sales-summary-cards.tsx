@@ -15,7 +15,7 @@ export function SalesSummaryCards({ record }: SalesSummaryCardsProps) {
     { label: 'Total Sales', value: record.totalSales },
     { label: 'POS Sales', value: record.posReportedTotal ?? '—' },
     { label: 'Channel Sales', value: record.reconciliation.channelEntriesTotal },
-    { label: 'Discounts', value: record.discountsTotal },
+    { label: 'Manual Discounts', value: record.discountsTotal },
     { label: 'Vouchers', value: record.vouchersAmount },
   ]
 

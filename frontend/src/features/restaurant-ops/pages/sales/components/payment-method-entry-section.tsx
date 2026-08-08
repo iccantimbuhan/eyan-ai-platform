@@ -3,14 +3,17 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   useCreatePosSource,
   useCreateSalesPaymentMethod,
   usePosSources,
   useSalesPaymentMethods,
+  useUpdateSalesPaymentMethod,
 } from '../../../hooks/use-sales-reference'
 import { useCreatePaymentMethodEntry, useDeletePaymentMethodEntry } from '../../../hooks/use-sales'
 import {
@@ -38,6 +41,7 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
   const { data: methods } = useSalesPaymentMethods(restaurantId)
   const { data: posSources } = usePosSources(restaurantId)
   const createMethod = useCreateSalesPaymentMethod(restaurantId)
+  const updateMethod = useUpdateSalesPaymentMethod(restaurantId)
   const createPosSource = useCreatePosSource(restaurantId)
   const createEntry = useCreatePaymentMethodEntry()
   const deleteEntry = useDeletePaymentMethodEntry()
@@ -216,6 +220,32 @@ export function PaymentMethodEntrySection({ restaurantId, salesId, entries }: Pa
           Add POS Source
         </Button>
       </div>
+
+      {(methods ?? []).length > 0 && (
+        <div className='space-y-1.5 rounded-md border p-3'>
+          <p className='text-xs font-medium text-muted-foreground'>
+            Physical cash classification — used by Cash Reconciliation to tell physical cash apart from card/
+            electronic payment methods.
+          </p>
+          <div className='flex flex-wrap gap-x-4 gap-y-2'>
+            {(methods ?? []).map((method) => (
+              <div key={method.id} className='flex items-center gap-2'>
+                <Checkbox
+                  id={`cash-equivalent-${method.id}`}
+                  checked={method.isCashEquivalent}
+                  disabled={updateMethod.isPending}
+                  onCheckedChange={(checked) =>
+                    updateMethod.mutate({ id: method.id, isCashEquivalent: checked === true })
+                  }
+                />
+                <Label htmlFor={`cash-equivalent-${method.id}`} className='text-sm font-normal'>
+                  {method.name} is physical cash
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

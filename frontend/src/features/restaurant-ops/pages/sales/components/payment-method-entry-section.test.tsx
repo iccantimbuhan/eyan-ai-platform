@@ -10,11 +10,12 @@ const createPosSourceMutateAsync = vi.fn()
 vi.mock('../../../hooks/use-sales-reference', () => ({
   useSalesPaymentMethods: () => ({
     data: [
-      { id: 'cash-id', restaurantId: 'rest-1', name: 'Cash', createdAt: '', updatedAt: '' },
-      { id: 'wolt-id', restaurantId: 'rest-1', name: 'Wolt', createdAt: '', updatedAt: '' },
+      { id: 'cash-id', restaurantId: 'rest-1', name: 'Cash', isCashEquivalent: true, createdAt: '', updatedAt: '' },
+      { id: 'wolt-id', restaurantId: 'rest-1', name: 'Wolt', isCashEquivalent: false, createdAt: '', updatedAt: '' },
     ],
   }),
   useCreateSalesPaymentMethod: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateSalesPaymentMethod: () => ({ mutate: vi.fn(), isPending: false }),
   usePosSources: () => ({
     data: [
       { id: 'pos-1-id', restaurantId: 'rest-1', name: 'POS 1', createdAt: '', updatedAt: '' },
@@ -38,6 +39,7 @@ function entry(overrides: Partial<SalesPaymentMethodEntry> = {}): SalesPaymentMe
     posSourceName: null,
     amount: '200.00',
     transactionCount: null,
+    isCashEquivalent: true,
     createdAt: '',
     ...overrides,
   }

@@ -41,8 +41,15 @@ export class SalesPaymentMethodRepository {
     });
   }
 
-  async create(data: { restaurantId: string; name: string }) {
+  async create(data: { restaurantId: string; name: string; isCashEquivalent?: boolean }) {
     return prisma.salesPaymentMethod.create({ data });
+  }
+
+  // The only reference-list update in this sprint (ADR-0043) — lets a
+  // manager retroactively flag an existing payment method as physical cash
+  // without recreating it.
+  async update(id: string, data: { isCashEquivalent: boolean }) {
+    return prisma.salesPaymentMethod.update({ where: { id }, data });
   }
 }
 

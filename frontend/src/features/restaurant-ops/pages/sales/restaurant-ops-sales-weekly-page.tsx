@@ -16,6 +16,7 @@ import { ReconciliationCard } from './components/reconciliation-card'
 import { SalesComparisonSection } from './components/sales-comparison-section'
 import { SalesCoverageCard } from './components/sales-coverage-card'
 import { SalesTrendChart } from './components/sales-trend-chart'
+import { WeeklyCashReconciliationSection } from './components/weekly-cash-reconciliation-section'
 
 const TOP_ITEMS_DISPLAY_LIMIT = 5
 
@@ -165,7 +166,7 @@ export function RestaurantOpsSalesWeeklyPage() {
             </Card>
             <Card>
               <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium text-muted-foreground'>Discounts</CardTitle>
+                <CardTitle className='text-sm font-medium text-muted-foreground'>Manual Discounts</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-2xl font-bold'>&euro;{summary.discountsTotal}</p>
@@ -200,6 +201,11 @@ export function RestaurantOpsSalesWeeklyPage() {
           </div>
 
           <SalesTrendChart dailySales={summary.dailySales} />
+
+          <WeeklyCashReconciliationSection
+            dailySales={summary.dailySales}
+            summary={summary.cashReconciliationSummary}
+          />
 
           <ChannelPerformanceSection channelTotals={summary.channelTotals} />
 

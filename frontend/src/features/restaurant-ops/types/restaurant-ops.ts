@@ -186,6 +186,13 @@ export interface SalesReference {
   updatedAt: string
 }
 
+// SalesPaymentMethod is the only reference list with a field beyond name
+// (ADR-0043) — isCashEquivalent is catalog-level, so it applies to every
+// entry referencing this payment method regardless of POS source.
+export interface SalesPaymentMethodReference extends SalesReference {
+  isCashEquivalent: boolean
+}
+
 export type SalesSource = 'MANUAL' | 'POS_REPORT'
 export type PosReportType = 'Z_REPORT' | 'X_REPORT'
 
@@ -214,6 +221,10 @@ export interface SalesPaymentMethodEntry {
   posSourceName: string | null
   amount: string
   transactionCount: number | null
+  // Catalog-level cash classification (ADR-0043), read off the referenced
+  // SalesPaymentMethod — splits a record's payment methods into Physical
+  // Cash vs Card/Electronic without a second lookup.
+  isCashEquivalent: boolean
   createdAt: string
 }
 
@@ -274,6 +285,9 @@ export interface DailySalesRecord {
   discountsTotal: string
   vouchersAmount: string
   vouchersCount: number | null
+  // Manager-entered physical cash count for the whole day (ADR-0043). Null
+  // until entered — never inferred from POS data.
+  actualCashCounted: string | null
   notes: string | null
   channels: SalesChannelEntry[]
   paymentMethods: SalesPaymentMethodEntry[]
@@ -282,6 +296,10 @@ export interface DailySalesRecord {
   // Sprint 2D — the same reconciliation shape the weekly summary uses,
   // computed server-side for this single day.
   reconciliation: SalesReconciliation
+  // ADR-0043 — a separate calculation from reconciliation above; never
+  // touches totalSales, only payment-method entries/discountsTotal/
+  // actualCashCounted. Computed fresh on every read, never persisted.
+  cashReconciliation: CashReconciliation
   createdAt: string
   updatedAt: string
 }
@@ -295,6 +313,10 @@ export interface DailySalesRecordListItem {
   createdAt: string
 }
 
+// BALANCED/SHORT/OVER only apply once a manager has entered a cash count;
+// NOT_COUNTED is a distinct state, never treated as BALANCED (ADR-0043).
+export type CashReconciliationStatus = 'BALANCED' | 'SHORT' | 'OVER' | 'NOT_COUNTED'
+
 export interface DailySalesTotal {
   date: string
   totalSales: string
@@ -302,6 +324,14 @@ export interface DailySalesTotal {
   // reconcile with it (ADR-0039 Decision 2/3).
   posReportedTotal: string | null
   channelEntriesTotal: string
+  // Cash reconciliation for this one day (ADR-0043), flattened onto this
+  // row rather than nested, matching this DTO's existing flat shape.
+  discountsTotal: string
+  physicalCashBasis: string
+  expectedCash: string
+  actualCashCounted: string | null
+  discrepancy: string | null
+  status: CashReconciliationStatus
 }
 
 export interface ChannelTotal {
@@ -339,6 +369,9 @@ export interface PosSourceChannelBreakdown {
 export interface PaymentMethodTotal {
   salesPaymentMethodId: string
   paymentMethodName: string
+  // Catalog-level classification (ADR-0043) — splits this breakdown into
+  // Physical Cash vs Card/Electronic without a second lookup.
+  isCashEquivalent: boolean
   amount: string
   transactionCount: number
   percentOfPaymentMethodEntriesTotal: string | null
@@ -400,6 +433,39 @@ export interface SalesReconciliation {
   varianceVsChannelEntriesTotal: string
 }
 
+// A distinct, separately-surfaced calculation from SalesReconciliation
+// above (ADR-0043) — that one compares totalSales/posReportedTotal/channel
+// entries and never touches payment methods or cash; this one is entirely
+// about physical cash on hand and never touches totalSales. Kept visually
+// distinct in the UI, never merged into one number.
+export interface CashReconciliation {
+  physicalCashBasis: string
+  cardElectronicTotal: string
+  totalPaymentMethods: string
+  manualDiscounts: string
+  expectedCash: string
+  actualCashCounted: string | null
+  discrepancy: string | null
+  status: CashReconciliationStatus
+}
+
+// Weekly rollup of the per-day cash reconciliation figures in dailySales[]
+// (ADR-0043). totalActualCashCounted/totalDiscrepancy sum ONLY days that
+// have a count (daysCounted) — a day with no count contributes nothing to
+// either, so a week with missing counts never reads as a phantom shortfall.
+export interface CashReconciliationSummary {
+  totalManualDiscounts: string
+  totalPhysicalCashBasis: string
+  totalExpectedCash: string
+  totalActualCashCounted: string
+  totalDiscrepancy: string
+  daysCounted: number
+  daysBalanced: number
+  daysShort: number
+  daysOver: number
+  daysNotCounted: number
+}
+
 export interface WeeklySalesSummary {
   branchId: string
   startDate: string
@@ -410,6 +476,7 @@ export interface WeeklySalesSummary {
   vouchersCount: number
   coverage: SalesDataCoverage
   reconciliation: SalesReconciliation
+  cashReconciliationSummary: CashReconciliationSummary
   dailySales: DailySalesTotal[]
   channelTotals: ChannelTotal[]
   posSourceTotals: PosSourceTotal[]

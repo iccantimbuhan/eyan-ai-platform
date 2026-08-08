@@ -13,6 +13,7 @@ function record(overrides: Partial<Record<string, unknown>> = {}) {
     discountsTotal: new Prisma.Decimal("0"),
     vouchersAmount: new Prisma.Decimal("0"),
     vouchersCount: 0,
+    actualCashCounted: null,
     channelEntries: [],
     paymentMethodEntries: [],
     categoryEntries: [],
@@ -43,11 +44,12 @@ function paymentMethodEntry(
   name: string,
   amount: string,
   transactionCount: number | null = null,
-  posSource: { id: string; name: string } | null = null
+  posSource: { id: string; name: string } | null = null,
+  isCashEquivalent = false
 ) {
   return {
     salesPaymentMethodId: id,
-    salesPaymentMethod: { name },
+    salesPaymentMethod: { name, isCashEquivalent },
     amount: new Prisma.Decimal(amount),
     transactionCount,
     posSourceId: posSource?.id ?? null,
@@ -537,6 +539,118 @@ describe("SalesAggregationService.getWeeklySummary", () => {
       const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
 
       expect(summary.dailySales[0].posReportedTotal).toBeNull();
+    });
+  });
+
+  describe("cash reconciliation (ADR-0043) — per-day figures and the weekly rollup", () => {
+    it("computes physicalCashBasis/expectedCash/discrepancy/status per day, excluding non-cash methods", async () => {
+      const records = [
+        record({
+          businessDate: new Date("2026-08-03T00:00:00.000Z"),
+          discountsTotal: new Prisma.Decimal("10.00"),
+          actualCashCounted: new Prisma.Decimal("70.00"),
+          paymentMethodEntries: [
+            paymentMethodEntry("cash-id", "Cash", "50.00", null, null, true),
+            paymentMethodEntry("bolt-cash-id", "Bolt Cash", "30.00", null, null, true),
+            paymentMethodEntry("card-id", "Trust/Card Payment", "999.00", null, null, false),
+          ],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.dailySales[0]).toMatchObject({
+        discountsTotal: "10.00",
+        physicalCashBasis: "80.00",
+        expectedCash: "70.00",
+        actualCashCounted: "70.00",
+        discrepancy: "0.00",
+        status: "BALANCED",
+      });
+    });
+
+    it("marks a day NOT_COUNTED — distinct from BALANCED — when no manager has entered a cash count", async () => {
+      const records = [record({ actualCashCounted: null })];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.dailySales[0].status).toBe("NOT_COUNTED");
+      expect(summary.dailySales[0].discrepancy).toBeNull();
+    });
+
+    it("rolls up totalExpectedCash across every day, but totalActualCashCounted/totalDiscrepancy only over counted days", async () => {
+      const records = [
+        record({
+          businessDate: new Date("2026-08-03T00:00:00.000Z"),
+          discountsTotal: new Prisma.Decimal("0"),
+          actualCashCounted: new Prisma.Decimal("95.00"), // short by 5
+          paymentMethodEntries: [paymentMethodEntry("cash-id", "Cash", "100.00", null, null, true)],
+        }),
+        record({
+          businessDate: new Date("2026-08-04T00:00:00.000Z"),
+          discountsTotal: new Prisma.Decimal("0"),
+          actualCashCounted: new Prisma.Decimal("205.00"), // over by 5
+          paymentMethodEntries: [paymentMethodEntry("cash-id", "Cash", "200.00", null, null, true)],
+        }),
+        record({
+          // Not counted — its €50 expected cash must still count toward
+          // totalExpectedCash, but must NOT drag totalActualCashCounted or
+          // totalDiscrepancy down as if it were a €50 shortfall.
+          businessDate: new Date("2026-08-05T00:00:00.000Z"),
+          discountsTotal: new Prisma.Decimal("0"),
+          actualCashCounted: null,
+          paymentMethodEntries: [paymentMethodEntry("cash-id", "Cash", "50.00", null, null, true)],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.cashReconciliationSummary).toMatchObject({
+        totalPhysicalCashBasis: "350.00",
+        totalExpectedCash: "350.00",
+        totalActualCashCounted: "300.00", // 95 + 205, the €50 not-counted day excluded
+        totalDiscrepancy: "0.00", // -5 + 5, the not-counted day contributes nothing
+        daysCounted: 2,
+        daysBalanced: 0,
+        daysShort: 1,
+        daysOver: 1,
+        daysNotCounted: 1,
+      });
+    });
+
+    it("reuses discountsTotal as manualDiscounts and never lets it affect totalSales", async () => {
+      const records = [
+        record({ totalSales: new Prisma.Decimal("500.00"), discountsTotal: new Prisma.Decimal("25.00") }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      expect(summary.totalSales).toBe("500.00");
+      expect(summary.dailySales[0].discountsTotal).toBe("25.00");
+      expect(summary.cashReconciliationSummary.totalManualDiscounts).toBe("25.00");
+    });
+
+    it("tags each payment-method breakdown row with isCashEquivalent, independent of the channel dimension", async () => {
+      const records = [
+        record({
+          paymentMethodEntries: [
+            paymentMethodEntry("cash-id", "Cash", "100.00", null, null, true),
+            paymentMethodEntry("card-id", "Card", "50.00", null, null, false),
+          ],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      const cashTotal = summary.paymentMethodTotals.find((m) => m.salesPaymentMethodId === "cash-id");
+      const cardTotal = summary.paymentMethodTotals.find((m) => m.salesPaymentMethodId === "card-id");
+      expect(cashTotal?.isCashEquivalent).toBe(true);
+      expect(cardTotal?.isCashEquivalent).toBe(false);
     });
   });
 });

@@ -35,6 +35,15 @@ export class SalesPaymentMethodController {
     const row = await salesPaymentMethodService.create(getParam(req, "restaurantId"), req.body);
     return ApiResponse.success(res, row, 201, "Sales payment method created successfully.");
   }
+
+  static async update(req: Request, res: Response) {
+    const row = await salesPaymentMethodService.update(
+      getParam(req, "restaurantId"),
+      getParam(req, "id"),
+      req.body
+    );
+    return ApiResponse.success(res, row, 200, "Sales payment method updated successfully.");
+  }
 }
 
 export class SalesCategoryController {

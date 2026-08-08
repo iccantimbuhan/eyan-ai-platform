@@ -102,6 +102,7 @@ describe('PosSourcePerformanceSection', () => {
           {
             salesPaymentMethodId: 'cash-id',
             paymentMethodName: 'Cash',
+            isCashEquivalent: true,
             amount: '200.00',
             transactionCount: 20,
             percentOfPaymentMethodEntriesTotal: '16.8',
@@ -109,6 +110,7 @@ describe('PosSourcePerformanceSection', () => {
           {
             salesPaymentMethodId: 'card-id',
             paymentMethodName: 'Card',
+            isCashEquivalent: false,
             amount: '220.30',
             transactionCount: 20,
             percentOfPaymentMethodEntriesTotal: '18.6',
@@ -122,6 +124,7 @@ describe('PosSourcePerformanceSection', () => {
           {
             salesPaymentMethodId: 'wolt-id',
             paymentMethodName: 'Wolt',
+            isCashEquivalent: false,
             amount: '486.49',
             transactionCount: 25,
             percentOfPaymentMethodEntriesTotal: '41.0',

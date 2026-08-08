@@ -37,7 +37,12 @@ import { createIngredientCategoryValidator } from "../../validators/ingredient-c
 import { createSupplierValidator } from "../../validators/supplier.validator.js";
 import { createIngredientValidator } from "../../validators/ingredient.validator.js";
 import { createRecipeValidator } from "../../validators/recipe.validator.js";
-import { createSalesReferenceValidator } from "../../validators/sales-reference.validator.js";
+import {
+  createSalesPaymentMethodValidator,
+  createSalesReferenceValidator,
+  salesPaymentMethodIdParamValidator,
+  updateSalesPaymentMethodValidator,
+} from "../../validators/sales-reference.validator.js";
 
 // Mounted at /api/v1/restaurants. Every route here is scoped by
 // :restaurantId and guarded by requireRestaurantAccess — this is also
@@ -254,11 +259,27 @@ router.get(
 router.post(
   "/:restaurantId/sales-payment-methods",
   restaurantIdParamValidator,
-  createSalesReferenceValidator,
+  createSalesPaymentMethodValidator,
   validate,
   requireRestaurantAccess(),
   requireTenantRole(...SALES_WRITE_ROLES),
   SalesPaymentMethodController.create
+);
+
+// ADR-0043 — the only single-resource reference-list write in this sprint:
+// lets a manager retroactively flag an existing payment method as physical
+// cash. Scope (the id actually belongs to :restaurantId) is checked in
+// SalesPaymentMethodService.update, mirroring sales-entry.service.ts's own
+// FK scope checks rather than a dedicated requireXAccess middleware.
+router.patch(
+  "/:restaurantId/sales-payment-methods/:id",
+  restaurantIdParamValidator,
+  salesPaymentMethodIdParamValidator,
+  updateSalesPaymentMethodValidator,
+  validate,
+  requireRestaurantAccess(),
+  requireTenantRole(...SALES_WRITE_ROLES),
+  SalesPaymentMethodController.update
 );
 
 router.get(

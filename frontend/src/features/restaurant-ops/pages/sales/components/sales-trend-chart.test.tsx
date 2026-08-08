@@ -4,7 +4,18 @@ import type { DailySalesTotal } from '../../../types/restaurant-ops'
 import { SalesTrendChart } from './sales-trend-chart'
 
 function day(date: string, totalSales: string): DailySalesTotal {
-  return { date, totalSales, posReportedTotal: null, channelEntriesTotal: '0.00' }
+  return {
+    date,
+    totalSales,
+    posReportedTotal: null,
+    channelEntriesTotal: '0.00',
+    discountsTotal: '0.00',
+    physicalCashBasis: '0.00',
+    expectedCash: '0.00',
+    actualCashCounted: null,
+    discrepancy: null,
+    status: 'NOT_COUNTED',
+  }
 }
 
 // Recharts' <ResponsiveContainer> measures its parent via ResizeObserver,

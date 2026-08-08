@@ -78,6 +78,7 @@ export class DailySalesRecordService {
       discountsTotal: data.discountsTotal ?? 0,
       vouchersAmount: data.vouchersAmount ?? 0,
       vouchersCount: data.vouchersCount ?? null,
+      actualCashCounted: data.actualCashCounted ?? null,
       notes: data.notes ?? null,
       createdById,
     });
@@ -97,6 +98,7 @@ export class DailySalesRecordService {
       discountsTotal: data.discountsTotal,
       vouchersAmount: data.vouchersAmount,
       vouchersCount: data.vouchersCount,
+      actualCashCounted: data.actualCashCounted,
       notes: data.notes,
     });
 

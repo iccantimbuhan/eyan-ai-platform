@@ -11,6 +11,7 @@ import {
   getSalesChannelMenuItems,
   getSalesChannels,
   getSalesPaymentMethods,
+  updateSalesPaymentMethod,
   upsertSalesChannelMenuItem,
 } from '../api/restaurant-ops-api'
 
@@ -64,6 +65,32 @@ export function useCreateSalesPaymentMethod(restaurantId: string) {
 
     onError: () => {
       toast.error('Failed to add payment method.')
+    },
+  })
+}
+
+// ADR-0043 — the only reference-list update in this sprint: retroactively
+// flags an existing payment method as physical cash for Cash Reconciliation.
+export function useUpdateSalesPaymentMethod(restaurantId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, isCashEquivalent }: { id: string; isCashEquivalent: boolean }) =>
+      updateSalesPaymentMethod(restaurantId, id, { isCashEquivalent }),
+
+    onSuccess: async () => {
+      toast.success('Payment method updated.')
+      await queryClient.invalidateQueries({ queryKey: ['sales-payment-methods', restaurantId] })
+      // Cash classification changes what daily/weekly cash reconciliation
+      // figures — already-fetched records must recompute, not just the
+      // reference list.
+      await queryClient.invalidateQueries({ queryKey: ['daily-sales'] })
+      await queryClient.invalidateQueries({ queryKey: ['sales-record'] })
+      await queryClient.invalidateQueries({ queryKey: ['weekly-sales'] })
+    },
+
+    onError: () => {
+      toast.error('Failed to update payment method.')
     },
   })
 }

@@ -1,5 +1,5 @@
 import type { PosReportType, SalesSource } from "../generated/prisma/enums.js";
-import type { SalesReconciliationDto } from "./sales-aggregation.dto.js";
+import type { CashReconciliationDto, SalesReconciliationDto } from "./sales-aggregation.dto.js";
 
 export interface CreateDailySalesRecordDto {
   businessDate: string; // "YYYY-MM-DD"
@@ -11,6 +11,9 @@ export interface CreateDailySalesRecordDto {
   discountsTotal?: number | string;
   vouchersAmount?: number | string;
   vouchersCount?: number;
+  // Manager-entered physical cash count for the whole day (ADR-0043).
+  // Optional — most records won't have one at creation time.
+  actualCashCounted?: number | string;
   notes?: string;
 }
 
@@ -23,6 +26,7 @@ export interface UpdateDailySalesRecordDto {
   discountsTotal?: number | string;
   vouchersAmount?: number | string;
   vouchersCount?: number | null;
+  actualCashCounted?: number | string | null;
   notes?: string | null;
 }
 
@@ -50,6 +54,11 @@ export interface SalesPaymentMethodEntryResponseDto {
   posSourceName: string | null;
   amount: string;
   transactionCount: number | null;
+  // Catalog-level cash classification (ADR-0043), read off the referenced
+  // SalesPaymentMethod at response time — lets the UI split a record's
+  // payment methods into Physical Cash vs Card/Electronic without a
+  // second lookup.
+  isCashEquivalent: boolean;
   createdAt: Date;
 }
 
@@ -90,6 +99,9 @@ export interface DailySalesRecordResponseDto {
   discountsTotal: string;
   vouchersAmount: string;
   vouchersCount: number | null;
+  // Manager-entered physical cash count for the whole day (ADR-0043). Null
+  // until entered — never inferred from POS data.
+  actualCashCounted: string | null;
   notes: string | null;
   channels: SalesChannelEntryResponseDto[];
   paymentMethods: SalesPaymentMethodEntryResponseDto[];
@@ -99,6 +111,10 @@ export interface DailySalesRecordResponseDto {
   // weekly summary uses, computed for this single day. Never mutates the
   // record; a non-zero variance is not automatically an error (spec §F).
   reconciliation: SalesReconciliationDto;
+  // ADR-0043 — a separate calculation from reconciliation above; never
+  // touches totalSales, only payment-method entries/discountsTotal/
+  // actualCashCounted. Computed fresh on every read, never persisted.
+  cashReconciliation: CashReconciliationDto;
   createdAt: Date;
   updatedAt: Date;
 }
