@@ -14,6 +14,8 @@ function record(overrides: Partial<Record<string, unknown>> = {}) {
     vouchersAmount: new Prisma.Decimal("0"),
     vouchersCount: 0,
     actualCashCounted: null,
+    discountPosSourceId: null,
+    discountPosSource: null,
     channelEntries: [],
     paymentMethodEntries: [],
     categoryEntries: [],
@@ -651,6 +653,54 @@ describe("SalesAggregationService.getWeeklySummary", () => {
       const cardTotal = summary.paymentMethodTotals.find((m) => m.salesPaymentMethodId === "card-id");
       expect(cashTotal?.isCashEquivalent).toBe(true);
       expect(cardTotal?.isCashEquivalent).toBe(false);
+    });
+
+    // Item 15 — weekly aggregation MUST use the exact same POS-scoped
+    // formula as the single-record calculation, since both call the same
+    // shared computeCashReconciliation function. Same worked scenario:
+    // POS 1 (Trust Pay/Card + Cash Draw) absorbs the discount, POS 2
+    // (Bolt Cash) is untouched.
+    it("applies a POS-scoped manual discount identically to the single-record calculation", async () => {
+      const pos1 = { id: "pos-1", name: "POS 1" };
+      const pos2 = { id: "pos-2", name: "POS 2" };
+      const records = [
+        record({
+          discountsTotal: new Prisma.Decimal("61.35"),
+          discountPosSourceId: "pos-1",
+          discountPosSource: { name: "POS 1" },
+          actualCashCounted: new Prisma.Decimal("324.73"),
+          paymentMethodEntries: [
+            paymentMethodEntry("trust-card-id", "Trust Pay/Card Payment", "321.00", null, pos1, true),
+            paymentMethodEntry("cash-draw-id", "Cash Draw", "259.65", null, pos1, true),
+            paymentMethodEntry("bolt-cash-id", "Bolt Cash", "251.98", null, pos2, true),
+          ],
+        }),
+      ];
+      const { service } = buildService(records);
+
+      const summary = await service.getWeeklySummary("branch-1", "2026-08-03", "2026-08-09");
+
+      // Per-day flat figures (dailySales[]) reflect the POS-scoped total.
+      expect(summary.dailySales[0]).toMatchObject({
+        discountsTotal: "61.35",
+        physicalCashBasis: "832.63",
+        expectedCash: "771.28",
+        actualCashCounted: "324.73",
+        discrepancy: "-446.55",
+        status: "SHORT",
+      });
+
+      // The weekly rollup summary is built from that same corrected figure.
+      expect(summary.cashReconciliationSummary).toMatchObject({
+        totalPhysicalCashBasis: "832.63",
+        totalExpectedCash: "771.28",
+        totalActualCashCounted: "324.73",
+        totalDiscrepancy: "-446.55",
+        daysCounted: 1,
+        daysShort: 1,
+        daysBalanced: 0,
+        daysOver: 0,
+      });
     });
   });
 });

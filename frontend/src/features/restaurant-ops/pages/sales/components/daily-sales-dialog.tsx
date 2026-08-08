@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateDailySalesRecord, useSalesRecord, useUpdateDailySalesRecord } from '../../../hooks/use-sales'
+import { usePosSources } from '../../../hooks/use-sales-reference'
 import {
   dailySalesHeaderSchema,
   defaultDailySalesHeaderValues,
@@ -39,6 +40,10 @@ type DailySalesDialogProps = {
   onOpenChange: (open: boolean) => void
 }
 
+// Sentinel for the "All POS sources" option — Radix Select can't use an
+// empty string as an item value. Maps to discountPosSourceId: null.
+const ALL_POS_SOURCES = '__all__'
+
 function toHeaderValues(record?: DailySalesRecord | null, date?: Date): DailySalesHeaderFormValues {
   if (!record) {
     return { ...defaultDailySalesHeaderValues, businessDate: date ?? new Date() }
@@ -54,6 +59,10 @@ function toHeaderValues(record?: DailySalesRecord | null, date?: Date): DailySal
     discountsTotal: record.discountsTotal,
     vouchersAmount: record.vouchersAmount,
     actualCashCounted: record.actualCashCounted ?? '',
+    // ADR-0043 amendment — which POS source the discount is scoped to.
+    // Read off the computed cashReconciliation block (mirrors the record's
+    // own discountPosSourceId exactly), empty string = "All POS sources".
+    discountPosSourceId: record.cashReconciliation.discountPosSourceId ?? '',
     vouchersCount: record.vouchersCount?.toString() ?? '',
     notes: record.notes ?? '',
   }
@@ -76,6 +85,7 @@ export function DailySalesDialog({
 }: DailySalesDialogProps) {
   const [recordId, setRecordId] = useState<string | null>(existingRecord?.id ?? null)
   const { data: liveRecord } = useSalesRecord(recordId)
+  const { data: posSources } = usePosSources(restaurantId)
   const createRecord = useCreateDailySalesRecord(branchId)
   const updateRecord = useUpdateDailySalesRecord()
 
@@ -103,6 +113,10 @@ export function DailySalesDialog({
       discountsTotal: values.discountsTotal ? Number(values.discountsTotal) : undefined,
       vouchersAmount: values.vouchersAmount ? Number(values.vouchersAmount) : undefined,
       actualCashCounted: values.actualCashCounted ? Number(values.actualCashCounted) : undefined,
+      // ADR-0043 amendment — explicit null ("All POS sources") is a real,
+      // intentional value here, distinct from "leave unchanged" (undefined
+      // everywhere else in this payload) — the manager actively chose it.
+      discountPosSourceId: values.discountPosSourceId ? values.discountPosSourceId : null,
       vouchersCount: values.vouchersCount ? Number(values.vouchersCount) : undefined,
       notes: values.notes || undefined,
     }
@@ -242,7 +256,7 @@ export function DailySalesDialog({
               )}
             />
 
-            <div className='grid grid-cols-2 gap-3 rounded-md border p-3'>
+            <div className='grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-3'>
               <FormField
                 control={form.control}
                 name='discountsTotal'
@@ -254,6 +268,38 @@ export function DailySalesDialog({
                     </FormControl>
                     <p className='text-xs text-muted-foreground'>
                       Never subtracted from Total Sales &mdash; used only by Cash Reconciliation below.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='discountPosSourceId'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount applies to</FormLabel>
+                    <Select
+                      value={field.value || ALL_POS_SOURCES}
+                      onValueChange={(value) => field.onChange(value === ALL_POS_SOURCES ? '' : value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={ALL_POS_SOURCES}>All POS sources</SelectItem>
+                        {(posSources ?? []).map((posSource) => (
+                          <SelectItem key={posSource.id} value={posSource.id}>
+                            {posSource.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className='text-xs text-muted-foreground'>
+                      Which POS source&rsquo;s physical cash the discount reduces.
                     </p>
                     <FormMessage />
                   </FormItem>

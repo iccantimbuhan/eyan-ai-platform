@@ -580,6 +580,9 @@ export interface CreateDailySalesRecordPayload {
   vouchersCount?: number
   // Manager-entered physical cash count for the whole day (ADR-0043).
   actualCashCounted?: number
+  // Which POS source discountsTotal is scoped to (ADR-0043 amendment).
+  // null (or omitted) means "all POS sources" — the legacy/global behavior.
+  discountPosSourceId?: string | null
   notes?: string
 }
 

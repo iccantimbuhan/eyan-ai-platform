@@ -209,7 +209,9 @@ export class SalesAggregationService {
       const dayCash = computeCashReconciliation(
         record.paymentMethodEntries,
         record.discountsTotal,
-        record.actualCashCounted
+        record.actualCashCounted,
+        record.discountPosSourceId,
+        record.discountPosSource
       );
 
       dailySales.push({

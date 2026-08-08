@@ -47,6 +47,9 @@ export const dailySalesHeaderSchema = z.object({
   // Manager-entered physical cash count for the whole day (ADR-0043) — used
   // only by Cash Reconciliation, never by totalSales.
   actualCashCounted: optionalNonNegativeNumericString('Actual cash counted must be zero or greater.'),
+  // Which POS source discountsTotal applies to (ADR-0043 amendment) — empty
+  // string maps to "All POS sources" / null at submit time.
+  discountPosSourceId: z.string().trim().optional(),
   vouchersCount: z
     .string()
     .trim()
@@ -69,6 +72,7 @@ export const defaultDailySalesHeaderValues: DailySalesHeaderFormValues = {
   discountsTotal: '',
   vouchersAmount: '',
   actualCashCounted: '',
+  discountPosSourceId: '',
   vouchersCount: '',
   notes: '',
 }

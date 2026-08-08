@@ -35,6 +35,10 @@ export const createDailySalesRecordValidator = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage("Actual cash counted must be zero or greater."),
+  // Which POS source discountsTotal is scoped to (ADR-0043 amendment).
+  // Existence + restaurant-scope is checked in the service, same as every
+  // other client-supplied master-list FK — this only checks shape.
+  body("discountPosSourceId").optional({ nullable: true }).isString(),
 
   body("notes").optional().isString(),
 ];
@@ -55,6 +59,7 @@ export const updateDailySalesRecordValidator = [
     .optional({ nullable: true })
     .isFloat({ min: 0 })
     .withMessage("Actual cash counted must be zero or greater."),
+  body("discountPosSourceId").optional({ nullable: true }).isString(),
   body("notes").optional({ nullable: true }).isString(),
 ];
 

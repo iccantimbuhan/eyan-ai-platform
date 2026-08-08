@@ -2327,6 +2327,16 @@ model DailySalesRecord {
   // inferred or auto-calculated from POS data. See ADR-0043.
   actualCashCounted Decimal? @db.Decimal(10, 2)
 
+  // Which POS source's physical cash discountsTotal reduces (ADR-0043
+  // amendment — POS-scoped discount). Null means "all POS sources /
+  // legacy global behavior": the discount reduces the combined cash basis
+  // across every POS source, exactly as before this field existed — so
+  // every pre-existing record keeps computing the exact same Expected
+  // Cash it did before, unchanged. Never inferred from payment method or
+  // POS source names.
+  discountPosSourceId String?
+  discountPosSource   PosSource? @relation(fields: [discountPosSourceId], references: [id], onDelete: SetNull)
+
   notes String?
 
   createdById String
@@ -2403,6 +2413,9 @@ model PosSource {
 
   channelEntries       SalesChannelEntry[]
   paymentMethodEntries SalesPaymentMethodEntry[]
+  // Reverse side of DailySalesRecord.discountPosSource (ADR-0043 amendment)
+  // — days whose manual discount is scoped to this POS source.
+  discountScopedRecords DailySalesRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

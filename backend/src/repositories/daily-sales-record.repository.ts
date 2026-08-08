@@ -13,6 +13,10 @@ const fullInclude = {
   },
   categoryEntries: { include: { salesCategory: true }, orderBy: { createdAt: "asc" } },
   itemEntries: { orderBy: { createdAt: "asc" } },
+  // ADR-0043 amendment — which POS source discountsTotal is scoped to, for
+  // display name resolution independent of whether that POS actually has
+  // any cash entries recorded yet today.
+  discountPosSource: true,
 } as const;
 
 export type DailySalesRecordWithLines = Prisma.DailySalesRecordGetPayload<{ include: typeof fullInclude }>;
@@ -30,6 +34,7 @@ export interface CreateDailySalesRecordData {
   vouchersAmount: Prisma.Decimal | string | number;
   vouchersCount?: number | null;
   actualCashCounted?: Prisma.Decimal | string | number | null;
+  discountPosSourceId?: string | null;
   notes?: string | null;
   createdById: string;
 }
@@ -44,6 +49,7 @@ export interface UpdateDailySalesRecordData {
   vouchersAmount?: Prisma.Decimal | string | number;
   vouchersCount?: number | null;
   actualCashCounted?: Prisma.Decimal | string | number | null;
+  discountPosSourceId?: string | null;
   notes?: string | null;
 }
 

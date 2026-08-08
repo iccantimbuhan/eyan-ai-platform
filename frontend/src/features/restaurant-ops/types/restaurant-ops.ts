@@ -438,11 +438,30 @@ export interface SalesReconciliation {
 // entries and never touches payment methods or cash; this one is entirely
 // about physical cash on hand and never touches totalSales. Kept visually
 // distinct in the UI, never merged into one number.
+// One POS source's slice of physical cash (ADR-0043 amendment — POS-scoped
+// discount). posSourceId/posSourceName are both null for the "unassigned"
+// bucket (cash entries with no posSourceId set — the common single-POS
+// case). discountApplied is "0.00" for every bucket except the one
+// matching CashReconciliation.discountPosSourceId.
+export interface CashPosSourceBreakdown {
+  posSourceId: string | null
+  posSourceName: string | null
+  grossCashBasis: string
+  discountApplied: string
+  expectedCash: string
+}
+
 export interface CashReconciliation {
   physicalCashBasis: string
   cardElectronicTotal: string
   totalPaymentMethods: string
   manualDiscounts: string
+  // Which POS source manualDiscounts is scoped to (ADR-0043 amendment).
+  // null means "all POS sources" — the discount reduces the combined cash
+  // basis across every POS source (legacy/global behavior).
+  discountPosSourceId: string | null
+  discountPosSourceName: string | null
+  cashByPosSource: CashPosSourceBreakdown[]
   expectedCash: string
   actualCashCounted: string | null
   discrepancy: string | null

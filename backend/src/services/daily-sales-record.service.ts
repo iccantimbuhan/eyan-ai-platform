@@ -3,8 +3,12 @@ import {
   DailySalesRecordRepository,
 } from "../repositories/daily-sales-record.repository.js";
 import { branchRepository as defaultBranchRepository, BranchRepository } from "../repositories/branch.repository.js";
+import {
+  posSourceRepository as defaultPosSourceRepository,
+  PosSourceRepository,
+} from "../repositories/sales-reference.repository.js";
 import { NotFoundError } from "../errors/auth.error.js";
-import { DailySalesRecordAlreadyExistsError } from "../errors/sales.error.js";
+import { DailySalesRecordAlreadyExistsError, SalesScopeMismatchError } from "../errors/sales.error.js";
 import {
   mapDailySalesRecordToListItem,
   mapDailySalesRecordToResponse,
@@ -24,8 +28,23 @@ export function truncateToUtcDate(value: string | Date): Date {
 export class DailySalesRecordService {
   constructor(
     private readonly repository: DailySalesRecordRepository = dailySalesRecordRepository,
-    private readonly branchRepository: BranchRepository = defaultBranchRepository
+    private readonly branchRepository: BranchRepository = defaultBranchRepository,
+    private readonly posSourceRepository: PosSourceRepository = defaultPosSourceRepository
   ) {}
+
+  // discountPosSourceId (ADR-0043 amendment) is a client-supplied FK like
+  // any entry-level posSourceId — validated against the record's own
+  // restaurant the same way sales-entry.service.ts validates every other
+  // client-supplied master-list FK, so a discount can never be scoped to a
+  // POS source belonging to a different restaurant.
+  private async assertDiscountPosSourceScope(discountPosSourceId: string | null | undefined, restaurantId: string) {
+    if (!discountPosSourceId) return;
+
+    const posSource = await this.posSourceRepository.findById(discountPosSourceId);
+    if (!posSource || posSource.restaurantId !== restaurantId) {
+      throw new SalesScopeMismatchError("This POS source does not belong to the given branch's restaurant.");
+    }
+  }
 
   async list(branchId: string) {
     const rows = await this.repository.findManyByBranchId(branchId);
@@ -66,6 +85,8 @@ export class DailySalesRecordService {
       throw new DailySalesRecordAlreadyExistsError();
     }
 
+    await this.assertDiscountPosSourceScope(data.discountPosSourceId, branch.restaurantId);
+
     const row = await this.repository.create({
       branchId,
       restaurantId: branch.restaurantId,
@@ -79,6 +100,7 @@ export class DailySalesRecordService {
       vouchersAmount: data.vouchersAmount ?? 0,
       vouchersCount: data.vouchersCount ?? null,
       actualCashCounted: data.actualCashCounted ?? null,
+      discountPosSourceId: data.discountPosSourceId ?? null,
       notes: data.notes ?? null,
       createdById,
     });
@@ -87,7 +109,9 @@ export class DailySalesRecordService {
   }
 
   async update(id: string, data: UpdateDailySalesRecordDto) {
-    await this.getById(id);
+    const existing = await this.getById(id);
+
+    await this.assertDiscountPosSourceScope(data.discountPosSourceId, existing.restaurantId);
 
     const row = await this.repository.update(id, {
       source: data.source,
@@ -99,6 +123,7 @@ export class DailySalesRecordService {
       vouchersAmount: data.vouchersAmount,
       vouchersCount: data.vouchersCount,
       actualCashCounted: data.actualCashCounted,
+      discountPosSourceId: data.discountPosSourceId,
       notes: data.notes,
     });
 

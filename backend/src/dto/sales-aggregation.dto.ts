@@ -139,6 +139,22 @@ export interface SalesReconciliationDto {
   varianceVsChannelEntriesTotal: string; // totalSales - channelEntriesTotal
 }
 
+// One POS source's slice of physical cash (ADR-0043 amendment — POS-scoped
+// discount). posSourceId/posSourceName are both null for the "unassigned"
+// bucket (cash entries with no posSourceId set — the common single-POS
+// case), matching the same convention SalesAggregationService's
+// posSourceTotals/paymentMethodPosSourceTotals already use. discountApplied
+// is "0.00" for every bucket except the one matching
+// CashReconciliationDto.discountPosSourceId — never more than one bucket,
+// never split across buckets.
+export interface CashPosSourceBreakdownDto {
+  posSourceId: string | null;
+  posSourceName: string | null;
+  grossCashBasis: string;
+  discountApplied: string;
+  expectedCash: string; // grossCashBasis - discountApplied
+}
+
 // A distinct, separately-surfaced calculation from SalesReconciliationDto
 // above (ADR-0043) — that one compares totalSales/posReportedTotal/channel
 // entries and never touches payment methods or cash; this one is entirely
@@ -149,17 +165,36 @@ export interface SalesReconciliationDto {
 //
 //   physicalCashBasis   = sum of payment-method entries where
 //                          salesPaymentMethod.isCashEquivalent is true
-//                          (any POS source, summed together)
+//                          (every POS source, summed together — same
+//                          meaning as before the POS-scoped discount
+//                          amendment; equals the sum of
+//                          cashByPosSource[].grossCashBasis)
 //   cardElectronicTotal = sum of the remaining (non-cash) entries
 //   manualDiscounts     = DailySalesRecord.discountsTotal, reused as-is
-//   expectedCash        = physicalCashBasis - manualDiscounts
-//   discrepancy         = actualCashCounted - expectedCash (null until a
+//   discountPosSourceId = DailySalesRecord.discountPosSourceId, reused
+//                          as-is — null means the discount reduces the
+//                          combined physicalCashBasis across every POS
+//                          source (legacy/global behavior, unchanged from
+//                          before this amendment); non-null means the
+//                          discount reduces ONLY that one POS source's
+//                          gross cash, every other POS source's expected
+//                          cash equals its own gross cash untouched
+//   cashByPosSource      = per-POS-source breakdown carrying the above
+//                          rule out per bucket (see CashPosSourceBreakdownDto)
+//   expectedCash         = sum of cashByPosSource[].expectedCash (equals
+//                          physicalCashBasis - manualDiscounts exactly
+//                          when discountPosSourceId is null, since then
+//                          there is effectively one combined bucket)
+//   discrepancy          = actualCashCounted - expectedCash (null until a
 //                          manager enters actualCashCounted)
 export interface CashReconciliationDto {
   physicalCashBasis: string;
   cardElectronicTotal: string;
   totalPaymentMethods: string; // physicalCashBasis + cardElectronicTotal
   manualDiscounts: string;
+  discountPosSourceId: string | null;
+  discountPosSourceName: string | null;
+  cashByPosSource: CashPosSourceBreakdownDto[];
   expectedCash: string;
   actualCashCounted: string | null;
   discrepancy: string | null;

@@ -5,10 +5,18 @@ import type {
   DailySalesRecordResponseDto,
 } from "./daily-sales-record.dto.js";
 import type {
+  CashPosSourceBreakdownDto,
   CashReconciliationDto,
   CashReconciliationStatus,
   SalesReconciliationDto,
 } from "./sales-aggregation.dto.js";
+
+// Key for the "no POS source specified" cash bucket — mirrors
+// SalesAggregationService's own UNASSIGNED_POS_SOURCE_KEY constant exactly
+// (kept as a separate local constant rather than a shared import to avoid a
+// circular dependency, since that service already imports from this file).
+// Never collides with a real PosSource id (cuid).
+const UNASSIGNED_POS_SOURCE_KEY = "unassigned";
 
 // Same reconciliation shape/reasoning as SalesAggregationService's weekly
 // summary, computed for this one record — real Prisma.Decimal arithmetic,
@@ -32,24 +40,91 @@ function computeReconciliation(row: DailySalesRecordWithLines): SalesReconciliat
   };
 }
 
-// Pure, Decimal-safe cash reconciliation (ADR-0043) — shared by the
-// single-record mapper below and SalesAggregationService's per-day rollup,
-// so the two never drift. Never mutates anything; totalSales is untouched.
+// Pure, Decimal-safe cash reconciliation (ADR-0043, amended for POS-scoped
+// discounts) — shared by the single-record mapper below and
+// SalesAggregationService's per-day rollup, so the two never drift. Never
+// mutates anything; totalSales is untouched.
+//
+// discountPosSourceId/discountPosSource identify which POS source
+// discountsTotal is scoped to (DailySalesRecord.discountPosSourceId).
+// null means "all POS sources" — the legacy/global behavior every record
+// created before this amendment already has, preserved exactly: the
+// overall expectedCash formula (physicalCashBasis - discountsTotal) is
+// IDENTICAL whether or not a POS scope is set, because summing gross cash
+// across every bucket and then subtracting one flat discount produces the
+// same total regardless of which bucket "owns" that subtraction for
+// display purposes. Only the per-bucket breakdown (cashByPosSource) changes
+// with the scope — this is deliberately display/audit information, never a
+// second source of truth for the total.
 export function computeCashReconciliation(
   paymentMethodEntries: DailySalesRecordWithLines["paymentMethodEntries"],
   discountsTotal: Prisma.Decimal,
-  actualCashCounted: Prisma.Decimal | null
+  actualCashCounted: Prisma.Decimal | null,
+  discountPosSourceId: string | null,
+  discountPosSource: { name: string } | null
 ): CashReconciliationDto {
   let physicalCashBasis = new Prisma.Decimal(0);
   let cardElectronicTotal = new Prisma.Decimal(0);
 
+  const buckets = new Map<
+    string,
+    { posSourceId: string | null; posSourceName: string | null; grossCashBasis: Prisma.Decimal }
+  >();
+
   for (const entry of paymentMethodEntries) {
-    if (entry.salesPaymentMethod.isCashEquivalent) {
-      physicalCashBasis = physicalCashBasis.plus(entry.amount);
-    } else {
+    if (!entry.salesPaymentMethod.isCashEquivalent) {
       cardElectronicTotal = cardElectronicTotal.plus(entry.amount);
+      continue;
+    }
+
+    physicalCashBasis = physicalCashBasis.plus(entry.amount);
+
+    const key = entry.posSourceId ?? UNASSIGNED_POS_SOURCE_KEY;
+    const existing = buckets.get(key);
+    if (existing) {
+      existing.grossCashBasis = existing.grossCashBasis.plus(entry.amount);
+    } else {
+      buckets.set(key, {
+        posSourceId: entry.posSourceId,
+        posSourceName: entry.posSource ? entry.posSource.name : null,
+        grossCashBasis: new Prisma.Decimal(entry.amount),
+      });
     }
   }
+
+  // A discount can be scoped to a POS source that has no cash entries
+  // recorded yet today — surface it anyway (grossCashBasis "0.00", expected
+  // cash goes negative) rather than silently dropping the discount from the
+  // breakdown, per the "never hide the calculation" auditability principle.
+  if (discountPosSourceId && !buckets.has(discountPosSourceId)) {
+    buckets.set(discountPosSourceId, {
+      posSourceId: discountPosSourceId,
+      posSourceName: discountPosSource ? discountPosSource.name : null,
+      grossCashBasis: new Prisma.Decimal(0),
+    });
+  }
+
+  const cashByPosSource: CashPosSourceBreakdownDto[] = Array.from(buckets.values())
+    // The discount-scoped bucket sorts first so the UI can render its
+    // "Discountable" section before the "Non-Discountable" ones — a stable
+    // sort (Node/V8 guarantee since ES2019) otherwise preserves each
+    // bucket's first-seen order.
+    .sort((a, b) => {
+      if (a.posSourceId === discountPosSourceId) return -1;
+      if (b.posSourceId === discountPosSourceId) return 1;
+      return 0;
+    })
+    .map((bucket) => {
+      const isDiscountedBucket = discountPosSourceId !== null && bucket.posSourceId === discountPosSourceId;
+      const discountApplied = isDiscountedBucket ? discountsTotal : new Prisma.Decimal(0);
+      return {
+        posSourceId: bucket.posSourceId,
+        posSourceName: bucket.posSourceName,
+        grossCashBasis: bucket.grossCashBasis.toFixed(2),
+        discountApplied: discountApplied.toFixed(2),
+        expectedCash: bucket.grossCashBasis.minus(discountApplied).toFixed(2),
+      };
+    });
 
   const expectedCash = physicalCashBasis.minus(discountsTotal);
   // == null (not !== null) deliberately catches both null and undefined —
@@ -75,6 +150,9 @@ export function computeCashReconciliation(
     cardElectronicTotal: cardElectronicTotal.toFixed(2),
     totalPaymentMethods: physicalCashBasis.plus(cardElectronicTotal).toFixed(2),
     manualDiscounts: discountsTotal.toFixed(2),
+    discountPosSourceId,
+    discountPosSourceName: discountPosSource ? discountPosSource.name : null,
+    cashByPosSource,
     expectedCash: expectedCash.toFixed(2),
     actualCashCounted: hasActualCashCounted ? actualCashCounted.toFixed(2) : null,
     discrepancy: discrepancy !== null ? discrepancy.toFixed(2) : null,
@@ -151,7 +229,13 @@ export function mapDailySalesRecordToResponse(
       createdAt: entry.createdAt,
     })),
     reconciliation: computeReconciliation(row),
-    cashReconciliation: computeCashReconciliation(row.paymentMethodEntries, row.discountsTotal, row.actualCashCounted),
+    cashReconciliation: computeCashReconciliation(
+      row.paymentMethodEntries,
+      row.discountsTotal,
+      row.actualCashCounted,
+      row.discountPosSourceId,
+      row.discountPosSource
+    ),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

@@ -14,6 +14,10 @@ export interface CreateDailySalesRecordDto {
   // Manager-entered physical cash count for the whole day (ADR-0043).
   // Optional — most records won't have one at creation time.
   actualCashCounted?: number | string;
+  // Which POS source discountsTotal is scoped to (ADR-0043 amendment).
+  // Omitted/undefined and null are both accepted; null (or omitted) means
+  // "all POS sources" — the legacy/global discount behavior.
+  discountPosSourceId?: string | null;
   notes?: string;
 }
 
@@ -27,6 +31,7 @@ export interface UpdateDailySalesRecordDto {
   vouchersAmount?: number | string;
   vouchersCount?: number | null;
   actualCashCounted?: number | string | null;
+  discountPosSourceId?: string | null;
   notes?: string | null;
 }
 
