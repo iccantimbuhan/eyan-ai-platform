@@ -9,6 +9,7 @@ import {
   seedContentBrains,
   seedVideoPlanningBrain,
   seedVideoTextBrains,
+  seedFinanceBrains,
 } from './seed-ai-core'
 import { bootstrapPlatform } from './bootstrap'
 
@@ -91,5 +92,9 @@ async function main() {
   await seedContentBrains(prisma)
   await seedVideoPlanningBrain(prisma)
   await seedVideoTextBrains(prisma)
+
+  // Finance AI Core migration — see seed-ai-core.ts's own comment on
+  // seedFinanceBrains() for the full rationale.
+  await seedFinanceBrains(prisma)
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())

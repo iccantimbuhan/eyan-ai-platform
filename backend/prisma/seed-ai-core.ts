@@ -615,3 +615,321 @@ export async function seedVideoTextBrains(prisma: PrismaClient): Promise<void> {
     })
   }
 }
+
+// Finance AI Core migration — moves the AI Finance Inbox's two AI-calling
+// tasks (intent classification, expense-field extraction) off n8n-embedded
+// direct-Ollama calls and onto AI Core, mirroring seedAiCoreFoundation()'s
+// CRM precedent. `mistral:7b`/`gemma3:4b` are declared as local constants
+// (not imported from the General Chat section below) so this function stays
+// self-contained, matching seedContentBrains()/seedVideoPlanningBrain()'s
+// own convention of redeclaring their own model-key constant rather than
+// cross-importing — both AiModel rows already exist (created by
+// seedGeneralChatBrain() for its own, unrelated "model switching
+// validation" feature), so these upserts are idempotent no-ops against the
+// existing rows, not new AiModel data.
+const FINANCE_INTENT_MODEL_KEY = 'mistral:7b'
+const FINANCE_INTENT_BRAIN_KEY = 'finance-intent-brain'
+const FINANCE_INTENT_CLASSIFICATION_CAPABILITY_KEY = 'finance-intent-classification'
+
+const EXPENSE_EXTRACTION_MODEL_KEY = 'gemma3:4b'
+const EXPENSE_EXTRACTION_BRAIN_KEY = 'expense-extraction-brain'
+const EXPENSE_EXTRACTION_CAPABILITY_KEY = 'expense-extraction'
+
+// Verbatim from eyan-automation-hub/workflows/finance/prompts/
+// intent-classification.v2.md's actual prompt body (everything after that
+// file's own header/changelog section), plus one required addition: the
+// input-format paragraph below, since v2 was written for n8n's LangChain
+// `chainLlm` free-text `text` templating, not AI Core's
+// `JSON.stringify(input)`-as-user-message convention (buildMessages() in
+// ai-routing.service.ts). Versioned 'v1' here, not 'v2' — AiPrompt.version
+// is scoped per-brainId (@@unique([brainId, version])), and this is the
+// first prompt version this Brain has ever had; every other seed function
+// in this file starts its first prompt at 'v1' regardless of the source
+// prompt's own prior history (mirrors LEAD_QUALIFICATION_PROMPT_V1 above).
+const FINANCE_INTENT_CLASSIFICATION_PROMPT_V1 = `You are the Finance Intent Router's classifier for the AI Finance Inbox. Read the user's message and decide which ONE Finance intent it belongs to.
+
+Supported intents — choose exactly one:
+
+- CREATE_EXPENSE: the user is describing money they spent (e.g. "spent $12 on lunch", "bought groceries for 45").
+- GET_BUDGET: the user is asking about their configured monthly budget limit (e.g. "what's my budget?").
+- GET_DASHBOARD: the user is asking for a spending summary or overview (e.g. "how am I doing this month?", "show my spending").
+- GET_FINANCE_QUESTION: an open-ended finance question not covered by GET_BUDGET or GET_DASHBOARD (e.g. "am I overspending on food?", "what's my biggest expense category?").
+- CREATE_INCOME: the user is describing money they received (e.g. "got paid $2000", "received a refund of $30").
+- CREATE_TRANSFER: the user is describing money moved between accounts or people, not spent or earned (e.g. "sent $50 to Alex", "transferred money to savings").
+- UPLOAD_RECEIPT: the message clearly references a shared image or attachment that is a receipt.
+- UNRECOGNIZED: the message does not clearly fit any of the above, or is genuinely ambiguous between two intents.
+
+The user's message is provided as JSON in the next message under the "message" key (an optional "attachmentCount" field is also present — a nonzero value means the user shared one or more attachments alongside the message). Respond directly with the JSON object described below only — no commentary, no code fences.
+
+Output format — follow this exactly:
+
+- Return JSON only. Your entire response must be exactly one JSON object and nothing else.
+- Do not wrap the JSON in Markdown code fences or any other formatting.
+- Do not include explanations, reasoning, commentary, or any text before or after the JSON object.
+- Do not use tool calls, function calls, or any structured-output mechanism other than writing the JSON object directly as your response text.
+- The object must contain exactly these two fields, and no others: \`intent\` and \`confidence\`. Do not invent additional fields. Do not extract amounts, categories, dates, counterparties, or any other Finance-specific field — that is a downstream Handler workflow's job, never yours.
+
+The required shape:
+
+\`\`\`json
+{"intent": "CREATE_EXPENSE", "confidence": 0.97}
+\`\`\`
+
+Rules for the two fields:
+
+- \`intent\` must be exactly one of the eight supported intent values listed above — never a value outside that list.
+- \`confidence\` must be a plain number between 0 and 1 (inclusive).
+
+Rules for ambiguity — read carefully, these matter more than getting a "confident-sounding" answer:
+
+- Use UNRECOGNIZED when the message does not clearly match any listed intent (small talk, unrelated questions, requests unrelated to Finance).
+- Prefer UNRECOGNIZED over guessing whenever the message is genuinely ambiguous between two intents. A wrong guess is worse than asking the user to clarify.
+- Do not guess between CREATE_EXPENSE and CREATE_TRANSFER when the message could plausibly be either (e.g. money sent to a person could be a personal expense or a transfer) — use UNRECOGNIZED instead.
+- Do not guess between CREATE_INCOME and CREATE_EXPENSE when the direction of money movement is unclear (e.g. a refund or reversal could read as either) — use UNRECOGNIZED instead.
+- Do not guess whether an attachment is a receipt when the intent is otherwise unclear from the message — use UNRECOGNIZED instead, even if an attachment is present.
+
+Examples:
+
+Message: "spent $12.50 on lunch"
+\`{"intent": "CREATE_EXPENSE", "confidence": 0.95}\`
+
+Message: "what's my budget this month?"
+\`{"intent": "GET_BUDGET", "confidence": 0.95}\`
+
+Message: "how am I doing this month?"
+\`{"intent": "GET_DASHBOARD", "confidence": 0.9}\`
+
+Message: "am I overspending on food?"
+\`{"intent": "GET_FINANCE_QUESTION", "confidence": 0.9}\`
+
+Message: "got paid $2000"
+\`{"intent": "CREATE_INCOME", "confidence": 0.95}\`
+
+Message: "sent $50 to Alex"
+\`{"intent": "CREATE_TRANSFER", "confidence": 0.85}\`
+
+Message: [no text, one image attachment, no other context]
+\`{"intent": "UPLOAD_RECEIPT", "confidence": 0.8}\`
+
+Message: "hey how's it going?"
+\`{"intent": "UNRECOGNIZED", "confidence": 0.9}\`
+
+Message: "sent $50 to Alex for dinner" (ambiguous — could be a transfer to a person or a personal expense; do not guess)
+\`{"intent": "UNRECOGNIZED", "confidence": 0.55}\`
+
+Message: "got $30 back from a return" (ambiguous — could be income or a reversed expense; do not guess)
+\`{"intent": "UNRECOGNIZED", "confidence": 0.5}\`
+
+Message: [one image attachment, caption "check this out"] (attachment present but nothing indicates it is a receipt; do not guess)
+\`{"intent": "UNRECOGNIZED", "confidence": 0.4}\`
+
+Respond with the JSON object only.`
+
+// Verbatim from eyan-automation-hub/workflows/finance/prompts/
+// expense-extraction.v3.md's actual prompt body (the part sent to the
+// model — that file's own "Fields NOT extracted" and "Ollama request
+// configuration" sections are human documentation only, never part of the
+// literal systemPrompt string the n8n node built), plus two required
+// changes: the same input-format paragraph as above, and `${today}`
+// (a JS template-literal interpolation baked in at n8n-build time) becomes
+// a static `{{today}}` AI Core placeholder — buildMessages() in
+// ai-routing.service.ts resolves `{{today}}` from `input.today` per call,
+// the same convention VIDEO_PLANNING_PROMPT_V1's `{{durationMs}}` already
+// uses — so the workflow must now pass `today` as an `input` field instead
+// of interpolating it into the prompt string itself. Versioned 'v1', not
+// 'v3' — same reasoning as FINANCE_INTENT_CLASSIFICATION_PROMPT_V1 above.
+const EXPENSE_EXTRACTION_PROMPT_V1 = `You are the Finance CREATE_EXPENSE Handler's expense-field extractor for the AI Finance Inbox. Your ONLY job is to read the user's raw message and extract the fields needed to log an expense. Intent classification is already done (this message was already routed here as CREATE_EXPENSE) -- you do not classify intent, do not answer questions, and have no access to any Finance data.
+
+The user's message is provided as JSON in the next message under the "message" key (an optional "attachmentCount" field is also present — a nonzero value means the user shared one or more attachments alongside the message). Respond directly with the JSON object described below only — no commentary, no code fences.
+
+Extract exactly these fields:
+
+- amount: the numeric amount spent, as a plain number (e.g. 12.50). null if no amount is mentioned or it cannot be determined -- NEVER invent or guess a number.
+- category: EXACTLY one of these values: HOUSING, FOOD, UTILITIES, TRANSPORTATION, SHOPPING, MEDICAL, CREDIT_CARD, SAVINGS, TAX, OTHERS. No other value is valid -- for example, "Food & Drink" is NOT a valid category; the closest real value is FOOD. null if the category cannot be confidently determined -- NEVER guess between two plausible categories, and NEVER invent a category value that is not in this exact list.
+- paymentMethod: EXACTLY one of these values, or null if not mentioned: CASH, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, OTHER. No other value is valid -- for example, "Imagin Card" is NOT a valid paymentMethod. Named cards and payment instruments ("Imagin", "Visa", "Mastercard", "Amex", "Revolut", or similar) are not paymentMethod values themselves -- when the message names one of these to describe how something was paid, map it to CREDIT_CARD, unless the message specifically says it is a debit card, in which case use DEBIT_CARD.
+- date: the date the expense occurred, as YYYY-MM-DD. "today" is NOT a valid date output -- always resolve it to an actual calendar date. If the message implies today (or gives no date at all), use {{today}}. If it says "yesterday", use the day before {{today}}. Use your best resolution of any other relative or explicit date mentioned.
+- description: a short (under 100 characters) plain-text description of what the expense was for, drawing on the message's own wording (e.g. merchant, item). null if the message gives nothing beyond the amount.
+- isRecurring: true ONLY if the message clearly and explicitly describes a repeating or recurring expense (e.g. "my monthly Netflix subscription", "rent, same as every month", "this happens every month"). false if the message describes a one-time expense, or does not mention recurrence at all. NEVER guess true from an ambiguous or unstated case -- default to false.
+
+Note: "CREDIT_CARD" appears as a value in BOTH category and paymentMethod -- they are two separate fields. A message about paying a credit card BILL is category CREDIT_CARD; a message about paying an unrelated expense BY credit card is paymentMethod CREDIT_CARD (with category describing what was bought).
+
+Output rules -- follow every one of these exactly:
+- Never invent an amount. If it cannot be determined, use null.
+- Never invent a category. If it cannot be confidently determined, use null -- do not pick the closest guess.
+- Never output markdown, code fences, or any text other than the JSON object.
+- Return exactly one JSON object with exactly these six keys (amount, category, paymentMethod, date, description, isRecurring) and no other text, no explanation.`
+
+/**
+ * Seeds the Finance Intent Classification Brain and the Expense Extraction
+ * Brain — the two AI Finance Inbox tasks previously called directly against
+ * Ollama from eyan-automation-hub (`workflows/finance/02-finance-intent-router.json`,
+ * `workflows/finance/10-handle-create-expense.json`; see ADR-0011/ADR-0012
+ * there), now relocated to AI Core so n8n becomes orchestration-only for
+ * both, mirroring how CRM's Workflow 3 already calls `lead-qualification`.
+ * Two Brains, not one shared Brain — same one-active-prompt-per-Brain
+ * reasoning as seedContentBrains(), and the two tasks use different models.
+ */
+export async function seedFinanceBrains(prisma: PrismaClient): Promise<void> {
+  const provider = await prisma.aiProvider.upsert({
+    where: { key: OLLAMA_PROVIDER_KEY },
+    update: {},
+    create: {
+      key: OLLAMA_PROVIDER_KEY,
+      displayName: 'Ollama (local)',
+      kind: 'LOCAL',
+      baseUrl: env.ollamaBaseUrl,
+      isEnabled: true,
+    },
+  })
+
+  const intentModel = await prisma.aiModel.upsert({
+    where: { providerId_modelKey: { providerId: provider.id, modelKey: FINANCE_INTENT_MODEL_KEY } },
+    update: {},
+    create: {
+      providerId: provider.id,
+      modelKey: FINANCE_INTENT_MODEL_KEY,
+      displayName: 'Mistral 7B',
+      tags: ['chat', 'reasoning'],
+      isEnabled: true,
+    },
+  })
+
+  const extractionModel = await prisma.aiModel.upsert({
+    where: { providerId_modelKey: { providerId: provider.id, modelKey: EXPENSE_EXTRACTION_MODEL_KEY } },
+    update: {},
+    create: {
+      providerId: provider.id,
+      modelKey: EXPENSE_EXTRACTION_MODEL_KEY,
+      displayName: 'Gemma 3 4B',
+      tags: ['chat'],
+      isEnabled: true,
+    },
+  })
+
+  const intentBrain = await prisma.aiBrain.upsert({
+    where: { key: FINANCE_INTENT_BRAIN_KEY },
+    update: {},
+    create: {
+      key: FINANCE_INTENT_BRAIN_KEY,
+      name: 'Finance Intent Classification Brain',
+      description: 'Classifies inbound AI Finance Inbox messages into one of eight supported Finance intents.',
+      category: 'Finance',
+      memoryStrategy: 'NONE',
+      isEnabled: true,
+    },
+  })
+
+  await prisma.aiPrompt.upsert({
+    where: { brainId_version: { brainId: intentBrain.id, version: 'v1' } },
+    update: {},
+    create: {
+      brainId: intentBrain.id,
+      version: 'v1',
+      body: FINANCE_INTENT_CLASSIFICATION_PROMPT_V1,
+      isActive: true,
+    },
+  })
+
+  const existingIntentPolicy = await prisma.aiRoutingPolicy.findFirst({ where: { brainId: intentBrain.id } })
+  if (!existingIntentPolicy) {
+    await prisma.aiRoutingPolicy.create({
+      data: {
+        brainId: intentBrain.id,
+        isActive: true,
+        strategy: 'BALANCED',
+        preferredProviderId: provider.id,
+        preferredModelId: intentModel.id,
+        // No fallback — matches every other Brain seeded in this file; no
+        // second provider/model pairing exists to fall back to today.
+        fallbackProviderId: null,
+        fallbackModelId: null,
+        // The Router had zero retry (ADR-0012 removed the old retry
+        // taxonomy) and no confidence-threshold routing at all — this is a
+        // deliberate behavior addition, not a preserved value. See
+        // ADR-0014's discussion of this decision.
+        maxRetries: 3,
+        timeoutMs: 300_000,
+        confidenceHighThreshold: 0.75,
+        confidenceMediumThreshold: 0.4,
+      },
+    })
+  }
+
+  await prisma.aiCapability.upsert({
+    where: { key: FINANCE_INTENT_CLASSIFICATION_CAPABILITY_KEY },
+    update: {},
+    create: {
+      key: FINANCE_INTENT_CLASSIFICATION_CAPABILITY_KEY,
+      name: 'Finance Intent Classification',
+      description: 'Classifies an inbound Finance Inbox message into one of eight supported intents.',
+      brainId: intentBrain.id,
+      isEnabled: true,
+    },
+  })
+
+  const extractionBrain = await prisma.aiBrain.upsert({
+    where: { key: EXPENSE_EXTRACTION_BRAIN_KEY },
+    update: {},
+    create: {
+      key: EXPENSE_EXTRACTION_BRAIN_KEY,
+      name: 'Expense Extraction Brain',
+      description: 'Extracts structured expense fields (amount/category/paymentMethod/date/description/isRecurring) from a CREATE_EXPENSE message.',
+      category: 'Finance',
+      memoryStrategy: 'NONE',
+      isEnabled: true,
+    },
+  })
+
+  await prisma.aiPrompt.upsert({
+    where: { brainId_version: { brainId: extractionBrain.id, version: 'v1' } },
+    update: {},
+    create: {
+      brainId: extractionBrain.id,
+      version: 'v1',
+      body: EXPENSE_EXTRACTION_PROMPT_V1,
+      isActive: true,
+    },
+  })
+
+  const existingExtractionPolicy = await prisma.aiRoutingPolicy.findFirst({ where: { brainId: extractionBrain.id } })
+  if (!existingExtractionPolicy) {
+    await prisma.aiRoutingPolicy.create({
+      data: {
+        brainId: extractionBrain.id,
+        isActive: true,
+        strategy: 'BALANCED',
+        preferredProviderId: provider.id,
+        preferredModelId: extractionModel.id,
+        fallbackProviderId: null,
+        fallbackModelId: null,
+        maxRetries: 3,
+        // 300s, not the Handler's current 90s httpRequest timeout — this
+        // Brain's own maxRetries:3 means a slow call plus retries could
+        // legitimately need longer than 90s to reach a final answer, and
+        // 300s only changes the abort ceiling (matches every other seeded
+        // policy), not typical latency. The n8n workflow's own httpRequest
+        // node timeout must be set to >= this value or it will abort the
+        // call before this policy's retry loop can finish.
+        timeoutMs: 300_000,
+        // Seeded for consistency with every other Brain, but currently
+        // inert: this prompt has no `confidence` field (deliberate — see
+        // ADR-0014), so extractConfidence() always returns null for this
+        // Brain and these thresholds are never evaluated.
+        confidenceHighThreshold: 0.75,
+        confidenceMediumThreshold: 0.4,
+      },
+    })
+  }
+
+  await prisma.aiCapability.upsert({
+    where: { key: EXPENSE_EXTRACTION_CAPABILITY_KEY },
+    update: {},
+    create: {
+      key: EXPENSE_EXTRACTION_CAPABILITY_KEY,
+      name: 'Expense Extraction',
+      description: 'Extracts structured expense-log fields from a CREATE_EXPENSE Finance Inbox message.',
+      brainId: extractionBrain.id,
+      isEnabled: true,
+    },
+  })
+}
