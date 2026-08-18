@@ -18,6 +18,7 @@ import {
   periodStart,
   trailingPeriods,
 } from "../utils/finance-period.js";
+import { buildFinanceFacts } from "../utils/finance-facts.js";
 
 const RECENT_EXPENSES_LIMIT = 5;
 const TREND_MONTHS = 6;
@@ -51,17 +52,27 @@ export class FinanceDashboardService {
       ? budgetRaw.monthlyLimit.minus(totalExpenses)
       : null;
 
+    const categoryTotals = groupedByCategory.map((row) => ({
+      category: row.category,
+      total: row._sum.amount ?? new Prisma.Decimal(0),
+    }));
+
     return {
       period,
       budget: budgetRaw ? mapBudgetToResponse(budgetRaw) : null,
       totalExpenses: totalExpenses.toFixed(2),
       remainingBudget: remainingBudget ? remainingBudget.toFixed(2) : null,
-      categoryBreakdown: groupedByCategory.map((row) => ({
-        category: row.category,
-        total: (row._sum.amount ?? new Prisma.Decimal(0)).toFixed(2),
+      categoryBreakdown: categoryTotals.map((entry) => ({
+        category: entry.category,
+        total: entry.total.toFixed(2),
       })),
       spendingTrend,
       recentExpenses: recent.map(mapExpenseToResponse),
+      financeFacts: buildFinanceFacts(
+        totalExpenses,
+        budgetRaw?.monthlyLimit ?? null,
+        categoryTotals
+      ),
     };
   }
 

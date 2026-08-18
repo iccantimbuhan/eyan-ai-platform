@@ -10,6 +10,7 @@ import {
   seedVideoPlanningBrain,
   seedVideoTextBrains,
   seedFinanceBrains,
+  seedFinanceQuestionBrain,
 } from './seed-ai-core'
 import { bootstrapPlatform } from './bootstrap'
 
@@ -96,5 +97,10 @@ async function main() {
   // Finance AI Core migration — see seed-ai-core.ts's own comment on
   // seedFinanceBrains() for the full rationale.
   await seedFinanceBrains(prisma)
+
+  // GET_FINANCE_QUESTION — a new, standalone Finance capability (not a
+  // migration of an existing n8n-embedded call); see seed-ai-core.ts's own
+  // comment on seedFinanceQuestionBrain() for the full rationale.
+  await seedFinanceQuestionBrain(prisma)
 }
 main().catch((error) => { console.error(error); process.exit(1) }).finally(() => prisma.$disconnect())
